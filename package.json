@@ -1,0 +1,8 @@
+{
+  "name": "site",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/fahmiirsyadk/site",
+  "author": "fahmiirsyadk <fahmiirsyad10@gmail.com>",
+  "license": "MIT"
+}
