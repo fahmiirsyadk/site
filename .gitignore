@@ -1,0 +1,15 @@
+out
+
+.DS_Store
+*.swp
+*.swo
+
+# Generated via update-index script
+public/blog/feed.xml
+
+node_modules/
+.bsb.lock
+.merlin
+lib/
+.merlin
+*.bs.js

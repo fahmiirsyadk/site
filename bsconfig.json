@@ -1,0 +1,23 @@
+{
+  "name": "fahmiirsyadk-site",
+  "version": "0.0.1",
+  "sources": [{
+    "dir": "src",
+    "subdirs": true
+  }, {
+    "dir": "engine",
+    "subdirs": true
+  }],
+  "package-specs": {
+    "module": "commonjs",
+    "in-source": true
+  },
+  "suffix": ".bs.js",
+  "namespace": "site",
+  "bs-dependencies": [],
+  "warnings": {
+    "number": "+A-48",
+    "error": "+A-3-44-102"
+  },
+  "refmt": 3
+}

@@ -4,5 +4,16 @@
   "main": "index.js",
   "repository": "https://github.com/fahmiirsyadk/site",
   "author": "fahmiirsyadk <fahmiirsyad10@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "bin": {
+    "fahmiirsyadk_site": "./engine/cli/cli"
+  },
+  "devDependencies": {
+    "bs-platform": "8.3.3"
+  },
+  "scripts": {
+    "build": "bsb -make-world",
+    "start": "bsb -make-world -w",
+    "clean": "bsb -clean-world"
+  },
 }
