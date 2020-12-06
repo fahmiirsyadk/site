@@ -20,9 +20,21 @@ let cleanDir (path: string) = path |> Path.join2 (Process.cwd Process.process)
                               |> Path.normalize
                               |> Extra.removeSync
 
+let getPages = [| Process.cwd Process.process; "pages"; "**"; "*.ml"; |]
+               |> Path.join
+               |> Path.normalize
+               |> Utils.glob
+
+
+let getPosts = [| Process.cwd Process.process; "posts"; "**"; "*.md"; |]
+               |> Path.join
+               |> Path.normalize
+               |> Utils.glob
+
+
+let _ = Js.log2 getPages getPosts
+
 let generatePage (manafile: string) (outputPath: string) (filename: string) =
   Node.Fs.writeFileSync (outputPath ^ filename ^ ".html") manafile `utf8
-
-
 
 let run = (fun _ -> cleanDir "dist"; ())

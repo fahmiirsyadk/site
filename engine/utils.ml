@@ -1,9 +1,5 @@
 type error
 
-external glob : string -> (error Js.nullable -> string array -> unit) -> unit
-  = "glob"
-[@@bs.module]
-
 type colorsUnit
 
 external colors : colorsUnit = "kleur" [@@bs.module]
@@ -20,8 +16,7 @@ external underline : 'a -> colorsUnit = "underline" [@@bs.send.pipe: colorsUnit]
 
 module Console = Js.Console
 
-external fsGlob : string array -> string array Js.Promise.t = "fast-glob"
-[@@bs.module]
+external glob : string -> string array = "sync" [@@bs.module "fast-glob"]
 
 
 

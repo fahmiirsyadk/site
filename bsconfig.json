@@ -2,7 +2,7 @@
   "name": "fahmiirsyadk-site",
   "version": "0.0.1",
   "sources": [{
-    "dir": "src",
+    "dir": "pages",
     "subdirs": true
   }, {
     "dir": "engine",
