@@ -5,11 +5,9 @@
   "repository": "https://github.com/fahmiirsyadk/site",
   "author": "fahmiirsyadk <fahmiirsyad10@gmail.com>",
   "license": "MIT",
-  "bin": {
-    "fahmiirsyadk_site": "./engine/cli/cli"
-  },
   "devDependencies": {
     "bs-platform": "8.3.3",
+    "fast-glob": "3.2.4",
     "fs-extra": "9.0.1",
     "gray-matter": "4.0.2",
     "marked": "1.2.5",

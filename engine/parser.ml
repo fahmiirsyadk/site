@@ -12,29 +12,53 @@
 (* parse individual blog post file & send them to the output blog dir *)
 (* end logging time *)
 
+type typeMatterData = {
+  title: string;
+  date: string;
+}
+
+type typeMatter = {
+  data: typeMatterData;
+  isEmpty: bool;
+  excerpt: string;
+}
+
+type metadata = {
+  filename: string;
+  path: string;
+  content: string;
+  matter: typeMatter;
+}
+
 module Extra = Utils.Fs_Extra
 module Path = Utils.NodeJS.Path
 module Process = Utils.NodeJS.Process
+external matter: string -> 'a = "gray-matter" [@@bs.module]
 
 let cleanDir (path: string) = path |> Path.join2 (Process.cwd Process.process)
                               |> Path.normalize
                               |> Extra.removeSync
 
-let getPages = [| Process.cwd Process.process; "pages"; "**"; "*.ml"; |]
-               |> Path.join
-               |> Path.normalize
-               |> Utils.glob
+let getGlob (path: string array) = path
+                                   |> Path.join
+                                   |> Path.normalize
+                                   |> Utils.glob
 
+let getPages = [| Process.cwd Process.process; "pages"; "**"; "*.ml"; |] |> getGlob
+let getPosts = [| Process.cwd Process.process; "posts"; "**"; "*.md"; |] |> getGlob
 
-let getPosts = [| Process.cwd Process.process; "posts"; "**"; "*.md"; |]
-               |> Path.join
-               |> Path.normalize
-               |> Utils.glob
+(* markdown *)
+let processMd: string array = Belt.Array.map getPosts (fun x -> (Extra.readFileSync x "utf8"))
 
+let postMd = (Belt.Array.map processMd (fun x -> matter x))
+             |. Belt.Array.map (fun x -> x.data)
+             |> Js.Array.sortInPlaceWith (fun a b ->
+                 match (a.date < b.date) with
+                 | true -> 1
+                 | false -> -1
+               )
 
-let _ = Js.log2 getPages getPosts
-
-let generatePage (manafile: string) (outputPath: string) (filename: string) =
+let generatePage (outputPath: string) (filename: string) (manafile: string) =
   Node.Fs.writeFileSync (outputPath ^ filename ^ ".html") manafile `utf8
 
 let run = (fun _ -> cleanDir "dist"; ())

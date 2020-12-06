@@ -18,8 +18,6 @@ module Console = Js.Console
 
 external glob : string -> string array = "sync" [@@bs.module "fast-glob"]
 
-
-
 (* binding NodeJS *)
 module NodeJS = struct
   module Path = struct
@@ -46,6 +44,8 @@ module Fs_Extra = struct
 
   external outputFile : string -> string -> unit Js.Promise.t = "outputFile"
   [@@bs.module "fs-extra"]
+
+  external readFileSync : string -> string -> string = "readFileSync" [@@bs.module "fs-extra"]
 
   external readFile : string -> string -> 'a Js.Promise.t = "readFile"
   [@@bs.module "fs-extra"]
