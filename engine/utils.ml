@@ -23,6 +23,23 @@ module Console = Js.Console
 external fsGlob : string array -> string array Js.Promise.t = "fast-glob"
 [@@bs.module]
 
+
+
+(* binding NodeJS *)
+module NodeJS = struct
+  module Path = struct
+    external join : string array -> string = "join" [@@bs.module "path"] [@@bs.splice]
+    external join2 : string -> string -> string = "join" [@@bs.module "path"]
+    external normalize: string -> string = "normalize" [@@bs.module "path"]
+  end
+  module Process = struct
+    type t
+    external process : t = "process"[@@bs.module ]
+    external cwd : t -> string = "cwd"[@@bs.send ]
+  end
+end
+(* end of binding *)
+
 module Fs_Extra = struct
   external pathExists : string -> bool Js.Promise.t = "pathExists"
   [@@bs.module "fs-extra"]

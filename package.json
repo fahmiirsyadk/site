@@ -9,11 +9,16 @@
     "fahmiirsyadk_site": "./engine/cli/cli"
   },
   "devDependencies": {
-    "bs-platform": "8.3.3"
+    "bs-platform": "8.3.3",
+    "fs-extra": "9.0.1",
+    "gray-matter": "4.0.2",
+    "marked": "1.2.5",
+    "remark": "13.0.0",
+    "remark-html": "13.0.1"
   },
   "scripts": {
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world"
-  },
+  }
 }
