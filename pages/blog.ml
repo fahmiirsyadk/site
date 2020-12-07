@@ -1,17 +1,6 @@
 module H = Mana.HTML
 module P = Mana.Property
 
-let head =
-  H.head [] [
-    H.title [] (H.text "ini demo");
-    H.style [] (H.text {j|
-       .theme {
-            background: black;
-            color: white;
-        }
-    |j});
-  ]
-
 let listPost posts =
   Belt.List.map (Array.to_list posts)
     (fun (post: Parser.typeMatterData) -> H.li [] (H.text post.title))
@@ -28,4 +17,4 @@ let body posts =
   ]
 
 let html (posts: Parser.typeMatterData array) =
-  [head; body posts;] |> H.html []
+  [Partial_head.head ~title:"blog"; body posts;] |> H.html []

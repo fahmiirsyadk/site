@@ -7,6 +7,9 @@
   }, {
     "dir": "engine",
     "subdirs": true
+  }, {
+    "dir": "layouts",
+    "subdirs": true
   }],
   "package-specs": {
     "module": "commonjs",
