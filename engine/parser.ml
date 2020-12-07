@@ -61,4 +61,18 @@ let postMd = (Belt.Array.map processMd (fun x -> matter x))
 let generatePage (outputPath: string) (filename: string) (manafile: string) =
   Node.Fs.writeFileSync (outputPath ^ filename ^ ".html") manafile `utf8
 
+let importManaFile = [%raw {|
+  function(path, props) {
+    let data = require(path);
+    return data.html(props);
+  }
+|}]
+
+let executeMana (path: string) =
+  importManaFile (
+    (Path.join [|(Process.cwd Process.process); "pages"; path ^ ".bs.js";|]
+     |> Path.normalize)) postMd
+
+let _ = executeMana "blog" |> generatePage "" "jajal"
+
 let run = (fun _ -> cleanDir "dist"; ())

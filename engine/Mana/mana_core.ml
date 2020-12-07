@@ -11,10 +11,10 @@ struct
       match attrs == [] with
       | true  -> ""
       | false  ->
-        List.fold_left (fun a  -> fun b  -> {j|$a $b|j}) (List.hd attrs)
+        List.fold_left (fun a  -> fun b  -> {j|$a$b|j}) (List.hd attrs)
           (List.tl attrs) in
-    {j|<$tag $at>$el</$tag>|j}
-  let attrFormat (attr : string) (prop : string) = {j|$attr="$prop"|j}
+    {j|<$tag$at>$el</$tag>|j}
+  let attrFormat (attr : string) (prop : string) = {j| $attr="$prop"|j}
   let textAttr (attr : string) (prop : string) =
     (attrFormat attr prop : string)
   let boolAttr (attr : string) (prop : bool) =
