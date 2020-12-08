@@ -5,6 +5,8 @@ date: '2020-01-02'
 
 We recommend using **Static Generation** (with and without data) whenever possible because your page can be built once and served by CDN, which makes it much faster than having a server render the page on every request.
 
+[![](https://c8r-x0.s3.amazonaws.com/lab-components-macbook.jpg)](https://c8r-x0.s3.amazonaws.com/lab-components-macbook.jpg)
+
 You can use Static Generation for many types of pages, including:
 
 - Marketing pages

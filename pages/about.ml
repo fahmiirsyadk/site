@@ -1,13 +1,8 @@
 module H = Mana.HTML
 module P = Mana.Property
 
-let listPost posts =
-  Belt.List.map (Array.to_list posts)
-    (fun (post: Parser.metadata) -> H.li [] (H.text post.matter.title))
-
-let body posts =
+let body =
   H.body [P.class_ "theme"] [
-    H.ol [] (listPost posts);
     H.h1 [] (H.text "ini judul");
     H.p [] (H.text "ini deskripsi");
     H.img [
@@ -16,5 +11,5 @@ let body posts =
     ] []
   ]
 
-let html (posts: Parser.metadata array) =
-  [Partial_head.head ~title:"blog"; body posts;] |> H.html []
+let html () =
+  [Partial_head.head ~title:"blog"; body;] |> H.html []

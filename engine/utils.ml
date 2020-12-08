@@ -1,22 +1,24 @@
 type error
-
+type remark
 type colorsUnit
 
 external colors : colorsUnit = "kleur" [@@bs.module]
-
 external bold : 'a -> colorsUnit = "bold" [@@bs.send.pipe: colorsUnit]
-
 external red : 'a -> colorsUnit = "red" [@@bs.send.pipe: colorsUnit]
-
 external green : 'a -> colorsUnit = "green" [@@bs.send.pipe: colorsUnit]
-
 external yellow : 'a -> colorsUnit = "yellow" [@@bs.send.pipe: colorsUnit]
-
 external underline : 'a -> colorsUnit = "underline" [@@bs.send.pipe: colorsUnit]
 
 module Console = Js.Console
 
 external glob : string -> string array = "sync" [@@bs.module "fast-glob"]
+external remark: unit -> remark = "remark" [@@bs.module]
+external remarkHtml: remark = "remark-html" [@@bs.module]
+external remarkFootnotes: remark = "remark-footnotes" [@@bs.module]
+external remarkImages: remark = "remark-images" [@@bs.module]
+external remarkToc: remark = "remark-toc" [@@bs.module]
+external use: remark -> remark = "use" [@@bs.send.pipe: remark]
+external processSync: 'a -> string = "processSync" [@@bs.send.pipe: remark]
 
 (* binding NodeJS *)
 module NodeJS = struct
@@ -36,36 +38,10 @@ end
 (* end of binding *)
 
 module Fs_Extra = struct
-  external pathExists : string -> bool Js.Promise.t = "pathExists"
-  [@@bs.module "fs-extra"]
-
-  external remove : string -> unit Js.Promise.t = "remove"
-  [@@bs.module "fs-extra"]
-
   external removeSync : string -> unit = "removeSync" [@@bs.module "fs-extra"]
-
-  external outputFile : string -> string -> unit Js.Promise.t = "outputFile"
-  [@@bs.module "fs-extra"]
-
   external readFileSync : string -> string -> string = "readFileSync" [@@bs.module "fs-extra"]
-
-  external readFile : string -> string -> 'a Js.Promise.t = "readFile"
-  [@@bs.module "fs-extra"]
-
-  external copy : string -> string -> unit Js.Promise.t = "copy"
-  [@@bs.module "fs-extra"]
-
-  external ensureDir : string -> unit Js.Promise.t = "ensureDir"
-  [@@bs.module "fs-extra"]
-
-  external ensureFile : string -> unit Js.Promise.t = "ensureDir"
-  [@@bs.module "fs-extra"]
-
-  external outputFileSync : string -> string -> unit = "outputFileSync"
-  [@@bs.module "fs-extra"]
-
-  external copySync : string -> string -> unit = "copySync"
-  [@@bs.module "fs-extra"]
+  external copy : string -> string -> unit Js.Promise.t = "copy" [@@bs.module "fs-extra"]
+  external outputFileSync : string -> string -> unit = "outputFileSync" [@@bs.module "fs-extra"]
 end
 
 let logMeasure (result : float) =

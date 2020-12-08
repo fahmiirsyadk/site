@@ -74,25 +74,21 @@ let importManaFile = [%raw {|
   }
 |}]
 
-let readMarkdown = [%raw {|
-  function(content) {
-     const remark = require('remark')
-     const html = require('remark-html')
-     const data = remark()
-        .use(html)
-        .processSync(content)
-     return data.toString()
-    }
-|}]
+let parseMarkdown content =
+  Utils.remark()
+  |> Utils.use Utils.remarkFootnotes
+  |> Utils.use Utils.remarkImages
+  |> Utils.use Utils.remarkToc
+  |> Utils.use Utils.remarkHtml
+  |> Utils.processSync content
 
 let metadataPost path (matter: graymatter) = {
   filename = "name";
   url = path;
-  content =  matter.content |> readMarkdown;
+  content =  matter.content |> parseMarkdown;
   excerpt = matter.excerpt;
   matter = matter.data;
 }
-
 
 let createMetaData: metadata array = sortMatterByDate
                                      |> Array.map (fun (post: graymatter) -> (post |> metadataPost "/blog/test"))
