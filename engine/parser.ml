@@ -51,8 +51,8 @@ let getGlob (path: string array) = path
                                    |> Path.normalize
                                    |> Utils.glob
 
-let getPages = [| Process.cwd Process.process; "pages"; "**"; "*.ml"; |] |> getGlob
-let getPosts = [| Process.cwd Process.process; "posts"; "**"; "*.md"; |] |> getGlob
+let getPages: string array = [| Process.cwd Process.process; "pages"; "**"; "*.ml"; |] |> getGlob
+let getPosts: string array = [| Process.cwd Process.process; "posts"; "**"; "*.md"; |] |> getGlob
 let getPagesJs: string array = [| Process.cwd Process.process; "pages"; "**"; "*.bs.js"; |] |> getGlob
 
 (* markdown *)
@@ -103,11 +103,25 @@ let createMetaData: metadata array = sortMatterByDate
 
 
 (* blogpost *)
+
 let generatePost () = Belt.Array.forEachWithIndex getPosts
     (fun index path -> let basename = (Path.basenameNoExt path ".md" ) in
       ((Path.join [|(Process.cwd Process.process); "pages"; "blogpost" ^ ".bs.js";|]
         |> Path.normalize)
        |. importManaFile createMetaData.(index))
-      |> Extra.outputFileSync ({j|dist/$basename|j} ^ ".html"))
+      |> Extra.outputFileSync ({j|dist/blog/$basename|j} ^ ".html"))
 
-let run = (fun _ -> cleanDir "dist"; generatePost())
+let manaToHtml () = Belt.Array.forEach getPages
+    (fun path ->
+       let basename = (Path.basenameNoExt path ".ml") in
+       match basename with
+       | "blogpost" -> generatePost()
+       | _ -> (
+           ((Path.join [|(Process.cwd Process.process); "pages"; basename ^ ".bs.js";|])
+            |> Path.normalize)
+           |. importManaFile ""
+           |> Extra.outputFileSync ({j|dist/$basename|j} ^ ".html")
+         )
+    )
+
+let run = (fun _ -> cleanDir "dist"; manaToHtml())
