@@ -67,10 +67,6 @@ let sortMatterByDate: graymatter array = processMatter
                                              | false -> -1
                                            )
 
-
-let generatePage (outputPath: string) (filename: string) (manafile: string) =
-  Extra.readFileSync (outputPath ^ filename ^ ".html") manafile
-
 let importManaFile = [%raw {|
   function(path, props) {
     let data = require(path);
@@ -104,24 +100,24 @@ let createMetaData: metadata array = sortMatterByDate
 
 (* blogpost *)
 
-let generatePost () = Belt.Array.forEachWithIndex getPosts
+let generatePosts () = Belt.Array.forEachWithIndex getPosts
     (fun index path -> let basename = (Path.basenameNoExt path ".md" ) in
       ((Path.join [|(Process.cwd Process.process); "pages"; "blogpost" ^ ".bs.js";|]
         |> Path.normalize)
        |. importManaFile createMetaData.(index))
       |> Extra.outputFileSync ({j|dist/blog/$basename|j} ^ ".html"))
 
-let manaToHtml () = Belt.Array.forEach getPages
+let generatePages () = Belt.Array.forEach getPages
     (fun path ->
        let basename = (Path.basenameNoExt path ".ml") in
        match basename with
-       | "blogpost" -> generatePost()
+       | "blogpost" -> generatePosts()
        | _ -> (
            ((Path.join [|(Process.cwd Process.process); "pages"; basename ^ ".bs.js";|])
             |> Path.normalize)
-           |. importManaFile ""
+           |. importManaFile createMetaData
            |> Extra.outputFileSync ({j|dist/$basename|j} ^ ".html")
          )
     )
 
-let run = (fun _ -> cleanDir "dist"; manaToHtml())
+let run = (fun _ -> cleanDir "dist"; generatePages())
