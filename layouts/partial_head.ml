@@ -5,9 +5,15 @@ let head ~title:(title: string) =
   H.head [] [
     H.title [] (H.text title);
     H.style [] (H.text {j|
+        :root {
+          --width-max: 64rem;
+        }
+       html {
+          width: var(--width-max);
+          margin: 0 auto;
+        }
        .theme {
-            background: black;
-            color: white;
+            color: #333;
         }
     |j});
   ]

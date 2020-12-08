@@ -24,6 +24,8 @@ module NodeJS = struct
     external join : string array -> string = "join" [@@bs.module "path"] [@@bs.splice]
     external join2 : string -> string -> string = "join" [@@bs.module "path"]
     external normalize: string -> string = "normalize" [@@bs.module "path"]
+    external basename: string -> string = "basename" [@@bs.module "path"]
+    external basenameNoExt: string -> string -> string = "basename" [@@bs.module "path"]
   end
   module Process = struct
     type t

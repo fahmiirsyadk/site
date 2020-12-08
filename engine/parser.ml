@@ -103,36 +103,11 @@ let createMetaData: metadata array = sortMatterByDate
 
 
 (* blogpost *)
-let _ = Belt.Array.forEachWithIndex getPosts
-    (fun index _ -> ((Path.join [|(Process.cwd Process.process); "pages"; "blogpost" ^ ".bs.js";|]
-                      |> Path.normalize)
-                     |. importManaFile createMetaData.(index))
-                    |> Extra.outputFileSync ({j|dist/$index|j} ^ ".html"))
+let generatePost () = Belt.Array.forEachWithIndex getPosts
+    (fun index path -> let basename = (Path.basenameNoExt path ".md" ) in
+      ((Path.join [|(Process.cwd Process.process); "pages"; "blogpost" ^ ".bs.js";|]
+        |> Path.normalize)
+       |. importManaFile createMetaData.(index))
+      |> Extra.outputFileSync ({j|dist/$basename|j} ^ ".html"))
 
-
- (*
-let execute = Js.log (Belt.Array.map getPagesJs createMetaData)
-*)
-
-(*
-let a = Js.log (Belt.Array.map getPagesJs (fun path -> executemana path))
-*)
-
- (*
- *
-let executemana (path: string) =
-  importManaFile (
-    (Path.join [|(Process.cwd Process.process); "pages"; path ^ ".bs.js";|]
-     |> Path.normalize)) sortMatterByDate
-
- * *)
-
-(*
-let _ = sortMatterByDate |> Array.map (fun (post: typeMatterData) -> Js.log (post |> metadataPost "/blog/test"))
-*)
-
- (*
-let _ = executeMana "blog" |> generatePage "" "jajal"
-*)
-
-let run = (fun _ -> cleanDir "dist"; ())
+let run = (fun _ -> cleanDir "dist"; generatePost())
