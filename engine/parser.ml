@@ -53,6 +53,7 @@ let getGlob (path: string array) = path
 
 let getPages = [| Process.cwd Process.process; "pages"; "**"; "*.ml"; |] |> getGlob
 let getPosts = [| Process.cwd Process.process; "posts"; "**"; "*.md"; |] |> getGlob
+let getPagesJs: string array = [| Process.cwd Process.process; "pages"; "**"; "*.bs.js"; |] |> getGlob
 
 (* markdown *)
 let processMd: string array = Belt.Array.map getPosts (fun x -> (Extra.readFileSync x "utf8"))
@@ -97,13 +98,29 @@ let metadataPost path (matter: graymatter) = {
 }
 
 
-let createMetaData = sortMatterByDate
-                     |> Array.map (fun (post: graymatter) -> (post |> metadataPost "/blog/test"))
+let createMetaData: metadata array = sortMatterByDate
+                                     |> Array.map (fun (post: graymatter) -> (post |> metadataPost "/blog/test"))
 
-let _ = Js.log createMetaData
+
+(* blogpost *)
+let _ = Belt.Array.forEachWithIndex getPosts
+    (fun index _ -> ((Path.join [|(Process.cwd Process.process); "pages"; "blogpost" ^ ".bs.js";|]
+                      |> Path.normalize)
+                     |. importManaFile createMetaData.(index))
+                    |> Extra.outputFileSync ({j|dist/$index|j} ^ ".html"))
+
+
+ (*
+let execute = Js.log (Belt.Array.map getPagesJs createMetaData)
+*)
+
+(*
+let a = Js.log (Belt.Array.map getPagesJs (fun path -> executemana path))
+*)
+
  (*
  *
-let executeMana (path: string) =
+let executemana (path: string) =
   importManaFile (
     (Path.join [|(Process.cwd Process.process); "pages"; path ^ ".bs.js";|]
      |> Path.normalize)) sortMatterByDate

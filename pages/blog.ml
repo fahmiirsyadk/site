@@ -3,7 +3,7 @@ module P = Mana.Property
 
 let listPost posts =
   Belt.List.map (Array.to_list posts)
-    (fun (post: Parser.typeMatter) -> H.li [] (H.text post.title))
+    (fun (post: Parser.metadata) -> H.li [] (H.text post.matter.title))
 
 let body posts =
   H.body [P.class_ "theme"] [
@@ -16,5 +16,5 @@ let body posts =
     ] []
   ]
 
-let html (posts: Parser.typeMatter array) =
+let html (posts: Parser.metadata array) =
   [Partial_head.head ~title:"blog"; body posts;] |> H.html []
