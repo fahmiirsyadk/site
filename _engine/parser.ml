@@ -56,8 +56,8 @@ let getGlob (path: string array) = path
                                    |> Path.normalize
                                    |> Utils.glob
 
-let getPages: string array = [| Process.cwd Process.process; "pages"; "**"; "*.ml"; |] |> getGlob
-let getPosts: string array = [| Process.cwd Process.process; "posts"; "**"; "*.md"; |] |> getGlob
+let getPages: string array = [| Process.cwd Process.process; "_pages"; "**"; "*.ml"; |] |> getGlob
+let getPosts: string array = [| Process.cwd Process.process; "_posts"; "**"; "*.md"; |] |> getGlob
 
 (* markdown *)
 let processMd: (string * string) array = Belt.Array.map getPosts (fun x -> (Extra.readFileSync x "utf8", x))
@@ -81,7 +81,7 @@ let parseMarkdown content =
 
 let metadataPost path (matter: graymatter) = {
   filename = "name";
-  url = path;
+  url = "blog/" ^ (path |. Path.basenameNoExt ".md");
   content =  matter.content |> parseMarkdown;
   excerpt = matter.excerpt;
   matter = matter.data;
@@ -101,8 +101,8 @@ let importManaFile = [%raw {|
 let generatePosts () = Belt.Array.forEach createMetaData
     (fun (meta: metadata) ->
        let basename = (Path.basenameNoExt meta.url ".md") in
-       let blogpostPath = ((Path.join [|(Process.cwd Process.process); "pages"; "blogpost" ^ ".bs.js";|])) in
-       importManaFile blogpostPath meta |> Extra.outputFileSync ({j|dist/blog/$basename|j} ^ ".html")
+       let blogpostPath = ((Path.join [|(Process.cwd Process.process); "_pages"; "blogpost" ^ ".bs.js";|])) in
+       importManaFile blogpostPath meta |> Extra.outputFileSync ({j|dist/blog/$basename/index|j} ^ ".html")
     )
 
 let generatePages () = Belt.Array.forEach getPages
@@ -111,7 +111,7 @@ let generatePages () = Belt.Array.forEach getPages
        match basename with
        | "blogpost" -> generatePosts()
        | _ -> (
-           ((Path.join [|(Process.cwd Process.process); "pages"; basename ^ ".bs.js";|])
+           ((Path.join [|(Process.cwd Process.process); "_pages"; basename ^ ".bs.js";|])
             |> Path.normalize)
            |. importManaFile createMetaData
            |> Extra.outputFileSync ({j|dist/$basename|j} ^ ".html")

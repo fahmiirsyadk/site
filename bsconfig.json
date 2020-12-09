@@ -2,13 +2,13 @@
   "name": "fahmiirsyadk-site",
   "version": "0.0.1",
   "sources": [{
-    "dir": "pages",
+    "dir": "_pages",
     "subdirs": true
   }, {
-    "dir": "engine",
+    "dir": "_engine",
     "subdirs": true
   }, {
-    "dir": "layouts",
+    "dir": "partials",
     "subdirs": true
   }],
   "package-specs": {

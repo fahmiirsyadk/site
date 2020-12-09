@@ -3,7 +3,11 @@ module P = Mana.Property
 
 let listPost posts =
   Belt.List.map (Array.to_list posts)
-    (fun (post: Parser.metadata) -> H.li [] (H.text post.matter.title))
+    (fun (post: Parser.metadata) ->
+       H.a [ P.href post.url] [
+         (H.li [] (H.text post.matter.title));
+       ]
+    )
 
 let body posts =
   H.body [P.class_ "theme"] [

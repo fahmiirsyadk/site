@@ -6,7 +6,7 @@ type ('a, 'b) t =
   | Watch of ('b)
 
 let run (x,y) = match command with
-  | "build" -> Build (x())
+  | "build" -> Build (x(); Js.log "broooo")
   | "watch" -> Watch (y())
   | _ -> invalid_arg "invalid command"
 

@@ -11,7 +11,7 @@ external watch: string array -> watchConfig -> chokidar = "watch" [@@bs.send.pip
 external on: string -> ('a -> unit) -> chokidar = "on" [@@bs.send.pipe: chokidar]
 
 let run () =
-  let target = [| "layouts";"pages";"posts"; |] in
+  let target = [| "partials"; "_pages"; "_posts"; |] in
   let config = { ignored="*.bs.js"; persistent=true; } in
 
   (watcher |> watch target config)
