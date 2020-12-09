@@ -8,6 +8,6 @@ type ('a, 'b) t =
 let run (x,y) = match command with
   | "build" -> Build (x())
   | "watch" -> Watch (y())
-  | _ -> invalid_arg "bro"
+  | _ -> invalid_arg "invalid command"
 
 let _ = run(Parser.run, Watcher.run)

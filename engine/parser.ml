@@ -32,6 +32,11 @@ type graymatter = {
   excerpt: string;
 }
 
+type matterAndPath = {
+  matter: graymatter;
+  path: string;
+}
+
 module Extra = Utils.Fs_Extra
 module Path = Utils.NodeJS.Path
 module Process = Utils.NodeJS.Process
@@ -53,26 +58,18 @@ let getGlob (path: string array) = path
 
 let getPages: string array = [| Process.cwd Process.process; "pages"; "**"; "*.ml"; |] |> getGlob
 let getPosts: string array = [| Process.cwd Process.process; "posts"; "**"; "*.md"; |] |> getGlob
-let getPagesJs: string array = [| Process.cwd Process.process; "pages"; "**"; "*.bs.js"; |] |> getGlob
 
 (* markdown *)
-let processMd: string array = Belt.Array.map getPosts (fun x -> (Extra.readFileSync x "utf8"))
+let processMd: (string * string) array = Belt.Array.map getPosts (fun x -> (Extra.readFileSync x "utf8", x))
 
-let processMatter: graymatter array = (Belt.Array.map processMd (fun x -> matter x))
+let processMatter: matterAndPath array = (Belt.Array.map processMd (fun (x,y) -> { matter=(matter x); path=y; }))
 
-let sortMatterByDate: graymatter array = processMatter
-                                         |> Js.Array.sortInPlaceWith (fun a b ->
-                                             match (a.data.date < b.data.date) with
-                                             | true -> 1
-                                             | false -> -1
-                                           )
-
-let importManaFile = [%raw {|
-  function(path, props) {
-    let data = require(path);
-    return data.html(props);
-  }
-|}]
+let sortMatterByDate = processMatter
+                       |> Js.Array.sortInPlaceWith (fun a b ->
+                           match (a.matter.data.date < b.matter.data.date) with
+                           | true -> 1
+                           | false -> -1
+                         )
 
 let parseMarkdown content =
   Utils.remark()
@@ -91,17 +88,22 @@ let metadataPost path (matter: graymatter) = {
 }
 
 let createMetaData: metadata array = sortMatterByDate
-                                     |> Array.map (fun (post: graymatter) -> (post |> metadataPost "/blog/test"))
+                                     |> Array.map (fun (post: matterAndPath) -> (post.matter |> metadataPost post.path))
 
+let importManaFile = [%raw {|
+  function(path, props) {
+    let data = require(path);
+    return data.html(props);
+  }
+|}]
 
 (* blogpost *)
-
-let generatePosts () = Belt.Array.forEachWithIndex getPosts
-    (fun index path -> let basename = (Path.basenameNoExt path ".md" ) in
-      ((Path.join [|(Process.cwd Process.process); "pages"; "blogpost" ^ ".bs.js";|]
-        |> Path.normalize)
-       |. importManaFile createMetaData.(index))
-      |> Extra.outputFileSync ({j|dist/blog/$basename|j} ^ ".html"))
+let generatePosts () = Belt.Array.forEach createMetaData
+    (fun (meta: metadata) ->
+       let basename = (Path.basenameNoExt meta.url ".md") in
+       let blogpostPath = ((Path.join [|(Process.cwd Process.process); "pages"; "blogpost" ^ ".bs.js";|])) in
+       importManaFile blogpostPath meta |> Extra.outputFileSync ({j|dist/blog/$basename|j} ^ ".html")
+    )
 
 let generatePages () = Belt.Array.forEach getPages
     (fun path ->

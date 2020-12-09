@@ -15,6 +15,6 @@ let run () =
   let config = { ignored="*.bs.js"; persistent=true; } in
 
   (watcher |> watch target config)
-  |> on "add" (fun path -> Js.log {j|File $path has been added|j})
-  |> on "change" (fun path -> Js.log {j|File $path has been changed|j})
-  |> on "unlink" (fun path -> Js.log {j|File $path has been removed|j})
+  |> on "add" (fun path -> Parser.run(); Js.log {j|$path ditambahkan|j})
+  |> on "change" (fun path -> Parser.run(); Js.log {j|$path diubah|j})
+  |> on "unlink" (fun path -> Parser.run(); Js.log {j|$path dihapus|j})
