@@ -15,6 +15,7 @@
 type typeMatter = {
   title: string;
   date: string;
+  template: string option;
 }
 
 type metadata = {

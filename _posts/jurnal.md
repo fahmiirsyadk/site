@@ -1,6 +1,7 @@
 ---
 title: 'Menulis Jurnal'
 date: '2020-12-09'
+template: 'layout_cyberpunk'
 ---
 
 # Jurnal test

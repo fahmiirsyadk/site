@@ -1,0 +1,18 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+:root {
+    --width-max: 64rem;
+}
+
+html {
+    width: var(--width-max);
+    margin: 0 auto;
+}
+
+.theme {
+    color: #333;
+}
+

@@ -1,4 +1,5 @@
 open Mana_core.Core
+
 module Property =
 struct
   let title (prop : string) =

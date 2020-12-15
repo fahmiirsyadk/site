@@ -7,15 +7,5 @@ let body (post: Parser.metadata) =
     H.div [] (H.text post.content);
   ]
 
-(*
-    H.img [
-      (P.alt "makima doing cursed stuff");
-      (P.src "https://i.ytimg.com/vi/usr7UZthAos/hqdefault.jpg")
-    ] []
-  ]
-
- *)
-
-
 let html (post: Parser.metadata) =
   [Partial_head.head ~title:"blog"; body post;] |> H.html []

@@ -22,7 +22,9 @@
   "scripts": {
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
-    "clean": "bsb -clean-world"
+    "clean": "bsb -clean-world",
+    "compile": "node ./_engine/cli/cli.bs.js build",
+    "export": "npm run build && npm run compile"
   },
   "dependencies": {
     "refactor": "0.0.3"
