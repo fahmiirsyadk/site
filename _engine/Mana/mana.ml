@@ -1,5 +1,13 @@
 open Mana_core.Core
 
+module Extra =
+struct
+  let inject (path: string) =
+    (Utils.Fs_Extra.readFileSync (Utils.NodeJS.Path.join
+                                    [|(Utils.NodeJS.Process.cwd Utils.NodeJS.Process.process); path|]
+                                  |> Utils.NodeJS.Path.normalize) "utf-8")
+end
+
 module Property =
 struct
   let title (prop : string) =
