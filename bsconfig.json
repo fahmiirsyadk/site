@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/rescript-lang/rescript-compiler/master/docs/docson/build-schema.json",
   "name": "fahmiirsyadk-site",
   "version": "0.0.1",
   "sources": [{
@@ -19,7 +20,6 @@
   "namespace": "site",
   "bs-dependencies": [],
   "warnings": {
-    "error": "+8"
+    "error": "+101"
   },
-  "refmt": 3
 }
