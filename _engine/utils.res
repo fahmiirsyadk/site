@@ -1,26 +1,24 @@
 type error
-type remark
+type unified
 
-module Console = Js.Console
+type propertiesAst = {
+  title: string,
+  date: string,
+  template: string,
+}
+
+type orgAst = {
+  properties: propertiesAst
+}
+
+type vfile = {
+  contents: string
+}
 
 @module("fast-glob") external glob: string => array<string> = "sync"
-@module external remark: unit => remark = "remark"
-@module external remarkHtml: remark = "remark-html"
-@module external remarkFootnotes: remark = "remark-footnotes"
-@module external remarkImages: remark = "remark-images"
-@module external remarkToc: remark = "remark-toc"
-@bs.send.pipe(: remark) external use: remark => remark = "use"
-@bs.send.pipe(: remark) external processSync: 'a => string = "processSync"
 
 /* binding NodeJS */
 module NodeJS = {
-  module Path = {
-    @module("path") @splice external join: array<string> => string = "join"
-    @module("path") external join2: (string, string) => string = "join"
-    @module("path") external normalize: string => string = "normalize"
-    @module("path") external basename: string => string = "basename"
-    @module("path") external basenameNoExt: (string, string) => string = "basename"
-  }
   module Process = {
     type t
     @module external process: t = "process"
@@ -35,3 +33,12 @@ module Fs_Extra = {
   @module("fs-extra") external copy: (string, string) => Js.Promise.t<unit> = "copy"
   @module("fs-extra") external outputFileSync: (string, string) => unit = "outputFileSync"
 }
+
+@module external unified: unit => unified = "unified"
+@module external reorgParse: unified = "reorg-parse"
+@module external reorgMutate: unified = "reorg-rehype"
+@module external rehypeStringify: unified = "rehype-stringify"
+@module("orga") external parseOrga: string => orgAst = "parse"  
+@send external use: (unified, unified) => unified = "use"
+@send external parse: (unified, 'a) => string = "parse"  
+@send external processSync: (unified, 'a) => vfile = "processSync"

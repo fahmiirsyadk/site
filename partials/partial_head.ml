@@ -1,8 +1,6 @@
 module H = Mana.HTML
 module P = Mana.Property
 module E = Mana.Extra
-module Path = Utils.NodeJS.Path
-module Process = Utils.NodeJS.Process
 
 let head ~title:(title: string) =
   H.head [] [
