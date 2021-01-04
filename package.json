@@ -7,11 +7,13 @@
   "license": "MIT",
   "devDependencies": {
     "bs-platform": "*",
+    "chokidar": "3.4.3",
     "fast-glob": "3.2.4",
     "fs-extra": "9.0.1",
     "orga": "2.3.9",
     "rehype-stringify": "8.0.0",
     "reorg-parse": "2.3.9",
+    "reorg-rehype": "2.3.9",
     "unified": "9.2.0"
   },
   "scripts": {
