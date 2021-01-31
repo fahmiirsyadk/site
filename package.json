@@ -8,7 +8,7 @@
   "devDependencies": {
     "bs-platform": "*",
     "chokidar": "3.5.1",
-    "fast-glob": "3.2.4",
+    "fast-glob": "3.2.5",
     "fs-extra": "9.0.1",
     "orga": "2.3.9",
     "rehype-stringify": "8.0.0",
