@@ -7,9 +7,9 @@
   "license": "MIT",
   "devDependencies": {
     "bs-platform": "*",
-    "chokidar": "3.4.3",
-    "fast-glob": "3.2.4",
-    "fs-extra": "9.0.1",
+    "chokidar": "3.5.1",
+    "fast-glob": "3.2.5",
+    "fs-extra": "9.1.0",
     "orga": "2.3.9",
     "rehype-stringify": "8.0.0",
     "reorg-parse": "2.3.9",
