@@ -1,19 +1,19 @@
 open Mana_core.Core
 open Utils
-  
+
 module Extra = {
   let inject = (path: string) =>
     Fs_Extra.readFileSync(
       Node.Path.join([
         Utils.NodeJS.Process.cwd(Utils.NodeJS.Process.process),
         path,
-      ]) -> Node.Path.normalize,
+      ])->Node.Path.normalize,
       "utf-8",
     )
-};
+}
 
 module Property = {
-  let title = (prop: string) => "title"-> textAttr(prop)
+  let title = (prop: string) => "title"->textAttr(prop)
   let selected = (prop: bool) => "selected"->boolAttr(prop)
   let hidden = (prop: bool) => "hidden"->boolAttr(prop)
   let value = (prop: string) => "value"->textAttr(prop)
