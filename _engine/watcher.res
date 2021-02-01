@@ -1,29 +1,29 @@
 type chokidar
 
 type watchConfig = {
-  ignored: string,
+  ignored: Js.Re.t,
   persistent: bool,
 }
 
-@bs.module external watcher: chokidar = "chokidar"
-@bs.send.pipe(: chokidar) external watch: (array<string>, watchConfig) => chokidar = "watch"
-@bs.send.pipe(: chokidar) external on: (string, 'a => unit) => chokidar = "on"
+@module external watcher: chokidar = "chokidar"
+@send external watch: (chokidar, array<string>, watchConfig) => chokidar = "watch"
+@send external on: (chokidar, string, 'a => unit) => chokidar = "on"
 
 let run = () => {
   let target = ["partials", "_pages", "_posts"]
-  let config = {ignored: "*.bs.js", persistent: true}
+  let config = {ignored: %re("/^.*\.(bs.js)$/ig"), persistent: true}
 
   watcher
-  |> watch(target, config)
-  |> on("add", path => {
+  -> watch(target, config)
+  -> on("add", path => {
     Parser.run()
     Js.log(j`$path ditambahkan`)
   })
-  |> on("change", path => {
+  -> on("change", path => {
     Parser.run()
     Js.log(j`$path diubah`)
   })
-  |> on("unlink", path => {
+  -> on("unlink", path => {
     Parser.run()
     Js.log(j`$path dihapus`)
   })
