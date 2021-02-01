@@ -9,9 +9,11 @@ type metadata = {
   content: string,
   matter: propertiesAst,
 }
-  
+
+let rootPath = Process.process->Process.cwd
+
 let normalizePath = (path: string) => path
-  -> Path.join2(Process.process->Process.cwd)
+  -> Path.join2(rootPath)
   -> Path.normalize
 
 let outputDir = (dir: string) => dir -> normalizePath
@@ -22,8 +24,8 @@ let globPath = (path: array<string>) => path
   -> Path.normalize
   -> Utils.glob
 
-let getPages: array<string> = [Process.cwd(Process.process), "_pages", "**", "*.ml"]-> globPath
-let getPosts: array<string> = [Process.cwd(Process.process), "_posts", "**", "*.org"]-> globPath
+let getPages: array<string> = [rootPath, "_pages", "**", "*.ml"]-> globPath
+let getPosts: array<string> = [rootPath, "_posts", "**", "*.org"]-> globPath
   
 let orgToHtml = (path: string): vfile => unified()
   -> use(reorgParse)
@@ -43,7 +45,7 @@ let importManaFile = %raw(`
 let metadataPost = (content, matter, path) => {
   let pathNoExt = path -> Path.basename_ext(".org");
   { filename: pathNoExt,
-    url: "blog/" ++ pathNoExt,
+    url: Path.join(["blog", pathNoExt]),
     content: content,
     matter: matter,
   }
@@ -63,17 +65,16 @@ let processMetadata: array<metadata> =
 
 let generatePosts = () => {
   Js.Array2.forEach(processMetadata, meta => {
-    let blogpostPath = Path.join([Process.cwd(Process.process), "_pages", "blogpost" ++ ".bs.js"])
-    let filename = meta.filename
-    j`dist/blog/$filename/index.html` -> Extra.outputFileSync(blogpostPath -> importManaFile(meta))
+    let blogpostPath = Path.join([rootPath, "_pages", "blogpost" ++ ".bs.js"])
+    Path.join([rootPath, "dist", meta.url, "index.html"]) -> Extra.outputFileSync(blogpostPath -> importManaFile(meta))
   })
 }
 
 let generatePage = (meta, path, basename) => {
-  Path.join([Process.process->Process.cwd, "_pages", basename ++ ".bs.js"])
+  Path.join([rootPath, "_pages", basename ++ ".bs.js"])
     -> Path.normalize
     -> importManaFile(meta)
-    -> Extra.outputFileSync("dist/" ++ path, _)
+    -> Extra.outputFileSync(Path.join([rootPath, "dist", path]), _)
 }
   
 let generateHtml = () => {

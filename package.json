@@ -23,5 +23,8 @@
     "compile": "node ./_engine/cli/cli.bs.js build",
     "watch": "npm run compile && node ./_engine/cli/cli.bs.js watch",
     "export": "npm run build && npm run compile"
+  },
+  "dependencies": {
+    "live-server": "^1.2.1"
   }
 }

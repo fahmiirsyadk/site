@@ -4,6 +4,7 @@ module P = Mana.Property
 let body (post: Parser.metadata) =
   H.body [P.class_ "theme"] [
     H.h1 [] (H.text post.matter.title);
+    H.span [] (H.text ("tanggal rilis: " ^ post.matter.date));
     H.div [] (H.text post.content);
   ]
 
