@@ -20,8 +20,8 @@
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
     "clean": "bsb -clean-world",
-    "watch": "node ./_engine/cli/cli.bs.js watch",
     "compile": "node ./_engine/cli/cli.bs.js build",
+    "watch": "npm run compile && node ./_engine/cli/cli.bs.js watch",
     "export": "npm run build && npm run compile"
   }
 }

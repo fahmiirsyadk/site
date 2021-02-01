@@ -1,0 +1,5 @@
+#+TITLE: Ocaml as template engine
+#+DATE: 2021-02-01
+
+
+* Its look cool tho

@@ -11,12 +11,11 @@ let listPost posts =
 
 let body posts =
   H.body [P.class_ "theme"] [
-    H.h1 [] (H.text "Artikel");
+    H.h1 [] (H.text "Artikel saat ini");
     H.ol [] (listPost posts);
-    H.img [
-      (P.alt "makima doing cursed stuff");
-      (P.src "https://i.ytimg.com/vi/usr7UZthAos/hqdefault.jpg")
-    ] []
+    H.footer [] [
+      H.b [] (H.text "made with <3 from banyuwangi")
+    ]
   ]
 
 let html (posts: Parser.metadata array) =
