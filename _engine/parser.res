@@ -69,15 +69,20 @@ let generatePosts = () => {
   })
 }
 
+let generatePage = (meta, path, basename) => {
+  Path.join([Process.process->Process.cwd, "_pages", basename ++ ".bs.js"])
+    -> Path.normalize
+    -> importManaFile(meta)
+    -> Extra.outputFileSync("dist/" ++ path, _)
+}
+  
 let generateHtml = () => {
   getPages -> Js.Array2.forEach(pages => {
     let basename = pages -> Path.basename_ext(".ml");
     switch basename {
     | "blogpost" => generatePosts()
-    | _ => Path.join([Process.process->Process.cwd, "_pages", basename ++ ".bs.js"])
-      -> Path.normalize
-      -> importManaFile(processMetadata)
-      -> Extra.outputFileSync(j`dist/$basename` ++ ".html", _)
+    | "404" | "index" => generatePage(processMetadata, j`$basename.html`, basename)
+    | _ => generatePage(processMetadata, j`$basename/index.html`, basename)
     }
   })
 }
