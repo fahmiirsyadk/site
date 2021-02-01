@@ -32,6 +32,7 @@ module Fs_Extra = {
   @module("fs-extra") external readFileSync: (string, string) => string = "readFileSync"
   @module("fs-extra") external copy: (string, string) => Js.Promise.t<unit> = "copy"
   @module("fs-extra") external outputFileSync: (string, string) => unit = "outputFileSync"
+  @module("fs-extra") external emptyDirSync: string => unit = "emptyDirSync"
 }
 
 @module external unified: unit => unified = "unified"
