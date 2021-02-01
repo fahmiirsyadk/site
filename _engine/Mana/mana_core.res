@@ -1,11 +1,17 @@
 module Core = {
   let render = (tag, attrs, children) => {
     let el =
-      children === list{}
-        ? ""
-        : List.fold_left((a, b) => a ++ b, List.hd(children), List.tl(children))
+      switch children {
+      | list{} => ""
+      | list{head, ...rest} => List.fold_left((a, b) => a ++ b, head, rest)
+      }
+
     let at =
-      attrs === list{} ? "" : List.fold_left((a, b) => j`$a$b`, List.hd(attrs), List.tl(attrs))
+      switch attrs {
+      | list{} => ""
+      | list{head, ...rest} => List.fold_left((a, b) => j`$a$b`, head, rest)
+      }
+      
     j`<$tag$at>$el</$tag>`
   }
   let attrFormat = (attr: string, prop: string) => j` $attr="$prop"`
