@@ -15,9 +15,7 @@ let normalizePath = (path: string) => path
   -> Path.normalize
 
 let outputDir = (dir: string) => dir -> normalizePath
-let cleanDir = (path: string) => path 
-  -> normalizePath
-  -> Extra.emptyDirSync
+let cleanDir = (path: string) => path -> Extra.emptyDirSync
 
 let globPath = (path: array<string>) => path
   -> Path.join
