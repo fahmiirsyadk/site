@@ -77,7 +77,7 @@ let generateHtml = () => {
     | _ => Path.join([Process.process->Process.cwd, "_pages", basename ++ ".bs.js"])
       -> Path.normalize
       -> importManaFile(processMetadata)
-      |> Extra.outputFileSync(j`dist/$basename` ++ ".html")
+      -> Extra.outputFileSync(j`dist/$basename` ++ ".html", _)
     }
   })
 }
