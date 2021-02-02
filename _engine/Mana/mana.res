@@ -6,10 +6,10 @@ module Extra = {
     Fs_Extra.readFileSync(
       Node.Path.join([
         Utils.NodeJS.Process.cwd(Utils.NodeJS.Process.process),
-        path,
+        path->Js.String2.split(Node.Path.sep)->Node.Path.join,
       ])->Node.Path.normalize,
       "utf-8",
-  )
+    )
 }
 
 module Property = {

@@ -25,6 +25,7 @@
     "export": "npm run build && npm run compile"
   },
   "dependencies": {
-    "live-server": "^1.2.1"
+    "live-server": "^1.2.1",
+    "unixify": "^1.0.0"
   }
 }
