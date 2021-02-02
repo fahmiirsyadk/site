@@ -1,5 +1,5 @@
-#+TITLE: Site created
-#+DATE: 2021-01-02
+#+title: Site created
+#+date: 2021-01-02
 
 * Site is up finally
 this is how i create my blog from scratch using nodejs, rescript, ocaml & bs-platform

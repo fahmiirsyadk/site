@@ -9,7 +9,7 @@ module Extra = {
         path,
       ])->Node.Path.normalize,
       "utf-8",
-    )
+  )
 }
 
 module Property = {

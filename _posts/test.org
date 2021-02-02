@@ -1,5 +1,5 @@
-#+TITLE: TEST PAGE ORG MODE
-#+DATE: 2021-01-04
+#+title: TEST PAGE ORG MODE
+#+date: 2021-01-04
 
 * PUBLISHED Hello World :hello:
 CLOSED: [2019-11-16 Sat 20:58]
@@ -11,7 +11,7 @@ Hi, this is the content from org-mode[fn:1].
 
 #+begin_src javascript
 function hello() {
-    console.log(`hello world.`)
+    return `hello world.`
 }
 #+end_src
 
@@ -19,7 +19,7 @@ Here is a table.
 | metadata field | properties (headline) | properties (file) |
 |----------------+-----------------------+-------------------|
 | title          | headline content      |                   |
-|                | =EXPORT_TITLE=        |                   |
+|                | =EXPORT_title=        |                   |
 |----------------+-----------------------+-------------------|
 | date           | DATE                  |                   |
 |                | EXPORT_DATE           |                   |

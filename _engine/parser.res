@@ -1,13 +1,13 @@
-open Utils;
+open Utils.Org
 module Path = Node.Path
-module Extra = Fs_Extra
-module Process = NodeJS.Process
+module Extra = Utils.Fs_Extra
+module Process = Utils.NodeJS.Process
 
 type metadata = {
   filename: string,
   url: string,
   content: string,
-  matter: propertiesAst,
+  matter: Utils.propertiesAst,
 }
 
 let rootPath = Process.process->Process.cwd
@@ -27,7 +27,7 @@ let globPath = (path: array<string>) => path
 let getPages: array<string> = [rootPath, "_pages", "**", "*.ml"]-> globPath
 let getPosts: array<string> = [rootPath, "_posts", "**", "*.org"]-> globPath
   
-let orgToHtml = (path: string): vfile => unified()
+let orgToHtml = (path: string): Utils.vfile => unified()
   -> use(reorgParse)
   -> use(reorgMutate)
   -> use(rehypeStringify)
@@ -62,11 +62,14 @@ let processMetadata: array<metadata> =
     let processContent = path -> Node.Fs.readFileAsUtf8Sync -> orgToHtml
     metadataPost(processContent.contents, processMatter.properties, path);
 })->sortMatterByDate
-
+  
 let generatePosts = () => {
   Js.Array2.forEach(processMetadata, meta => {
-    let blogpostPath = Path.join([rootPath, "_pages", "blogpost" ++ ".bs.js"])
-    Path.join([rootPath, "dist", meta.url, "index.html"]) -> Extra.outputFileSync(blogpostPath -> importManaFile(meta))
+    let post =
+      Path.join([rootPath, "_pages", "blogpost" ++ ".bs.js"])
+      -> importManaFile(meta)
+
+    Path.join([rootPath, "dist", meta.url, "index.html"]) -> Extra.outputFileSync(post)
   })
 }
 

@@ -27,7 +27,7 @@ let run = () => {
   server->start({ root: Node.Process.cwd() ++ "/dist", logLevel: 0 })
   clear()
   Js.log("Ready for changes")
-  let target = ["partials", "_pages", "_posts", "assets"]
+  let target = ["partials", "_pages", "_posts", "assets", "layouts"]
   let config = {
     ignored: %re("/^.*\.(bs.js)$/ig")
       , persistent: true

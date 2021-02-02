@@ -35,11 +35,13 @@ module Fs_Extra = {
   @module("fs-extra") external emptyDirSync: string => unit = "emptyDirSync"
 }
 
-@module external unified: unit => unified = "unified"
-@module external reorgParse: unified = "reorg-parse"
-@module external reorgMutate: unified = "reorg-rehype"
-@module external rehypeStringify: unified = "rehype-stringify"
-@module("orga") external parseOrga: string => orgAst = "parse"  
-@send external use: (unified, unified) => unified = "use"
-@send external parse: (unified, 'a) => string = "parse"  
-@send external processSync: (unified, 'a) => vfile = "processSync"
+module Org = {    
+  @module external unified: unit => unified = "unified"
+  @module external reorgParse: unified = "reorg-parse"
+  @module external reorgMutate: unified = "reorg-rehype"
+  @module external rehypeStringify: unified = "rehype-stringify"
+  @module("orga") external parseOrga: string => orgAst = "parse"  
+  @send external use: (unified, unified) => unified = "use"
+  @send external parse: (unified, 'a) => string = "parse"
+  @send external processSync: (unified, 'a) => vfile = "processSync"
+}

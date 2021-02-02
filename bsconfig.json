@@ -4,13 +4,13 @@
   "version": "0.0.1",
   "sources": [{
     "dir": "_pages",
-    "subdirs": true
   }, {
     "dir": "_engine",
     "subdirs": true
   }, {
     "dir": "partials",
-    "subdirs": true
+  }, {
+    "dir": "layouts"
   }],
   "package-specs": {
     "module": "commonjs",

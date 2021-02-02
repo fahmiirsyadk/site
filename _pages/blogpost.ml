@@ -1,5 +1,6 @@
 module H = Mana.HTML
 module P = Mana.Property
+module L = Layout_post
 
 let body (post: Parser.metadata) =
   H.body [P.class_ "theme"] [
@@ -9,4 +10,4 @@ let body (post: Parser.metadata) =
   ]
 
 let html (post: Parser.metadata) =
-  [Partial_head.head ~title:"blog"; body post;] |> H.html []
+  L.template (body post) post
