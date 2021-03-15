@@ -11,6 +11,9 @@
     "dir": "partials",
   }, {
     "dir": "layouts"
+  }, {
+    "dir": "assets",
+    "subdirs": true
   }],
   "package-specs": {
     "module": "commonjs",

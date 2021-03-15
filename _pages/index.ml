@@ -12,8 +12,17 @@ let listPost posts =
        ]
     )
 
+let themeJS = Mana.Extra.inject("assets/js/theme.js")
+
 let body posts =
-  H.body [P.class_ "theme"] [
+  H.body [] [
+   H.button [
+    (P.id "theme-toggle");
+    (P.type_ "button");
+   ] [
+    (H.span [] (H.text "moon"));
+    (H.span [] (H.text "shine"));
+   ];
     H.h1 [] (H.text "Artikel");
     H.ol [] (listPost posts);
     H.footer [] [
@@ -28,7 +37,8 @@ let body posts =
           (H.span [] (H.text "View source on Github"))
         ]);
       (H.div [] []);
-      (H.p [P.style "font-weight: bold;"] (H.text {js|made with 💕 from banyuwangi|js}))
+      (H.p [P.style "font-weight: bold;"] (H.text {js|made with 💕 from banyuwangi|js}));
+      (H.script)[] [themeJS]
     ]
   ]
 

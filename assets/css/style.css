@@ -3,16 +3,52 @@
     margin: 0;
     padding: 0;
 }
+
 :root {
-    --width-max: 64rem;
+    --background-color: #F5F5F5;
+    --primary-text-color: #0B0C11;
+    --secondary-text-color: rgba(11,12,17,45%);
+    --border-divider-color: 2px solid rgba(28, 27, 27, 0.08);
+    --link-color: #0b0c11;
+    --bs-font-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
-html {
-    width: var(--width-max);
-    margin: 0 auto;
+html[data-theme='sky'] {
+    --background-color: #F5F5F5;
+    --primary-text-color: #0B0C11;
+    --secondary-text-color: rgba(11,12,17,45%);
+    --border-divider-color: 2px solid rgba(28, 27, 27, 0.08);
+    --link-color: #0b0c11;
 }
 
-.theme {
-    color: #333;
+html[data-theme='earth'] {
+    --background-color: #FFE7CA;
+    --primary-text-color: #0B0C11;
+    --secondary-text-color: rgba(11,12,17,45%);
+    --border-divider-color: 2px solid rgba(28, 27, 27, 0.08);
+    --link-color: #0B0C11;
 }
 
+html[data-theme='space'] {
+    --background-color: #0B0C11;#F5F5F5;
+    --primary-text-color: #F5f5f5;
+    --secondary-text-color: #A8A8A8;
+    --border-divider-color: 2px solid rgba(207, 207, 207, 0.08);
+    --link-color: #FFD8AA;
+}
+
+
+body {
+    background: var(--background-color);
+    color: var(--primary-text-color);
+    font-family: var(--bs-font-sans-serif);
+}
+
+a {
+    color: var(--link-color);
+}
+
+a:hover {
+    text-decoration: underline;
+    filter: brightness(80%);
+}
