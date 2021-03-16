@@ -7,23 +7,21 @@ let listPost posts =
   Belt.List.map (Array.to_list posts)
     (fun (post: Parser.metadata) ->
        H.a [
-         (P.href post.url);
-         (P.style "color: #444;")
+         P.href post.url;
+         P.style "color: #444;"
        ] [
-         (H.li [] (H.text post.matter.title));
+         H.li [] (H.text post.matter.title);
        ]
     )
 
-let themeJS = Mana.Extra.inject("assets/js/theme.js")
-
 let body posts =
-  H.body [] [
+  H.section [] [
    H.button [
     (P.id "theme-toggle");
     (P.type_ "button");
    ] [
-    (H.span [] (H.text "moon"));
-    (H.span [] (H.text "shine"));
+    H.span [] (H.text "moon");
+    H.span [] (H.text "shine");
    ];
     H.h1 [] (H.text "Artikel");
     H.ol [] (listPost posts);
