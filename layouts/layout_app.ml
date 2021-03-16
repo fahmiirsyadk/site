@@ -5,9 +5,9 @@ let footer = Partial_footer.footer
 
 let layout head section =
     H.html [] [
-        ( head );
-        ( H.body [] [
-            ( section );
-            ( footer );
-        ])
+        head;
+        H.body [] [
+            section;
+            footer;
+        ]
     ]
