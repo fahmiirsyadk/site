@@ -2,6 +2,9 @@ module H = Mana.HTML
 module P = Mana.Property
 module E = Mana.Extra
 
+let footer = Partial_footer.footer
+let css = E.inject "assets/css/style.css"
+
 let template content (meta: Parser.metadata) =  
   [
   H.head [] [
@@ -18,7 +21,8 @@ let template content (meta: Parser.metadata) =
       (P.name "description");
       (P.content ("from layout - " ^ meta.matter.title))
     ] [];
-    H.style [] (H.text (E.inject "assets/css/style.css"));
+    H.style [] (H.text css);
   ]; H.body [] [
-    content
+    content;
+    footer;
   ]] |> H.html []
