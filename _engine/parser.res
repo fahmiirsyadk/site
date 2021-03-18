@@ -72,6 +72,16 @@ let generatePage = (meta, path, basename) => {
   ->Extra.outputFileSync(Path.join([rootPath, "dist", path]), _)
 }
 
+/* Hardcode copy assets ( fonts, images ) to dist */
+  let copyAssets = () => {
+    let assetFolder = path => Path.join([rootPath, "assets", path]);
+    let destFolder = path => Path.join([rootPath, "dist", "assets", path])
+    let _ = Js.Promise.all([
+      Extra.copy(assetFolder("fonts"), destFolder("fonts")),
+      Extra.copy(assetFolder("images"), destFolder("images")),
+      ])
+  }
+  
 let generateHtml = () => {
   getPages->Js.Array2.forEach(pages => {
     let basename = pages->Path.basename_ext(".ml")
@@ -84,6 +94,7 @@ let generateHtml = () => {
 }
 
 let run = () => {
-  cleanDir("dist")
+  cleanDir("dist");
+  copyAssets();
   generateHtml()
 }

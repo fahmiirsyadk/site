@@ -40,7 +40,7 @@ module Org = {
   @module external reorgParse: unified = "reorg-parse"
   @module external reorgMutate: unified = "reorg-rehype"
   @module external rehypeStringify: unified = "rehype-stringify"
-  @module("orga") external parseOrga: string => orgAst = "parse"  
+  @module("orga") external parseOrga: string => orgAst = "parse"
   @send external use: (unified, unified) => unified = "use"
   @send external parse: (unified, 'a) => string = "parse"
   @send external processSync: (unified, 'a) => vfile = "processSync"

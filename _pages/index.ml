@@ -15,7 +15,7 @@ let listPost posts =
 
 (* Variables *)
 let heading_title =
-    "Hi, i’m fahmi. On this site you will literally find collection of poetries, notes, thoughts, or anything comes up into my mind. " 
+    {js| Hi, i’m fahmi. On this site you will literally find collection of poetries, notes, thoughts, or anything comes up into my mind. |js} 
 
 let body posts =
   H.section [] [
@@ -36,7 +36,7 @@ let body posts =
                 ];
                 H.div [ P.class_ "hero-heading__desc" ] [
                     H.span [] (H.text heading_title);
-                    H.a [ P.href "/about"] (H.text "More about me -->");
+                    H.a [ P.href "/about"] (H.text "More about me ->");
                 ];
             ];
         ];
