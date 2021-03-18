@@ -7,11 +7,6 @@ let themeJS = E.inject "assets/js/theme.js"
 
 let footer = H.footer [] [
     ( H.a [ P.href "https://github.com/fahmiirsyadk/site" ] [
-        ( H.img [
-            ( P.src "https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" );
-            ( P.alt "Github icon" );
-            ( P.style "height: 1em;" );
-        ] []);
         ( H.span [] (H.text "View source on Github") );
     ]);
     ( H.div [] [] );
