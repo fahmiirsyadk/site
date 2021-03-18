@@ -5,6 +5,7 @@
 }
 
 
+/*
 @font-face {
     font-family: Manrope;
     font-weight: 400;
@@ -28,6 +29,9 @@
     src: url('assets/fonts/Manrope-Bold.woff2') format('woff2'), 
          url('assets/fonts/Manrope-Bold.woff') format('woff');
 }
+
+ *
+ */
 
 :root {
     --background-color: #F5F5F5;
