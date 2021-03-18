@@ -5,24 +5,26 @@ module E = Mana.Extra
 let footer = Partial_footer.footer
 let css = E.inject "assets/css/style.css"
 
+let metaContent (ct: string) (nm:string) =
+  H.meta [
+    (P.content ct);
+    (P.name nm);
+  ] []
+
 let template content (meta: Parser.metadata) =  
   [
   H.head [] [
+    H.meta [ P.charset "utf-8"] [];
+    metaContent "width=device-width,initial-scale=1" "viewport";
+    metaContent "#000" "theme-color";
+    H.title [] (H.text (meta.matter.title ^ "-- Fahmiirsyadk"));
     H.link [
-      P.rel "preconnect";
-      P.href "https://fonts.gstatic.com";
+      P.href "/assets/images/logo.png";
+      P.rel "shortcut icon";
     ] [];
-    H.link [
-      P.href "https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap";
-      P.rel "stylesheet";
-    ] [];
-    H.title [] (H.text meta.matter.title);
-    H.meta [
-      (P.name "description");
-      (P.content ("from layout - " ^ meta.matter.title))
-    ] [];
+    metaContent "fahmiirsyadk -- a Web developer based on Banyuwangi, Indonesia." "description";
     H.style [] (H.text css);
   ]; H.body [] [
     content;
     footer;
-  ]] |> H.html [ P.lang "en" ]
+  ]] |> H.html [ P.lang "en"]
