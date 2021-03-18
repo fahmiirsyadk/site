@@ -88,7 +88,7 @@ module Property = {
   let content = (prop: string) => "content"->textAttr(prop)
   let defer = (prop: string) => "defer"->textAttr(prop)
   let httpEquiv = (prop: string) => "httpEquiv"->textAttr(prop)
-  let language = (prop: string) => "language"->textAttr(prop)
+  let lang = (prop: string) => "lang"->textAttr(prop)
   let scoped = (prop: string) => "scoped"->textAttr(prop)
   let type_ = (prop: string) => "type"->textAttr(prop)
   let name = (prop: string) => "name"->textAttr(prop)

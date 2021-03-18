@@ -25,4 +25,4 @@ let template content (meta: Parser.metadata) =
   ]; H.body [] [
     content;
     footer;
-  ]] |> H.html [ P.language "en" ]
+  ]] |> H.html [ P.lang "en" ]
