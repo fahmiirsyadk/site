@@ -13,11 +13,10 @@ module Core = {
       }
 
     let checkTagHTML = (template, tag) =>
-      if tag === "html" {
-        j`<!DOCTYPE html>
-          $template
-          `
-      } else { template }
+      switch (tag === "html") {
+      | true => j`<!DOCTYPE html>$template`
+      | false => template
+      }
       
       switch (tagType) {
       | Single => j`<$tag$at>`->checkTagHTML(tag)
