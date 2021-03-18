@@ -171,3 +171,14 @@ a:hover {
     background: radial-gradient(50% 50% at 50% 50%, rgba(255, 0, 0, 0.41) 0%, rgba(255, 122, 0, 0) 100%);
     filter: blur(42px);
 }
+
+.star-logo-toggle {
+    position: absolute;
+    right: -3.3em;
+    bottom: 10em;
+    z-index: 1;
+}
+
+.star-logo-toggle svg path {
+    cursor: pointer;
+}

@@ -17,18 +17,14 @@ let listPost posts =
 let heading_title =
     {js| Hi, i’m fahmi. On this site you will literally find collection of poetries, notes, thoughts, or anything comes up into my mind. |js} 
 
+let starLogo = Mana.Extra.inject("assets/images/star.svg")
+
 let body posts =
   H.section [] [
-   H.button [
-    (P.id "theme-toggle");
-    (P.type_ "button");
-   ] [
-    H.span [] (H.text "moon");
-    H.span [] (H.text "shine");
-   ];
     H.div [ (P.class_ "section-home") ] [
         H.div [ (P.class_ "section-home__left") ] [
             H.div [ P.class_ "circle-blur circle-blur-red" ] [];
+            H.div [ P.class_ "star-logo-toggle" ] [starLogo];
             H.div [ (P.class_ "hero-heading") ] [
                 H.h1 [ P.class_ "hero-heading__title" ] [
                     H.span [] ( H.text "The Space ");
@@ -48,4 +44,4 @@ let body posts =
   ]
 
 let html (posts: Parser.metadata array) =
-  App.layout (Partial_head.head ~title: "blog") (body posts)
+  App.layout (Partial_head.head ~title: "Fahmiirsyadk") (body posts)
