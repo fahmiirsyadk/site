@@ -12,9 +12,16 @@ module Core = {
       | list{head, ...rest} => List.fold_left((a, b) => j`$a$b`, head, rest)
       }
 
+    let checkTagHTML = (template, tag) =>
+      if tag === "html" {
+        j`<!DOCTYPE html>
+          $template
+          `
+      } else { template }
+      
       switch (tagType) {
-      | Single => j`<$tag$at>`
-      | Paired => j`<$tag$at>$el</$tag>`    
+      | Single => j`<$tag$at>`->checkTagHTML(tag)
+      | Paired => j`<$tag$at>$el</$tag>`->checkTagHTML(tag)    
       }
     }
   let attrFormat = (attr: string, prop: string) => j` $attr="$prop"`
