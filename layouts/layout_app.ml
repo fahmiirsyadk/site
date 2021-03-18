@@ -9,7 +9,7 @@ let navigation =
   ]
 
 let layout head section =
-    H.html [] [
+    H.html [ P.language "en" ] [
         head;
         H.body [] [
             section;

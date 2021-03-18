@@ -75,6 +75,7 @@
     --link-color: #0b0c11;
     --bs-font-headline: "Libre Baskerville", Arial; 
     --bs-font-text: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --red-circle: radial-gradient(50% 50% at 50% 50%, rgba(255, 0, 0, 0.41) 0%, rgba(255, 122, 0, 0) 100%);
 }
 
 html[data-theme='sky'] {
@@ -83,6 +84,7 @@ html[data-theme='sky'] {
     --secondary-text-color: rgba(11,12,17,45%);
     --border-divider-color: 2px solid rgba(28, 27, 27, 0.08);
     --link-color: #0b0c11;
+    --red-circle: radial-gradient(50% 50% at 50% 50%, rgba(255, 0, 0, 0.41) 0%, rgba(255, 122, 0, 0) 100%);
 }
 
 html[data-theme='earth'] {
@@ -91,6 +93,7 @@ html[data-theme='earth'] {
     --secondary-text-color: rgba(11,12,17,45%);
     --border-divider-color: 2px solid rgba(28, 27, 27, 0.08);
     --link-color: #0B0C11;
+    --red-circle; radial-gradient(50% 50% at 50% 50%, rgba(255, 0, 0, 0.41) 0%, rgba(255, 122, 0, 0) 100%);
 }
 
 html[data-theme='space'] {
@@ -99,6 +102,7 @@ html[data-theme='space'] {
     --secondary-text-color: #A8A8A8;
     --border-divider-color: 2px solid rgba(207, 207, 207, 0.08);
     --link-color: #FFD8AA;
+    --red-circle: radial-gradient(50% 50% at 50% 50%, rgba(255, 0, 0, 0.20) 0%, rgba(255, 122, 0, 0) 100%);
 }
 
 
@@ -168,8 +172,7 @@ a:hover {
 .circle-blur-red {
     width: 501px;
     height: 501px;
-    background: radial-gradient(50% 50% at 50% 50%, rgba(255, 0, 0, 0.41) 0%, rgba(255, 122, 0, 0) 100%);
-    filter: blur(42px);
+    background: var(--red-circle);
 }
 
 .star-logo-toggle {
