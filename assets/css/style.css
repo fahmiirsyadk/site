@@ -10,7 +10,8 @@
     --secondary-text-color: rgba(11,12,17,45%);
     --border-divider-color: 2px solid rgba(28, 27, 27, 0.08);
     --link-color: #0b0c11;
-    --bs-font-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --bs-font-headline: "Libre Baskerville", Arial; 
+    --bs-font-text: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 html[data-theme='sky'] {
@@ -41,8 +42,13 @@ html[data-theme='space'] {
 body {
     background: var(--background-color);
     color: var(--primary-text-color);
-    font-family: var(--bs-font-sans-serif);
+    font-family: var(--bs-font-text);
 }
+
+h1,h2,h3,h4,h5,h6 {
+    font-family: var(--bs-font-headline);
+}
+
 
 a {
     color: var(--link-color);
@@ -50,5 +56,54 @@ a {
 
 a:hover {
     text-decoration: underline;
-    filter: brightness(80%);
+}
+
+
+/* Section Home */
+.section-home {
+    display: flex;
+    height: 100vh;
+}
+
+.section-home__left, .section-home__right {
+    flex: 1;
+    padding: 3em;
+    position: relative;
+}
+
+.section-home__left {
+    border-right: var(--border-divider-color);
+}
+
+.section-home__right {
+    
+}
+
+.hero-heading {
+    bottom: 0;
+    padding-bottom: 8em;
+    position: absolute;
+}
+
+.hero-heading__desc {
+    max-width: 700px;
+}
+
+.hero-heading__title {
+    font-size: clamp(1rem, 7vw, 7rem); 
+    font-weight: normal;
+}
+
+.circle-blur {
+    position: absolute;
+    z-index: -1;
+    right: 0;
+    bottom: 8em;
+}
+
+.circle-blur-red {
+    width: 501px;
+    height: 501px;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(255, 0, 0, 0.41) 0%, rgba(255, 122, 0, 0) 100%);
+    filter: blur(42px);
 }
