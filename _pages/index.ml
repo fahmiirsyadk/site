@@ -35,6 +35,7 @@ let body posts =
                     H.a [ P.href "/about"] (H.text "More about me ->");
                 ];
             ];
+            Partial_footer.footer;
         ];
         H.div [ (P.class_ "section-home__right") ] [            
             H.h1 [] (H.text "Recent article");
@@ -44,4 +45,4 @@ let body posts =
   ]
 
 let html (posts: Parser.metadata array) =
-  App.layout (Partial_head.head ~title: "Fahmiirsyadk") (body posts)
+  App.layout_index (Partial_head.head ~title: "Fahmiirsyadk") (body posts)

@@ -16,3 +16,12 @@ let layout head section =
             footer;
         ]
     ]
+
+(* Because the homepage is more _weird_ than other page, so footer must be removed *)
+let layout_index head section =
+  H.html [ P.lang "en" ] [
+    head;
+    H.body [] [
+      section;
+    ]
+  ]
