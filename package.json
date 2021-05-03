@@ -9,7 +9,7 @@
     "bs-platform": "*",
     "chokidar": "3.5.1",
     "fast-glob": "3.2.5",
-    "fs-extra": "9.1.0",
+    "fs-extra": "10.0.0",
     "orga": "2.3.15",
     "rehype-stringify": "8.0.0",
     "reorg-parse": "2.3.15",
