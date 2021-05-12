@@ -1,11 +1,5 @@
 {
   "extends": [
     "config:base"
-  ],
-  "packageRules": [
-    {
-      "matchPackagePatterns": ["orga", "reorg-parse", "reorg-rehype"],
-      "enabled": false
-    }
   ]
 }
