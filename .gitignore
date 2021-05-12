@@ -14,3 +14,4 @@ lib/
 .merlin
 *.bs.js
 dist/
+.vscode

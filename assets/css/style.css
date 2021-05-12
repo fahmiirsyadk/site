@@ -76,11 +76,11 @@ html[data-theme='earth'] {
     --secondary-text-color: rgba(11,12,17,45%);
     --border-divider-color: 2px solid rgba(28, 27, 27, 0.08);
     --link-color: #0B0C11;
-    --red-circle; radial-gradient(50% 50% at 50% 50%, rgba(255, 0, 0, 0.41) 0%, rgba(255, 122, 0, 0) 100%);
+    --red-circle: radial-gradient(50% 50% at 50% 50%, rgba(255, 0, 0, 0.41) 0%, rgba(255, 122, 0, 0) 100%);
 }
 
 html[data-theme='space'] {
-    --background-color: #0B0C11;#F5F5F5;
+    --background-color: #0B0C11;
     --primary-text-color: #F5f5f5;
     --secondary-text-color: #A8A8A8;
     --border-divider-color: 2px solid rgba(207, 207, 207, 0.08);
