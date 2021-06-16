@@ -3,8 +3,6 @@ module Path = Node.Path
 module Extra = Utils.Fs_Extra
 module Process = Utils.NodeJS.Process
 
-@module external unixify: string => string = "unixify"
-
 type metadata = {
   filename: string,
   url: string,
@@ -21,7 +19,7 @@ let cleanDir = (path: string) => path->Extra.emptyDirSync
 
 let globPath = (path: array<string>) => {
   Js.log(path->Path.join)
-  path->Path.join->unixify->Utils.glob
+  path->Path.join->Utils.glob
 }
 
 let getPages: array<string> = [rootPath, "_pages", "**", "*.ml"]->globPath
