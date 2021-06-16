@@ -15,7 +15,7 @@
     "rehype-stringify": "8.0.0",
     "reorg-parse": "2.3.16",
     "reorg-rehype": "2.3.16",
-    "rescript": "^9.1.2",
+    "rescript": "9.1.2",
     "unified": "9.2.1"
   },
   "scripts": {
