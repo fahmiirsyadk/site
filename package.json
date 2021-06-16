@@ -6,7 +6,7 @@
   "author": "fahmiirsyadk <fahmiirsyad10@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "chokidar": "3.5.1",
+    "chokidar": "3.5.2",
     "date-fns": "2.21.3",
     "fast-glob": "3.2.5",
     "fs-extra": "10.0.0",
@@ -15,7 +15,7 @@
     "rehype-stringify": "8.0.0",
     "reorg-parse": "2.3.16",
     "reorg-rehype": "2.3.16",
-    "rescript": "^9.1.2",
+    "rescript": "9.1.4",
     "unified": "9.2.1"
   },
   "scripts": {
