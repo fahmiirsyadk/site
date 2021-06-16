@@ -9,8 +9,9 @@ let metaContent (ct: string) (nm:string) =
   ] []
 
 let icon = H.link [
-  P.href "assets/images/logo-irsyad.png";
+  P.href "/assets/images/favicon.ico";
   P.rel "shortcut icon";
+  P.type_ "image/x-icon";
 ] []
 
 let head ~title:(title: string) =

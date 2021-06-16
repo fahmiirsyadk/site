@@ -11,18 +11,21 @@ let metaContent (ct: string) (nm:string) =
     (P.name nm);
   ] []
 
+let icon = H.link [
+  P.href "/assets/images/favicon.ico";
+  P.rel "shortcut icon";
+  P.type_ "image/x-icon";
+] []
+
 let template content (meta: Parser.metadata) =  
   [
   H.head [] [
     H.meta [ P.charset "utf-8"] [];
+    H.title [] (H.text (meta.matter.title ^ "-- Fahmiirsyadk"));
     metaContent "width=device-width,initial-scale=1" "viewport";
     metaContent "#000" "theme-color";
-    H.title [] (H.text (meta.matter.title ^ "-- Fahmiirsyadk"));
-    H.link [
-      P.href "/assets/images/logo.png";
-      P.rel "shortcut icon";
-    ] [];
     metaContent "fahmiirsyadk -- a Web developer based on Banyuwangi, Indonesia." "description";
+    icon;
     H.style [] (H.text css);
   ]; H.body [] [
     content;
