@@ -92,7 +92,7 @@ let generateHtml = () => {
 }
 
 let run = () => {
-  cleanDir("dist");
-  copyAssets();
+  cleanDir("dist")
+  copyAssets()
   generateHtml()
 }
