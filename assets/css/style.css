@@ -84,21 +84,21 @@
   font-family: 'EditorialNew';
   font-style:  italic;
   font-weight: 400;
-  font-display: optional;
+  font-display: swap;
   src: url("/assets/fonts/EditorialNew-Italic.otf") format("opentype");
 }
 @font-face {
   font-family: 'EditorialNew';
   font-style:  normal;
   font-weight: 900;
-  font-display: optional;
+  font-display: swap;
   src: url("/assets/fonts/EditorialNew-Ultrabold.otf") format("opentype");
 }
 @font-face {
   font-family: 'EditorialNew';
   font-style:  italic;
   font-weight: 900;
-  font-display: optional;
+  font-display: swap;
   src: url("/assets/fonts/EditorialNew-Ultrabolditalic.otf") format("opentype");
 }
 
