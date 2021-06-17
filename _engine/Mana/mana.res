@@ -99,6 +99,8 @@ module Property = {
   let checked = (prop: bool) => "checked"->boolAttr(prop)
   let autofocus = (prop: bool) => "autofocus"->boolAttr(prop)
   let class_ = (prop: string) => "class"->textAttr(prop)
+  let as_ = (prop: string) => "as"->textAttr(prop)
+  let crossorigin = (prop: string) => "crossorigin"->textAttr(prop)
 }
 
 module HTML = {

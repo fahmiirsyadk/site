@@ -14,6 +14,13 @@ let icon = H.link [
   P.type_ "image/x-icon";
 ] []
 
+let preloadFont fontName = H.link [
+  P.rel "preload";
+  P.href ("/assets/fonts/" ^ fontName);
+  P.as_ "font";
+  P.crossorigin "";
+] []
+
 let head ~title:(title: string) =
   H.head [] [
     H.meta [ P.charset "utf-8"] [];
@@ -22,5 +29,9 @@ let head ~title:(title: string) =
     metaContent "#000" "theme-color";
     metaContent "fahmiirsyadk -- a Web developer based on Banyuwangi, Indonesia." "description";
     icon;
+    preloadFont "Inter-var-latin.woff2";
+    preloadFont "EditorialNew-Regular.otf";
+    preloadFont "EditorialNew-Italic.otf";
+    preloadFont "EditorialNew-Ultrabold.otf";
     H.style [] (H.text (E.inject "assets/css/style.css"));
   ]
