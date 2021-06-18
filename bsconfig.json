@@ -1,20 +1,26 @@
 {
-  "$schema": "https://raw.githubusercontent.com/rescript-lang/rescript-compiler/master/docs/docson/build-schema.json",
   "name": "fahmiirsyadk-site",
   "version": "0.0.1",
-  "sources": [{
-    "dir": "_pages",
-  }, {
-    "dir": "_engine",
-    "subdirs": true
-  }, {
-    "dir": "partials",
-  }, {
-    "dir": "layouts"
-  }, {
-    "dir": "assets",
-    "subdirs": true
-  }],
+  "sources": [
+    {
+      "dir": "_pages",
+      "subdirs": true
+    },
+    {
+      "dir": "_engine",
+      "subdirs": true
+    },
+    {
+      "dir": "partials"
+    },
+    {
+      "dir": "layouts"
+    },
+    {
+      "dir": "assets",
+      "subdirs": true
+    }
+  ],
   "package-specs": {
     "module": "commonjs",
     "in-source": true
@@ -24,5 +30,5 @@
   "bs-dependencies": [],
   "warnings": {
     "error": "+101"
-  },
+  }
 }
