@@ -3,7 +3,7 @@ module H = Mana.HTML
 module P = Mana.Property
 module E = Mana.Extra
 
-let themeJS = E.inject "assets/js/theme.js"
+let themeJS = E.inject "src/assets/js/theme.js"
 
 let footer = H.footer [] [
     H.a [ P.href "https://github.com/fahmiirsyadk/site" ] [

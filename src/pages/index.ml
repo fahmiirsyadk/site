@@ -17,7 +17,7 @@ let listPost posts =
 let heading_title =
     {js| Hi, i’m fahmi. On this site you will literally find collection of poetries, notes, thoughts, or anything comes up into my mind. |js} 
 
-let starLogo = Mana.Extra.inject("assets/images/star.svg")
+let starLogo = Mana.Extra.inject("src/assets/images/star.svg")
 
 let body posts =
   H.section [] [

@@ -33,5 +33,5 @@ let head ~title:(title: string) =
     preloadFont "EditorialNew-Regular.otf";
     preloadFont "EditorialNew-Italic.otf";
     preloadFont "EditorialNew-Ultrabold.otf";
-    H.style [] (H.text (E.inject "assets/css/style.css"));
+    H.style [] (H.text (E.inject "src/assets/css/style.css"));
   ]
