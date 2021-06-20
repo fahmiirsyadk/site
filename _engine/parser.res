@@ -22,8 +22,8 @@ let globPath = (path: array<string>) => {
   path->Path.join->Utils.glob
 }
 
-let getPages: array<string> = [rootPath, "_pages", "**", "*.ml"]->globPath
-let getPosts: array<string> = [rootPath, "_posts", "**", "*.org"]->globPath
+let getPages: array<string> = [rootPath, "src", "pages", "**", "*.ml"]->globPath
+let getPosts: array<string> = [rootPath, "src", "posts", "**", "*.org"]->globPath
 
 let orgToHtml = (path: string): Utils.vfile =>
   unified()->use(reorgParse)->use(reorgMutate)->use(rehypeStringify)->processSync(path)
@@ -58,13 +58,13 @@ let processMetadata: array<metadata> = Js.Array2.map(getPosts, path => {
 
 let generatePosts = () => {
   Js.Array2.forEach(processMetadata, meta => {
-    let post = Path.join([rootPath, "_pages", "blogpost" ++ ".bs.js"])->importManaFile(meta)
+    let post = Path.join([rootPath, "src", "pages", "blogpost" ++ ".bs.js"])->importManaFile(meta)
     Path.join([rootPath, "dist", meta.url, "index.html"])->Extra.outputFileSync(post)
   })
 }
 
 let generatePage = (meta, path, basename) => {
-  Path.join([rootPath, "_pages", basename ++ ".bs.js"])
+  Path.join([rootPath, "src", "pages", basename ++ ".bs.js"])
   ->Path.normalize
   ->importManaFile(meta)
   ->Extra.outputFileSync(Path.join([rootPath, "dist", path]), _)
@@ -72,11 +72,12 @@ let generatePage = (meta, path, basename) => {
 
 /* Hardcode copy assets ( fonts, images ) to dist */
   let copyAssets = () => {
-    let assetFolder = path => Path.join([rootPath, "assets", path]);
+    let assetFolder = path => Path.join([rootPath, "src", "assets", path]);
     let destFolder = path => Path.join([rootPath, "dist", "assets", path])
     let _ = Js.Promise.all([
       Extra.copy(assetFolder("fonts"), destFolder("fonts")),
       Extra.copy(assetFolder("images"), destFolder("images")),
+      Extra.copy(assetFolder("js"), destFolder("js"))
       ])
   }
   
@@ -85,7 +86,7 @@ let generateHtml = () => {
     let basename = pages->Path.basename_ext(".ml")
     switch basename {
     | "blogpost" => generatePosts()
-    | "404" | "index" => generatePage(processMetadata, j`$basename.html`, basename)
+    | "404" | "index" | "offline" => generatePage(processMetadata, j`$basename.html`, basename)
     | _ => generatePage(processMetadata, Path.join([basename, "index.html"]), basename)
     }
   })

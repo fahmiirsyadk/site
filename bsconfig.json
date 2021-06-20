@@ -3,21 +3,11 @@
   "version": "0.0.1",
   "sources": [
     {
-      "dir": "_pages",
+      "dir": "src",
       "subdirs": true
     },
     {
       "dir": "_engine",
-      "subdirs": true
-    },
-    {
-      "dir": "partials"
-    },
-    {
-      "dir": "layouts"
-    },
-    {
-      "dir": "assets",
       "subdirs": true
     }
   ],
