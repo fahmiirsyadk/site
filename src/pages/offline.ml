@@ -7,7 +7,7 @@ let styles = "
   padding: 0;
 }
 
-div {
+section {
   align-items: center;
   background: #000;
   box-sizing: border-box;
@@ -25,8 +25,7 @@ div {
   top: 0;
   width: 100%;
   z-index: 4;
-}
-"
+}"
 
 let head =
   H.head [
