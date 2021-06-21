@@ -8,28 +8,25 @@ let navigation =
   H.header [] [
       H.nav [] (H.text "navigation")
   ]
+let themeJS = E.inject "src/assets/js/theme.js"
+
+let script = [
+  H.script [P.defer ""] [themeJS];
+  H.script [
+    P.async "";
+    P.src "/assets/js/main.js"
+  ] [];
+]
 
 let layout head section =
     H.html [ P.lang "en" ] [
         head;
-        H.body [] [
-            section;
-            footer;
-        ]
+        H.body [] (section :: footer :: script)
     ]
-
-let themeJS = E.inject "src/assets/js/theme.js"
 
 (* Because the homepage is more _weird_ than other page, so footer must be removed *)
 let layout_index head section =
   H.html [ P.lang "en" ] [
     head;
-    H.body [] [
-      section;
-      H.script [P.defer ""] [themeJS];
-      H.script [
-        P.async "";
-        P.href "/assets/js/main.js"
-      ] [];
-    ]
+    H.body [] (section :: script)
   ]
