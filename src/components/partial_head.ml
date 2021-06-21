@@ -33,5 +33,9 @@ let head ~title:(title: string) =
     preloadFont "EditorialNew-Regular.otf";
     preloadFont "EditorialNew-Italic.otf";
     preloadFont "EditorialNew-Ultrabold.otf";
+    H.link [
+      P.rel "manifest";
+      P.href "/manifest.json";
+    ] [];
     H.style [] (H.text (E.inject "src/assets/css/style.css"));
   ]

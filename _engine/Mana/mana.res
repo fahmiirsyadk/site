@@ -42,6 +42,7 @@ module Property = {
   let readonly = (prop: bool) => "readonly"->boolAttr(prop)
   let required = (prop: bool) => "required"->boolAttr(prop)
   let size = (prop: string) => "size"->textAttr(prop)
+  let sizes = (prop: string) => "sizes"->textAttr(prop)
   let for_ = (prop: string) => "for_"->textAttr(prop)
   let form = (prop: string) => "form"->textAttr(prop)
   let max = (prop: string) => "max"->textAttr(prop)
