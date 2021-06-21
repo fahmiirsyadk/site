@@ -11,7 +11,7 @@ let navigation =
 let themeJS = E.inject "src/assets/js/theme.js"
 
 let script = [
-  H.script [P.defer ""] [themeJS];
+  H.script [] [themeJS];
   H.script [
     P.async "";
     P.src "/assets/js/main.js"

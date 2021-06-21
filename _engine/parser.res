@@ -71,16 +71,18 @@ let generatePage = (meta, path, basename) => {
 }
 
 /* Hardcode copy assets ( fonts, images ) to dist */
-  let copyAssets = () => {
-    let assetFolder = path => Path.join([rootPath, "src", "assets", path]);
-    let destFolder = path => Path.join([rootPath, "dist", "assets", path])
-    let _ = Js.Promise.all([
-      Extra.copy(assetFolder("fonts"), destFolder("fonts")),
-      Extra.copy(assetFolder("images"), destFolder("images")),
-      Extra.copy(assetFolder("js"), destFolder("js"))
-      ])
-  }
-  
+let copyAssets = () => {
+  let publicFolder = path => Path.join([rootPath, "src", path])
+  let assetFolder = path => Path.join([rootPath, "src", "assets", path])
+  let destFolder = paths => Path.join(paths |> Js.Array2.concat([rootPath, "dist"]))
+  let _ = Js.Promise.all([
+    Extra.copy(assetFolder("fonts"), destFolder(["assets", "fonts"])),
+    Extra.copy(assetFolder("images"), destFolder(["assets", "images"])),
+    Extra.copy(assetFolder("js"), destFolder(["assets", "js"])),
+    Extra.copy(publicFolder("public"), destFolder([])),
+  ])
+}
+
 let generateHtml = () => {
   getPages->Js.Array2.forEach(pages => {
     let basename = pages->Path.basename_ext(".ml")
