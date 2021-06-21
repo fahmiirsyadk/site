@@ -1,1 +1,0 @@
-%%raw(`const staticCacheName="v1::fahmiirsyadk";this.addEventListener("install",(t=>{this.skipWaiting(),t.waitUntil(caches.open(staticCacheName).then((t=>t.addAll(["/offline.html"]))))})),this.addEventListener("fetch",(t=>{t.respondWith(caches.match(t.request).then((e=>e||fetch(t.request))).catch((()=>caches.match("/offline.html"))))}))`)
