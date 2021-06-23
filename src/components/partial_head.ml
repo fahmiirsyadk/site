@@ -35,7 +35,7 @@ let head ~title:(title: string) =
     preloadFont "EditorialNew-Ultrabold.otf";
     H.link [
       P.rel "manifest";
-      P.href "/manifest.json";
+      P.href "/site.webmanifest";
     ] [];
     H.style [] (H.text (E.inject "src/assets/css/style.css"));
   ]

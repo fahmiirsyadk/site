@@ -1,3 +1,5 @@
+"serviceWorker" in navigator && navigator.serviceWorker.register("/sw.js")
+
 var toggle = document.getElementById("theme-toggle");
 
 var storedTheme = localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "space" : "sky");
