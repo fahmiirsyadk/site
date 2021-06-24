@@ -26,8 +26,8 @@
     "start": "rescript build -w -with-deps",
     "minify-css": "postcss src/assets/css/style.css > src/assets/css/style.min.css",
     "clean": "rescript clean",
-    "compile": "npm run minify-css && node ./_engine/cli/cli.bs.js build",
+    "compile": "node ./_engine/cli/cli.bs.js build",
     "watch": "npm run compile && node ./_engine/cli/cli.bs.js watch",
-    "export": "npm run build && npm run compile"
+    "export": "npm run build && npm run minify-css && npm run compile"
   }
 }

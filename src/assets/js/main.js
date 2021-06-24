@@ -23,9 +23,8 @@ const historyChange = (url) => {
   window.history.pushState(null, null, url)
 }
 
-const addLinksEventsListenener = () => {
-  const nodes = document.querySelectorAll("a");
-  const links = Array.from(nodes);
+function addLinksEventsListenener() {
+  const links = Array.from(document.querySelectorAll("a"))
   links.length > 0 && links.forEach(link => {
     const { href } = link
     href.indexOf(window.location.origin) > -1 ? link.onclick = e => {
