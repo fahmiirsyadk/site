@@ -28,11 +28,6 @@ const addLinksEventsListenener = () => {
   const links = Array.from(nodes);
   links.length > 0 && links.forEach(link => {
     const { href } = link
-    console.log({
-      link: href,
-      index: href.indexOf(window.location.origin),
-      window: window.location.origin
-    })
     href.indexOf(window.location.origin) > -1 ? link.onclick = e => {
       e.preventDefault()
       e.stopPropagation()

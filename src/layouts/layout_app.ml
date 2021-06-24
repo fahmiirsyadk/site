@@ -8,13 +8,13 @@ let navigation =
   H.header [] [
       H.nav [] (H.text "navigation")
   ]
-let themeJS = E.inject "src/assets/js/theme.js"
+let themeJS = E.inject "src/assets/js/theme.min.js"
 
 let script = [
   H.script [] [ themeJS ];
   H.script [
     P.async "";
-    P.src "/assets/js/main.js"
+    P.src "/assets/js/main.min.js"
   ] [];
 ]
 

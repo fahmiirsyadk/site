@@ -37,5 +37,5 @@ let head ~title:(title: string) =
       P.rel "manifest";
       P.href "/site.webmanifest";
     ] [];
-    H.style [] (H.text (E.inject "src/assets/css/style.css"));
+    H.style [] (H.text (E.inject "src/assets/css/style.min.css"));
   ]
