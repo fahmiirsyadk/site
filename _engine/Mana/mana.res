@@ -11,6 +11,18 @@ module Extra = {
       ])->Node.Path.normalize,
       "utf-8",
     )
+
+  type extractType =
+    | CSS(string)
+    | JS(string)
+
+  let extract = (path: extractType) => {
+    switch path {
+    | CSS(path) => inject(path)
+    | JS(path) => inject(path)
+    }
+  }
+
 }
 
 module Property = {

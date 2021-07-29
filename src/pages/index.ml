@@ -1,6 +1,5 @@
 module H = Mana.HTML
 module P = Mana.Property
-
 module App = Layout_app
 
 let listPost posts =
@@ -9,40 +8,35 @@ let listPost posts =
        H.a [
          P.href post.url;
        ] [
-         H.li [] (H.text post.matter.title);
+         H.p [] (H.text post.matter.title);
        ]
     )
 
-(* Variables *)
-let heading_title =
-    {js| Hi, i’m fahmi. On this site you will literally find collection of poetries, notes, thoughts, or anything comes up into my mind. |js} 
-
-let starLogo = Mana.Extra.inject("src/assets/images/star.svg")
-
+(* element hero *)
+let hero = 
+  H.div [ P.class_ "hero-container"] [
+    H.div [ P.class_ "hero-content"] [
+      H.img [] [];
+      H.div [ P.class_ "hero-content__borderline" ] [];
+      H.div [ P.class_ "hero-content__title"] [
+        H.span [] (H.text "Push The Boundary");
+        H.span [ P.class_ "title-overlay"] (H.text "&");
+        H.span [] (H.text "Living Edge");
+      ];
+      H.div [ P.class_ "hero-content__footprint" ] [
+        H.p [] (H.text "Frontend Developer");
+        H.p [] (H.text "Based in Banyuwangi, Indonesia");
+      ];
+    ]
+  ]
 let body posts =
   H.section [] [
-    H.div [ (P.class_ "section-home") ] [
-        H.div [ (P.class_ "section-home__left") ] [
-            H.div [ P.class_ "circle-blur circle-blur-red" ] [];
-            H.div [ P.class_ "star-logo-toggle" ] [starLogo];
-            H.div [ (P.class_ "hero-heading") ] [
-                H.h1 [ P.class_ "hero-heading__title" ] [
-                    H.span [] ( H.text "The Space ");
-                    H.span [ P.style "font-style: italic;" ] (H.text "Garden.");
-                ];
-                H.div [ P.class_ "hero-heading__desc" ] [
-                    H.span [] (H.text heading_title);
-                    H.a [ P.href "/about"] (H.text "More about me ->");
-                ];
-            ];
-            Partial_footer.footer;
-        ];
-        H.div [ (P.class_ "section-home__right") ] [            
-            H.h1 [] (H.text "Recent article");
-            H.ol [] (listPost posts);
-        ];
-    ];
+    H.div [ P.class_ "hero-container" ] [
+      hero;
+      H.div [] (listPost posts);
+    ]
   ]
 
+(* render *)
 let html (posts: Parser.metadata array) =
-  App.layout_index (Partial_head.head ~title: "Fahmiirsyadk") (body posts)
+  App.layout_index (Partial_head.head ~title: AppConfig.SEO.title) (body posts)

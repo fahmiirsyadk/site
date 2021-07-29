@@ -94,6 +94,17 @@ let generateHtml = () => {
   })
 }
 
+// auto compress css in folder assets css
+let compressCss = () => {
+  ()
+  /*
+    1. defines binding of postcss
+    2. Do parallel async readFile css files
+    3. Process css string with postcss using Promises.All
+    4. Output ( copy them ) to the dist folder
+  */
+}
+
 let run = () => {
   cleanDir("dist")
   copyAssets()
