@@ -12,7 +12,7 @@
     "fast-glob": "3.2.7",
     "fs-extra": "10.0.0",
     "live-server": "1.2.1",
-    "orga": "2.4.8",
+    "orga": "2.4.9",
     "postcss": "8.3.5",
     "postcss-cli": "8.3.1",
     "rehype-stringify": "8.0.0",
