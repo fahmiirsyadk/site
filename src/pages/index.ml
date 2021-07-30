@@ -38,5 +38,5 @@ let body posts =
   ]
 
 (* render *)
-let html (posts: Parser.metadata array) =
+let main (posts: Parser.metadata array) =
   App.layout_index (Partial_head.head ~title: AppConfig.SEO.title) (body posts)

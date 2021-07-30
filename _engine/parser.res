@@ -32,7 +32,7 @@ let getMatterData = (path: string) => parseOrga(path)
 let importManaFile = %raw(`
   function(path, props) {
     let data = require(path);
-    return data.html(props);
+    return data.main(props);
   }
 `)
 

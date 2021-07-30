@@ -18,7 +18,7 @@ let body =
     ]
   ]  
 
-let html () =
+let main () =
   H.html [] [
     head;
     body;

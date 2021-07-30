@@ -13,5 +13,5 @@ let body =
     ] []
   ]
 
-let html () =
+let main () =
   App.layout (Partial_head.head ~title: "about") (body)

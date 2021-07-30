@@ -9,5 +9,5 @@ let body (post: Parser.metadata) =
     H.div [] (H.text post.content);
   ]
 
-let html (post: Parser.metadata) =
+let main (post: Parser.metadata) =
   L.template (body post) post

@@ -8,5 +8,5 @@ let body =
     H.h1 [] (H.text "Uh oh... halaman tidak ditemukan");
   ]
 
-let html () =
+let main () =
   App.layout (Partial_head.head ~title:"404") body
