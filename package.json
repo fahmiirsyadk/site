@@ -7,19 +7,19 @@
   "license": "MIT",
   "devDependencies": {
     "chokidar": "3.5.2",
-    "cssnano": "^5.0.6",
-    "date-fns": "2.22.1",
-    "fast-glob": "3.2.5",
+    "cssnano": "5.0.6",
+    "date-fns": "2.23.0",
+    "fast-glob": "3.2.7",
     "fs-extra": "10.0.0",
     "live-server": "1.2.1",
-    "orga": "2.4.8",
-    "postcss": "^8.3.5",
-    "postcss-cli": "^8.3.1",
+    "orga": "2.4.9",
+    "postcss": "8.3.5",
+    "postcss-cli": "8.3.1",
     "rehype-stringify": "8.0.0",
     "reorg-parse": "2.3.16",
     "reorg-rehype": "2.3.16",
     "rescript": "9.1.4",
-    "unified": "9.2.1"
+    "unified": "9.2.2"
   },
   "scripts": {
     "build": "rescript build -with-deps",
