@@ -23,7 +23,13 @@ module Core = {
       | Paired => j`<$tag$at>$el</$tag>`->checkTagHTML(tag)    
       }
     }
-  let attrFormat = (attr: string, prop: string) => j` $attr="$prop"`
+
+  type renderAttr =
+    | String
+    | Variant
+
+  let attrFormat = (attr: string, prop: 'a) => j` $attr="$prop"`
   let textAttr = (attr: string, prop: string): string => attrFormat(attr, prop)
+  let textAttrPoly = (attr: string, prop) => attrFormat(attr, prop)
   let boolAttr = (attr: string, prop: bool): string => prop->string_of_bool |> attrFormat(attr)
 }

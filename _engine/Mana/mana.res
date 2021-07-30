@@ -1,7 +1,6 @@
 open Mana_core.Core
 open Utils
-open Mana_types
-  
+
 module Extra = {
   let inject = (path: string) =>
     Fs_Extra.readFileSync(
@@ -22,15 +21,22 @@ module Extra = {
     | JS(path) => inject(path)
     }
   }
-
 }
 
 module Property = {
-  let custom_attr = (attrName: string, attrVal: customValAttrType) =>
-    switch(attrVal) {
+  let custom_attr = (attrName: string, attrVal: Mana_types.customValAttrType) =>
+    switch attrVal {
     | Bool(x) => attrName->boolAttr(x)
     | String(x) => attrName->textAttr(x)
-    }  
+    }
+  type nameAttrs =
+    | Keyword
+    | Description
+    | Author
+    | Viewport
+    | ApplicationName
+    | Generator
+    | ThemeColor
   let title = (prop: string) => "title"->textAttr(prop)
   let selected = (prop: bool) => "selected"->boolAttr(prop)
   let hidden = (prop: bool) => "hidden"->boolAttr(prop)
@@ -104,7 +110,18 @@ module Property = {
   let lang = (prop: string) => "lang"->textAttr(prop)
   let scoped = (prop: string) => "scoped"->textAttr(prop)
   let type_ = (prop: string) => "type"->textAttr(prop)
-  let name = (prop: string) => "name"->textAttr(prop)
+  let name = (prop: nameAttrs): string =>
+    "name"->textAttr(
+      switch prop {
+      | Keyword => "keyword"
+      | Description => "description"
+      | Author => "author"
+      | Viewport => "viewport"
+      | ApplicationName => "application-name"
+      | Generator => "generator"
+      | ThemeColor => "theme-color"
+      },
+    )
   let href = (prop: string) => "href"->textAttr(prop)
   let id = (prop: string) => "id"->textAttr(prop)
   let placeholder = (prop: string) => "placeholder"->textAttr(prop)
@@ -119,116 +136,170 @@ module Property = {
 module HTML = {
   let text = (node: string) => list{node}
   let a = (attrs: list<string>, children: list<string>) => Paired->render("a", attrs, children)
-  let abbr = (attrs: list<string>, children: list<string>) => Paired->render("abbr", attrs, children)
-  let address = (attrs: list<string>, children: list<string>) => Paired->render("address", attrs, children)
-  let area = (attrs: list<string>, children: list<string>) => Paired->render("area", attrs, children)
-  let article = (attrs: list<string>, children: list<string>) => Paired->render("article", attrs, children)
-  let aside = (attrs: list<string>, children: list<string>) => Paired->render("aside", attrs, children)
-  let audio = (attrs: list<string>, children: list<string>) => Paired->render("audio", attrs, children)
+  let abbr = (attrs: list<string>, children: list<string>) =>
+    Paired->render("abbr", attrs, children)
+  let address = (attrs: list<string>, children: list<string>) =>
+    Paired->render("address", attrs, children)
+  let area = (attrs: list<string>, children: list<string>) =>
+    Paired->render("area", attrs, children)
+  let article = (attrs: list<string>, children: list<string>) =>
+    Paired->render("article", attrs, children)
+  let aside = (attrs: list<string>, children: list<string>) =>
+    Paired->render("aside", attrs, children)
+  let audio = (attrs: list<string>, children: list<string>) =>
+    Paired->render("audio", attrs, children)
   let b = (attrs: list<string>, children: list<string>) => Paired->render("b", attrs, children)
-  let base = (attrs: list<string>, children: list<string>) => Paired->render("base", attrs, children)
+  let base = (attrs: list<string>, children: list<string>) =>
+    Paired->render("base", attrs, children)
   let bdi = (attrs: list<string>, children: list<string>) => Paired->render("bdi", attrs, children)
   let bdo = (attrs: list<string>, children: list<string>) => Paired->render("bdo", attrs, children)
   let blockquotes = (attrs: list<string>, children: list<string>) =>
     Paired->render("blockquotes", attrs, children)
-  let body = (attrs: list<string>, children: list<string>) => Paired->render("body", attrs, children)
+  let body = (attrs: list<string>, children: list<string>) =>
+    Paired->render("body", attrs, children)
   let br = (attrs: list<string>, children: list<string>) => Paired->render("br", attrs, children)
-  let button = (attrs: list<string>, children: list<string>) => Paired->render("button", attrs, children)
-  let canvas = (attrs: list<string>, children: list<string>) => Paired->render("canvas", attrs, children)
-  let caption = (attrs: list<string>, children: list<string>) => Paired->render("caption", attrs, children)
-  let cite = (attrs: list<string>, children: list<string>) => Paired->render("cite", attrs, children)
-  let code = (attrs: list<string>, children: list<string>) => Paired->render("code", attrs, children)
+  let button = (attrs: list<string>, children: list<string>) =>
+    Paired->render("button", attrs, children)
+  let canvas = (attrs: list<string>, children: list<string>) =>
+    Paired->render("canvas", attrs, children)
+  let caption = (attrs: list<string>, children: list<string>) =>
+    Paired->render("caption", attrs, children)
+  let cite = (attrs: list<string>, children: list<string>) =>
+    Paired->render("cite", attrs, children)
+  let code = (attrs: list<string>, children: list<string>) =>
+    Paired->render("code", attrs, children)
   let col = (attrs: list<string>, children: list<string>) => Paired->render("col", attrs, children)
   let colgroup = (attrs: list<string>, children: list<string>) =>
     Paired->render("colgroup", attrs, children)
-  let command = (attrs: list<string>, children: list<string>) => Paired->render("command", attrs, children)
+  let command = (attrs: list<string>, children: list<string>) =>
+    Paired->render("command", attrs, children)
   let datalist = (attrs: list<string>, children: list<string>) =>
     Paired->render("datalist", attrs, children)
   let dd = (attrs: list<string>, children: list<string>) => Paired->render("dd", attrs, children)
   let del = (attrs: list<string>, children: list<string>) => Paired->render("del", attrs, children)
-  let details = (attrs: list<string>, children: list<string>) => Paired->render("details", attrs, children)
+  let details = (attrs: list<string>, children: list<string>) =>
+    Paired->render("details", attrs, children)
   let dfn = (attrs: list<string>, children: list<string>) => Paired->render("dfn", attrs, children)
-  let dialog = (attrs: list<string>, children: list<string>) => Paired->render("dialog", attrs, children)
+  let dialog = (attrs: list<string>, children: list<string>) =>
+    Paired->render("dialog", attrs, children)
   let div = (attrs: list<string>, children: list<string>) => Paired->render("div", attrs, children)
   let dl = (attrs: list<string>, children: list<string>) => Paired->render("dl", attrs, children)
   let dt = (attrs: list<string>, children: list<string>) => Paired->render("dt", attrs, children)
   let em = (attrs: list<string>, children: list<string>) => Paired->render("em", attrs, children)
-  let embed = (attrs: list<string>, children: list<string>) => Paired->render("embed", attrs, children)
+  let embed = (attrs: list<string>, children: list<string>) =>
+    Paired->render("embed", attrs, children)
   let figcation = (attrs: list<string>, children: list<string>) =>
     Paired->render("figcation", attrs, children)
-  let figure = (attrs: list<string>, children: list<string>) => Paired->render("figure", attrs, children)
-  let footer = (attrs: list<string>, children: list<string>) => Paired->render("footer", attrs, children)
-  let form = (attrs: list<string>, children: list<string>) => Paired->render("form", attrs, children)
+  let figure = (attrs: list<string>, children: list<string>) =>
+    Paired->render("figure", attrs, children)
+  let footer = (attrs: list<string>, children: list<string>) =>
+    Paired->render("footer", attrs, children)
+  let form = (attrs: list<string>, children: list<string>) =>
+    Paired->render("form", attrs, children)
   let h1 = (attrs: list<string>, children: list<string>) => Paired->render("h1", attrs, children)
   let h2 = (attrs: list<string>, children: list<string>) => Paired->render("h2", attrs, children)
   let h3 = (attrs: list<string>, children: list<string>) => Paired->render("h3", attrs, children)
   let h4 = (attrs: list<string>, children: list<string>) => Paired->render("h4", attrs, children)
   let h5 = (attrs: list<string>, children: list<string>) => Paired->render("h5", attrs, children)
   let h6 = (attrs: list<string>, children: list<string>) => Paired->render("h6", attrs, children)
-  let head = (attrs: list<string>, children: list<string>) => Paired->render("head", attrs, children)
-  let header = (attrs: list<string>, children: list<string>) => Paired->render("header", attrs, children)
+  let head = (attrs: list<string>, children: list<string>) =>
+    Paired->render("head", attrs, children)
+  let header = (attrs: list<string>, children: list<string>) =>
+    Paired->render("header", attrs, children)
   let hr = (attrs: list<string>, children: list<string>) => Paired->render("hr", attrs, children)
-  let html = (attrs: list<string>, children: list<string>) => Paired->render("html", attrs, children)
+  let html = (attrs: list<string>, children: list<string>) =>
+    Paired->render("html", attrs, children)
   let i = (attrs: list<string>, children: list<string>) => Paired->render("i", attrs, children)
-  let iframe = (attrs: list<string>, children: list<string>) => Paired->render("iframe", attrs, children)
+  let iframe = (attrs: list<string>, children: list<string>) =>
+    Paired->render("iframe", attrs, children)
   let img = (attrs: list<string>, children: list<string>) => Single->render("img", attrs, children)
-  let input = (attrs: list<string>, children: list<string>) => Single->render("input", attrs, children)
+  let input = (attrs: list<string>, children: list<string>) =>
+    Single->render("input", attrs, children)
   let ins = (attrs: list<string>, children: list<string>) => Paired->render("ins", attrs, children)
   let kbd = (attrs: list<string>, children: list<string>) => Paired->render("kbd", attrs, children)
-  let label = (attrs: list<string>, children: list<string>) => Paired->render("label", attrs, children)
-  let legend = (attrs: list<string>, children: list<string>) => Paired->render("legend", attrs, children)
+  let label = (attrs: list<string>, children: list<string>) =>
+    Paired->render("label", attrs, children)
+  let legend = (attrs: list<string>, children: list<string>) =>
+    Paired->render("legend", attrs, children)
   let li = (attrs: list<string>, children: list<string>) => Paired->render("li", attrs, children)
-  let link = (attrs: list<string>, children: list<string>) => Single->render("link", attrs, children)
-  let main = (attrs: list<string>, children: list<string>) => Paired->render("main", attrs, children)
+  let link = (attrs: list<string>, children: list<string>) =>
+    Single->render("link", attrs, children)
+  let main = (attrs: list<string>, children: list<string>) =>
+    Paired->render("main", attrs, children)
   let map = (attrs: list<string>, children: list<string>) => Paired->render("map", attrs, children)
-  let mark = (attrs: list<string>, children: list<string>) => Paired->render("mark", attrs, children)
-  let menu = (attrs: list<string>, children: list<string>) => Paired->render("menu", attrs, children)
+  let mark = (attrs: list<string>, children: list<string>) =>
+    Paired->render("mark", attrs, children)
+  let menu = (attrs: list<string>, children: list<string>) =>
+    Paired->render("menu", attrs, children)
   let menuItem = (attrs: list<string>, children: list<string>) =>
     Paired->render("menuItem", attrs, children)
-  let meta = (attrs: list<string>, children: list<string>) => Single->render("meta", attrs, children)
-  let meter = (attrs: list<string>, children: list<string>) => Paired->render("meter", attrs, children)
+  let meta = (attrs: list<string>, children: list<string>) =>
+    Single->render("meta", attrs, children)
+  let meter = (attrs: list<string>, children: list<string>) =>
+    Paired->render("meter", attrs, children)
   let nav = (attrs: list<string>, children: list<string>) => Paired->render("nav", attrs, children)
   let noscript = (attrs: list<string>, children: list<string>) =>
     Paired->render("noscript", attrs, children)
   // object is a reserved keyword
-  let object_ = (attrs: list<string>, children: list<string>) => Paired->render("object", attrs, children)
+  let object_ = (attrs: list<string>, children: list<string>) =>
+    Paired->render("object", attrs, children)
   let ol = (attrs: list<string>, children: list<string>) => Paired->render("ol", attrs, children)
   let optgroup = (attrs: list<string>, children: list<string>) =>
     Paired->render("optgroup", attrs, children)
   let p = (attrs: list<string>, children: list<string>) => Paired->render("p", attrs, children)
-  let param = (attrs: list<string>, children: list<string>) => Paired->render("param", attrs, children)
+  let param = (attrs: list<string>, children: list<string>) =>
+    Paired->render("param", attrs, children)
   let pre = (attrs: list<string>, children: list<string>) => Paired->render("pre", attrs, children)
   let q = (attrs: list<string>, children: list<string>) => Paired->render("q", attrs, children)
   let rp = (attrs: list<string>, children: list<string>) => Paired->render("rp", attrs, children)
   let rt = (attrs: list<string>, children: list<string>) => Paired->render("rt", attrs, children)
-  let ruby = (attrs: list<string>, children: list<string>) => Paired->render("ruby", attrs, children)
-  let samp = (attrs: list<string>, children: list<string>) => Paired->render("samp", attrs, children)
+  let ruby = (attrs: list<string>, children: list<string>) =>
+    Paired->render("ruby", attrs, children)
+  let samp = (attrs: list<string>, children: list<string>) =>
+    Paired->render("samp", attrs, children)
   // escape runtime
-  let script = (attrs: list<string>, children: list<string>) => Paired->render("script", attrs, children)
-  let section = (attrs: list<string>, children: list<string>) => Paired->render("section", attrs, children)
-  let select = (attrs: list<string>, children: list<string>) => Paired->render("select", attrs, children)
-  let small = (attrs: list<string>, children: list<string>) => Paired->render("small", attrs, children)
-  let source = (attrs: list<string>, children: list<string>) => Paired->render("source", attrs, children)
-  let span = (attrs: list<string>, children: list<string>) => Paired->render("span", attrs, children)
-  let strong = (attrs: list<string>, children: list<string>) => Paired->render("strong", attrs, children)
-  let style = (attrs: list<string>, children: list<string>) => Paired->render("style", attrs, children)
+  let script = (attrs: list<string>, children: list<string>) =>
+    Paired->render("script", attrs, children)
+  let section = (attrs: list<string>, children: list<string>) =>
+    Paired->render("section", attrs, children)
+  let select = (attrs: list<string>, children: list<string>) =>
+    Paired->render("select", attrs, children)
+  let small = (attrs: list<string>, children: list<string>) =>
+    Paired->render("small", attrs, children)
+  let source = (attrs: list<string>, children: list<string>) =>
+    Paired->render("source", attrs, children)
+  let span = (attrs: list<string>, children: list<string>) =>
+    Paired->render("span", attrs, children)
+  let strong = (attrs: list<string>, children: list<string>) =>
+    Paired->render("strong", attrs, children)
+  let style = (attrs: list<string>, children: list<string>) =>
+    Paired->render("style", attrs, children)
   let sub = (attrs: list<string>, children: list<string>) => Paired->render("sub", attrs, children)
-  let summary = (attrs: list<string>, children: list<string>) => Paired->render("summary", attrs, children)
+  let summary = (attrs: list<string>, children: list<string>) =>
+    Paired->render("summary", attrs, children)
   let sup = (attrs: list<string>, children: list<string>) => Paired->render("sup", attrs, children)
-  let table = (attrs: list<string>, children: list<string>) => Paired->render("table", attrs, children)
-  let tbody = (attrs: list<string>, children: list<string>) => Paired->render("tbody", attrs, children)
+  let table = (attrs: list<string>, children: list<string>) =>
+    Paired->render("table", attrs, children)
+  let tbody = (attrs: list<string>, children: list<string>) =>
+    Paired->render("tbody", attrs, children)
   let td = (attrs: list<string>, children: list<string>) => Paired->render("td", attrs, children)
   let textarea = (attrs: list<string>, children: list<string>) =>
     Paired->render("textarea", attrs, children)
-  let tfoot = (attrs: list<string>, children: list<string>) => Paired->render("tfoot", attrs, children)
+  let tfoot = (attrs: list<string>, children: list<string>) =>
+    Paired->render("tfoot", attrs, children)
   let th = (attrs: list<string>, children: list<string>) => Paired->render("th", attrs, children)
-  let thead = (attrs: list<string>, children: list<string>) => Paired->render("thead", attrs, children)
-  let time = (attrs: list<string>, children: list<string>) => Paired->render("time", attrs, children)
-  let title = (attrs: list<string>, children: list<string>) => Paired->render("title", attrs, children)
+  let thead = (attrs: list<string>, children: list<string>) =>
+    Paired->render("thead", attrs, children)
+  let time = (attrs: list<string>, children: list<string>) =>
+    Paired->render("time", attrs, children)
+  let title = (attrs: list<string>, children: list<string>) =>
+    Paired->render("title", attrs, children)
   let tr = (attrs: list<string>, children: list<string>) => Paired->render("tr", attrs, children)
-  let track = (attrs: list<string>, children: list<string>) => Paired->render("track", attrs, children)
+  let track = (attrs: list<string>, children: list<string>) =>
+    Paired->render("track", attrs, children)
   let u = (attrs: list<string>, children: list<string>) => Paired->render("u", attrs, children)
   let var = (attrs: list<string>, children: list<string>) => Paired->render("var", attrs, children)
-  let video = (attrs: list<string>, children: list<string>) => Paired->render("video", attrs, children)
+  let video = (attrs: list<string>, children: list<string>) =>
+    Paired->render("video", attrs, children)
   let wbr = (attrs: list<string>, children: list<string>) => Paired->render("wbr", attrs, children)
 }

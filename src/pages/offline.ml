@@ -1,32 +1,7 @@
 module H = Mana.HTML
 module P = Mana.Property
 
-let styles = "
-* {
-  margin: 0;
-  padding: 0;
-}
-
-section {
-  align-items: center;
-  background: #000;
-  box-sizing: border-box;
-  color: #fff;
-  cursor: default;
-  display: flex;
-  font-family: 'Arial';
-  font-size: 1.6rem;
-  height: 100%;
-  justify-content: center;
-  left: 0;
-  padding: 4rem;
-  position: fixed;
-  text-align: center;
-  top: 0;
-  width: 100%;
-  z-index: 4;
-}"
-
+let styles = Mana.Extra.inject("src/assets/css/offline.css")
 let head =
   H.head [
   ] [
