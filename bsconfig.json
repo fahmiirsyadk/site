@@ -15,7 +15,7 @@
     "module": "es6-global",
     "in-source": true
   },
-  "suffix": ".bs.js",
+  "suffix": ".mjs",
   "namespace": "site",
   "bs-dependencies": [],
   "warnings": {

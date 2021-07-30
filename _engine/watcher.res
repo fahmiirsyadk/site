@@ -29,7 +29,7 @@ let run = () => {
   Js.log("Ready for changes")
   let target = ["src/components", "src/pages", "src/posts", "src/assets", "src/layouts"]
   let config = {
-    ignored: %re("/^.*\.(bs.js)$/ig")
+    ignored: %re("/^.*\.(mjs)$/ig")
       , persistent: true
       , ignoreInitial: true
   }

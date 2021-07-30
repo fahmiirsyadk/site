@@ -12,6 +12,6 @@ node_modules/
 .merlin
 lib/
 .merlin
-*.bs.js
+*.mjs
 dist/
 .vscode

@@ -18,7 +18,6 @@ let outputDir = (dir: string) => dir->normalizePath
 let cleanDir = (path: string) => path->Extra.emptyDirSync
 
 let globPath = (path: array<string>) => {
-  Js.log(path->Path.join)
   path->Path.join->Utils.glob
 }
 
@@ -58,13 +57,13 @@ let processMetadata: array<metadata> = Js.Array2.map(getPosts, path => {
 
 let generatePosts = () => {
   Js.Array2.forEach(processMetadata, meta => {
-    let post = Path.join([rootPath, "src", "pages", "blogpost" ++ ".bs.js"])->importManaFile(meta)
+    let post = Path.join([rootPath, "src", "pages", "blogpost" ++ ".mjs"])->importManaFile(meta)
     Path.join([rootPath, "dist", meta.url, "index.html"])->Extra.outputFileSync(post)
   })
 }
 
 let generatePage = (meta, path, basename) => {
-  Path.join([rootPath, "src", "pages", basename ++ ".bs.js"])
+  Path.join([rootPath, "src", "pages", basename ++ ".mjs"])
   ->Path.normalize
   ->importManaFile(meta)
   ->Extra.outputFileSync(Path.join([rootPath, "dist", path]), _)

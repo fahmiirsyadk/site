@@ -15,7 +15,7 @@ type vfile = {
   contents: string
 }
 
-@module("fast-glob") external glob: string => array<string> = "sync"
+@module("globby") external glob: string => array<string> = "globbySync"
 
 /* binding NodeJS */
 module NodeJS = {
