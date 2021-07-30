@@ -19,7 +19,7 @@
     "reorg-parse": "2.3.16",
     "reorg-rehype": "2.3.16",
     "rescript": "9.1.4",
-    "unified": "9.2.2"
+    "unified": "10.1.0"
   },
   "scripts": {
     "build": "rescript build -with-deps",
