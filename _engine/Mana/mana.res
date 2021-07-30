@@ -24,11 +24,6 @@ module Extra = {
 }
 
 module Property = {
-  let custom_attr = (attrName: string, attrVal: Mana_types.customValAttrType) =>
-    switch attrVal {
-    | Bool(x) => attrName->boolAttr(x)
-    | String(x) => attrName->textAttr(x)
-    }
   type nameAttrs =
     | Keyword
     | Description
@@ -37,6 +32,19 @@ module Property = {
     | ApplicationName
     | Generator
     | ThemeColor
+  
+  %%private(
+    let nameAttrsToString = (attr) => 
+      switch attr {
+            | Keyword => "keyword"
+            | Description => "description"
+            | Author => "author"
+            | Viewport => "viewport"
+            | ApplicationName => "application-name"
+            | Generator => "generator"
+            | ThemeColor => "theme-color"
+            }
+  )
   let title = (prop: string) => "title"->textAttr(prop)
   let selected = (prop: bool) => "selected"->boolAttr(prop)
   let hidden = (prop: bool) => "hidden"->boolAttr(prop)
@@ -110,18 +118,7 @@ module Property = {
   let lang = (prop: string) => "lang"->textAttr(prop)
   let scoped = (prop: string) => "scoped"->textAttr(prop)
   let type_ = (prop: string) => "type"->textAttr(prop)
-  let name = (prop: nameAttrs): string =>
-    "name"->textAttr(
-      switch prop {
-      | Keyword => "keyword"
-      | Description => "description"
-      | Author => "author"
-      | Viewport => "viewport"
-      | ApplicationName => "application-name"
-      | Generator => "generator"
-      | ThemeColor => "theme-color"
-      },
-    )
+  let name = (prop: nameAttrs): string => "name"->textAttr(prop->nameAttrsToString)
   let href = (prop: string) => "href"->textAttr(prop)
   let id = (prop: string) => "id"->textAttr(prop)
   let placeholder = (prop: string) => "placeholder"->textAttr(prop)
