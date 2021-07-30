@@ -17,16 +17,6 @@ type vfile = {
 
 @module("fast-glob") external glob: string => array<string> = "sync"
 
-/* binding NodeJS */
-module NodeJS = {
-  module Process = {
-    type t
-    @module external process: t = "process"
-    @send external cwd: t => string = "cwd"
-  }
-}
-/* end of binding */
-
 module Fs_Extra = {
   @module("fs-extra") external removeSync: string => unit = "removeSync"
   @module("fs-extra") external readFileSync: (string, string) => string = "readFileSync"

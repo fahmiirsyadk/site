@@ -1,11 +1,11 @@
-open Mana_core.Core
+open Mana_core
 open Utils
 
 module Extra = {
   let inject = (path: string) =>
     Fs_Extra.readFileSync(
       Node.Path.join([
-        NodeJS.Process.cwd(NodeJS.Process.process),
+        Node.Process.cwd(),
         path->Js.String2.split(Node.Path.sep)->Node.Path.join,
       ])->Node.Path.normalize,
       "utf-8",

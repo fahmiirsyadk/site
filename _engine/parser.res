@@ -1,7 +1,7 @@
 open Utils.Org
 module Path = Node.Path
 module Extra = Utils.Fs_Extra
-module Process = Utils.NodeJS.Process
+module Process = Node.Process
 
 type metadata = {
   filename: string,
@@ -10,7 +10,7 @@ type metadata = {
   matter: Utils.propertiesAst,
 }
 
-let rootPath = Process.process->Process.cwd
+let rootPath = Process.cwd()
 
 let normalizePath = (path: string) => path->Path.join2(rootPath)->Path.normalize
 
