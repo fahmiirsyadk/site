@@ -26,11 +26,8 @@
     "start": "rescript build -w -with-deps",
     "minify-css": "postcss src/assets/css/style.css > src/assets/css/style.min.css",
     "clean": "rescript clean",
-    "compile": "node ./_engine/cli/cli.mjs build",
-    "watch": "npm run compile && node ./_engine/cli/cli.mjs watch",
+    "compile": "node ./_engine/cli/cli.bs.js build",
+    "watch": "npm run compile && node ./_engine/cli/cli.bs.js watch",
     "export": "npm run build && npm run minify-css && npm run compile"
-  },
-  "dependencies": {
-    "globby": "^12.0.0"
   }
 }

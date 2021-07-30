@@ -12,10 +12,10 @@
     }
   ],
   "package-specs": {
-    "module": "es6-global",
+    "module": "commonjs",
     "in-source": true
   },
-  "suffix": ".mjs",
+  "suffix": ".bs.js",
   "namespace": "site",
   "bs-dependencies": [],
   "warnings": {
