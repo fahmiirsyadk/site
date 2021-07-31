@@ -17,9 +17,9 @@ let hero =
   H.div [ P.class_ "hero-container"] [
     H.div [ P.class_ "hero-content"] [
       H.div [ P.class_ "hero-content__title"] [
-        H.span [] (H.text "Push The&nbsp;");
-        H.span [ P.style "color: #FFE7CA;" ] [ 
-          H.i [] (H.text "Boundary")
+        H.div [] [
+          H.p [] (H.text "Push the&nbsp;");
+          H.p [ P.style "color: #FFE7CA; font-size: 9.25vw"] [ H.i [] (H.text "Boundaries")];
         ];
       ];
       (* H.div [ P.class_ "hero-content__footprint" ] [
