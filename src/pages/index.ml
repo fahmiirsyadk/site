@@ -28,7 +28,7 @@ let hero =
       ]; *)
       H.div [ P.class_ "hero-content__image"] [
         H.div [ P.class_ "hero-content__borderline" ] [];
-        H.pre [] (H.text AppConfig.SEO.ascii)
+        H.pre [] (H.text AppConfig.Data.ascii)
       ];
     ]
   ]
