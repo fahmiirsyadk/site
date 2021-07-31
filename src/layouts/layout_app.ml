@@ -32,8 +32,6 @@ let layout head section =
 let layout_index head section =
   H.html [ P.lang "en" ] (
     head ::
-    H.body []
-      [ H.div [ P.class_ "container" ] [ 
-         section
-        ]
-      ] :: script)
+    H.body [] [
+      section
+    ] :: script)

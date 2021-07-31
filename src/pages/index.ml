@@ -16,24 +16,42 @@ let listPost posts =
 let hero = 
   H.div [ P.class_ "hero-container"] [
     H.div [ P.class_ "hero-content"] [
-      H.img [] [];
-      H.div [ P.class_ "hero-content__borderline" ] [];
       H.div [ P.class_ "hero-content__title"] [
-        H.span [] (H.text "Push The Boundary");
-        H.span [ P.class_ "title-overlay"] (H.text "&");
-        H.span [] (H.text "Living Edge");
+        H.span [] (H.text "Push The&nbsp;");
+        H.span [ P.style "color: #FFE7CA;" ] [ 
+          H.i [] (H.text "Boundary")
+        ];
       ];
-      H.div [ P.class_ "hero-content__footprint" ] [
+      (* H.div [ P.class_ "hero-content__footprint" ] [
         H.p [] (H.text "Frontend Developer");
         H.p [] (H.text "Based in Banyuwangi, Indonesia");
+      ]; *)
+      H.div [ P.class_ "hero-content__image"] [
+        H.div [ P.class_ "hero-content__borderline" ] [];
+        H.pre [] (H.text AppConfig.SEO.ascii)
       ];
     ]
   ]
+
+let headerNav = 
+  H.nav [ P.class_ "navbar" ] [
+    H.div [ P.class_ "navbar__logo"] (H.text AppConfig.SEO.title);
+    H.ul [ P.class_ "navbar__menu"] [
+      H.li [] (H.text "Blog");
+      H.li [] (H.text "Project");
+      H.li [] (H.text "About");
+    ];
+    H.div [ P.class_ "navbar__toggle" ] [
+      H.div [] (H.text "button_toggle")
+    ];
+  ]
+
 let body posts =
-  H.section [] [
-    H.div [ P.class_ "hero-container" ] [
+  H.div [] [
+    headerNav;
+    H.section [ P.class_ "container" ] [
       hero;
-      H.div [] (listPost posts);
+      (* H.div [] (listPost posts); *)
     ]
   ]
 

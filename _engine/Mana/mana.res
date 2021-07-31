@@ -240,6 +240,7 @@ module HTML = {
   // object is a reserved keyword
   let object_ = (attrs: list<string>, children: list<string>) =>
     Paired->render("object", attrs, children)
+  let ul = (attrs: list<string>, children: list<string>) => Paired->render("ul", attrs, children)
   let ol = (attrs: list<string>, children: list<string>) => Paired->render("ol", attrs, children)
   let optgroup = (attrs: list<string>, children: list<string>) =>
     Paired->render("optgroup", attrs, children)
