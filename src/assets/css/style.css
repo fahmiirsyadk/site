@@ -122,14 +122,14 @@ html[data-theme='sky'] {
   --red-circle: radial-gradient(50% 50% at 50% 50%, rgba(255, 0, 0, 0.41) 0%, rgba(255, 122, 0, 0) 100%);
 }
 
-html[data-theme='earth'] {
+/* html[data-theme='earth'] {
   --background-color: #FFE7CA;
   --primary-text-color: #0B0C11;
   --secondary-text-color: rgba(11, 12, 17, 45%);
   --border-divider-color: 2px solid rgba(28, 27, 27, 0.08);
   --link-color: #0B0C11;
   --red-circle: radial-gradient(50% 50% at 50% 50%, rgba(255, 0, 0, 0.41) 0%, rgba(255, 122, 0, 0) 100%);
-}
+} */
 
 html[data-theme='space'] {
   /* --background-color: #0B0C11; */
@@ -195,31 +195,43 @@ a:hover {
 }
 
 .hero-content__title {
-  position: fixed;
+  /* position: fixed; */
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  /* height: 100vh; */
   z-index: 2;
-  top: 0;
+  /* top: 0; */
 }
 
-.hero-content__title div {
-  margin-top: 100px;
+.hero-content__title .title-wrapper {
+  margin-top: 200px;
 }
-.hero-content__title p {
+
+.hero-content__title p, span:first-child {
   font-family: "EditorialNew";
   font-size: 6.25vw;
   transform: translate(0px, 0px);
   will-change: transform,opacity;
-  line-height: 1.4;
+  line-height: 1.2;
+}
+
+
+.hero-content__footprint {
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  width: 100%;
+  margin-left: 2em;
+  max-width: 262px;
 }
 
 .hero-content__image {
   overflow: hidden;
   position: fixed;
   width: 100%;
+  z-index: -1;
   bottom: 0;
 }
 

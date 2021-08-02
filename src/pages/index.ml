@@ -17,15 +17,15 @@ let hero =
   H.div [ P.class_ "hero-container"] [
     H.div [ P.class_ "hero-content"] [
       H.div [ P.class_ "hero-content__title"] [
-        H.div [] [
-          H.p [] (H.text "Push the&nbsp;");
+        H.div [ P.class_ "title-wrapper" ] [
+        H.div [ P.style "display: flex;"] [
+          H.span [] (H.text "Push the&nbsp;"); 
+          H.span [ P.class_ "hero-content__footprint" ]
+            (H.text "Fahmi is Front-end developer Based in Banyuwangi, Indonesia");
+        ]; 
           H.p [ P.style "color: #FFE7CA; font-size: 9.25vw"] [ H.i [] (H.text "Boundaries")];
         ];
       ];
-      (* H.div [ P.class_ "hero-content__footprint" ] [
-        H.p [] (H.text "Frontend Developer");
-        H.p [] (H.text "Based in Banyuwangi, Indonesia");
-      ]; *)
       H.div [ P.class_ "hero-content__image"] [
         H.div [ P.class_ "hero-content__borderline" ] [];
         H.pre [] (H.text AppConfig.Data.ascii)
@@ -51,7 +51,7 @@ let body posts =
     headerNav;
     H.section [ P.class_ "container" ] [
       hero;
-      (* H.div [] (listPost posts); *)
+      H.div [] (listPost posts);
     ]
   ]
 

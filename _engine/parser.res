@@ -29,12 +29,22 @@ let orgToHtml = (path: string): Utils.vfile =>
 
 let getMatterData = (path: string) => parseOrga(path)
 
-let importManaFile = %raw(`
+let importManaFileRawInternal = %raw(`
   function(path, props) {
     let data = require(path);
-    return data.main(props);
+    const status = data.main ? true : false
+    if (status) {
+      return { status, data: data.main(props) }
+    } else {
+      return { status, data: "" }
+    }
   }
 `)
+
+type importManaFile = { status: bool, data: string }
+let importManaFile = (path, meta): importManaFile => {
+  importManaFileRawInternal(path, meta)
+}
 
 let metadataPost = (content, matter, path) => {
   let pathNoExt = path->Path.basename_ext(".org")
@@ -57,16 +67,21 @@ let processMetadata: array<metadata> = Js.Array2.map(getPosts, path => {
 
 let generatePosts = () => {
   Js.Array2.forEach(processMetadata, meta => {
-    let post = Path.join([rootPath, "src", "pages", "blogpost" ++ ".bs.js"])->importManaFile(meta)
-    Path.join([rootPath, "dist", meta.url, "index.html"])->Extra.outputFileSync(post)
+    let filePost = Path.join([rootPath, "src", "pages", "blogpost" ++ ".bs.js"])->importManaFile(meta)
+    switch filePost.status {
+    | false => "Error found when generating post"->Js.log
+    | true => Path.join([rootPath, "dist", meta.url, "index.html"])->Extra.outputFileSync(filePost.data)
+    }
   })
 }
 
 let generatePage = (meta, path, basename) => {
-  Path.join([rootPath, "src", "pages", basename ++ ".bs.js"])
-  ->Path.normalize
-  ->importManaFile(meta)
-  ->Extra.outputFileSync(Path.join([rootPath, "dist", path]), _)
+  let filePage = Path.join([rootPath, "src", "pages", basename ++ ".bs.js"])->Path.normalize->importManaFile(meta)
+
+  switch filePage.status {
+  | false => Errors.noMainFunctionDeclared(`${basename}.ml`)
+  | true => Extra.outputFileSync(Path.join([rootPath, "dist", path]), filePage.data)
+  }
 }
 
 /* Hardcode copy assets ( fonts, images ) to dist */
@@ -101,7 +116,7 @@ let compressCss = () => {
     2. Do parallel async readFile css files
     3. Process css string with postcss using Promises.All
     4. Output ( copy them ) to the dist folder
-  */
+ */
 }
 
 let run = () => {

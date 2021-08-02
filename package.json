@@ -11,6 +11,7 @@
     "date-fns": "2.23.0",
     "fast-glob": "3.2.7",
     "fs-extra": "10.0.0",
+    "kleur": "^4.1.4",
     "live-server": "1.2.1",
     "orga": "2.4.9",
     "postcss": "8.3.5",
