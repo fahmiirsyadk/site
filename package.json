@@ -13,7 +13,7 @@
     "fs-extra": "10.0.0",
     "kleur": "^4.1.4",
     "live-server": "1.2.1",
-    "orga": "2.4.9",
+    "orga": "2.6.0",
     "postcss": "8.3.5",
     "postcss-cli": "8.3.1",
     "rehype-stringify": "8.0.0",
