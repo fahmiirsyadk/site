@@ -1,34 +1,18 @@
 {
   "name": "site",
-  "version": "1.0.1",
-  "main": "index.js",
+  "version": "1.0.2",
   "repository": "https://github.com/fahmiirsyadk/site",
   "author": "fahmiirsyadk <fahmiirsyad10@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "chokidar": "3.5.2",
-    "cssnano": "5.0.6",
-    "date-fns": "2.23.0",
-    "fast-glob": "3.2.7",
-    "fs-extra": "10.0.0",
-    "kleur": "^4.1.4",
-    "live-server": "1.2.1",
-    "orga": "2.4.9",
-    "postcss": "8.3.5",
-    "postcss-cli": "8.3.1",
-    "rehype-stringify": "8.0.0",
-    "reorg-parse": "2.3.16",
-    "reorg-rehype": "2.3.16",
-    "rescript": "9.1.4",
-    "unified": "9.2.2"
+    "@fahmiirsyadk/dust": "^0.0.2",
+    "rescript": "^9.1.4"
   },
   "scripts": {
-    "build": "rescript build -with-deps",
-    "start": "rescript build -w -with-deps",
-    "minify-css": "postcss src/assets/css/style.css > src/assets/css/style.min.css",
-    "clean": "rescript clean",
-    "compile": "node ./_engine/cli/cli.bs.js build",
-    "watch": "npm run compile && node ./_engine/cli/cli.bs.js watch",
-    "export": "npm run build && npm run minify-css && npm run compile"
+    "re:dev": "rescript build -w",
+    "re:build": "rescript build",
+    "re:clean": "rescript clean",
+    "start": "npx dust w",
+    "export": "yarn re:build && npx dust"
   }
 }

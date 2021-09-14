@@ -1,8 +1,0 @@
-#+title: Ocaml as template engine
-#+date: 2021-02-01
-
-* Its look cool tho
-
-** Test again if this work
-** Test again this time
-** Tesssst
