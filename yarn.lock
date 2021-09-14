@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@fahmiirsyadk/dust@^0.0.2":
+"@fahmiirsyadk/dust@0.0.2":
   version "0.0.2"
   resolved "https://registry.yarnpkg.com/@fahmiirsyadk/dust/-/dust-0.0.2.tgz#4d9659760540c4f20c75a921a2e24c00c32cb7eb"
   integrity sha512-kCKc1L5hY9t5054om9qk6I472tG0dw7xyWY9+ymUVB7apK+UZqL2a7X1a4RjrQTZIIAaBXjxfuqRZImrN8tMOQ==
@@ -1993,7 +1993,7 @@ repeat-string@^1.6.1:
   resolved "https://registry.yarnpkg.com/repeat-string/-/repeat-string-1.6.1.tgz#8dcae470e1c88abc2d600fff4a776286da75e637"
   integrity sha1-jcrkcOHIirwtYA//Sndihtp15jc=
 
-rescript@^9.1.4:
+rescript@9.1.4, rescript@^9.1.4:
   version "9.1.4"
   resolved "https://registry.yarnpkg.com/rescript/-/rescript-9.1.4.tgz#1eb126f98d6c16942c0bf0df67c050198e580515"
   integrity sha512-aXANK4IqecJzdnDpJUsU6pxMViCR5ogAxzuqS0mOr8TloMnzAjJFu63fjD6LCkWrKAhlMkFFzQvVQYaAaVkFXw==
