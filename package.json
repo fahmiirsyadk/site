@@ -12,14 +12,16 @@
     "re:dev": "rescript build -w",
     "re:build": "rescript build",
     "re:clean": "rescript clean",
-    "css:dev": "postcss src/public/assets/css/tailwind.css -o src/public/assets/css/styles.css",
+    "css:dev": "postcss src/public/assets/css/tailwind.css -o dist/assets/css/styles.css",
     "dust:dev": "npx dust w",
     "dust:build": "npx dust",
     "dev": "yarn css:dev && yarn dust:dev",
-    "export": "yarn re:build && yarn css:dev && yarn dust:build"
+    "export": "export NODE_ENV=production && yarn re:build && yarn dust:build && yarn css:dev"
   },
   "dependencies": {
+    "@fullhuman/postcss-purgecss": "^4.0.3",
     "autoprefixer": "10.3.7",
+    "cssnano": "^5.0.8",
     "postcss": "8.3.9",
     "postcss-cli": "9.0.1",
     "tailwindcss": "2.2.16"
