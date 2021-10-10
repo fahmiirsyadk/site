@@ -14,8 +14,9 @@
     "re:clean": "rescript clean",
     "css:dev": "postcss src/public/assets/css/tailwind.css -o src/public/assets/css/styles.css",
     "dust:dev": "npx dust w",
+    "dust:build": "npx dust",
     "dev": "yarn css:dev && yarn dust:dev",
-    "export": "yarn re:build && npx dust"
+    "export": "yarn re:build && yarn css:dev && yarn dust:build"
   },
   "dependencies": {
     "autoprefixer": "^10.3.7",
