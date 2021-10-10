@@ -1,0 +1,4 @@
+collections:
+  blog:
+    layout: layout_blog
+    source: src/posts

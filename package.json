@@ -5,14 +5,22 @@
   "author": "fahmiirsyadk <fahmiirsyad10@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "@fahmiirsyadk/dust": "0.0.2",
+    "@fahmiirsyadk/dust": "0.1.4",
     "rescript": "9.1.4"
   },
   "scripts": {
     "re:dev": "rescript build -w",
     "re:build": "rescript build",
     "re:clean": "rescript clean",
-    "start": "npx dust w",
+    "css:dev": "postcss src/public/assets/css/tailwind.css -o src/public/assets/css/styles.css",
+    "dust:dev": "npx dust w",
+    "dev": "yarn css:dev && yarn dust:dev",
     "export": "yarn re:build && npx dust"
+  },
+  "dependencies": {
+    "autoprefixer": "^10.3.7",
+    "postcss": "^8.3.9",
+    "postcss-cli": "^9.0.1",
+    "tailwindcss": "^2.2.16"
   }
 }
