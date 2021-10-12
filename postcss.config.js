@@ -8,9 +8,9 @@ module.exports = {
     process.env.NODE_ENV === 'production'
       ? cssnano({ preset: 'default' })
       : null,
-    purgecss({
+    process.env.NODE_ENV === 'production' ? purgecss({
       content: ['./dist/**/*.html'],
       defaultExtractor: content => content.match(/[\w-/:]+(?<!:)/g) || []
-    })
+    }) : null
   ]
 }
