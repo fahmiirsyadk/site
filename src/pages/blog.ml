@@ -15,17 +15,20 @@ type blog =
 
 type posts = { blog : blog array }
 
-let listPost posts =
-  posts
-  |. Belt.Array.map (fun post ->
-         H.div [] [ H.a [ A.href post.url ] [ H.h1 [] (H.text post.data.title) ] ])
-  |> Array.to_list
-;;
-
-let main (posts : posts) =
-  H.html
-    []
-    [ Seo.head ()
-    ; H.body [] [ H.p [] (H.text "blog test"); H.div [] (listPost posts.blog) ]
+let listPost blog =
+  blog |. Belt.List.map (fun post ->
+    H.div [] [
+      H.a [] [ A.href post.url ]
+      ; H.h1 [] (H.text post.data.title)
     ]
-;;
+  )
+
+let main posts =
+  let blog = posts.blog |> Array.to_list in
+  H.html [] [
+    Seo.head ~children: "" ()
+    ; H.body [] [
+        H.p [] (H.text "Blog posts")
+        ; H.div [] (listPost blog)
+    ]
+  ]
