@@ -5,7 +5,7 @@
   "author": "fahmiirsyadk <fahmiirsyad10@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "@fahmiirsyadk/dust": "0.1.7",
+    "@fahmiirsyadk/dust": "0.1.8-patch.1",
     "rescript": "9.1.4"
   },
   "scripts": {
