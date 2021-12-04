@@ -1,3 +1,6 @@
+dust:
+  openBrowser: false
+
 collections:
   blog:
     layout: layout_blog

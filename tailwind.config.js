@@ -1,10 +1,17 @@
+const { fontFamily } = require('tailwindcss/defaultTheme');
+
 module.exports = {
-  purge: [
-    './dist/**/*.html'
-  ],
+  purge: {
+    content: ['./dist/**/*.html']
+  },
   darkMode: false, // or 'media' or 'class'
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        'sans': ['Inter Var', 'sans-serif'],
+        'swear': ['Swear Banner', ...fontFamily.serif ],
+      },
+    },
   },
   variants: {
     extend: {},

@@ -1,3 +1,23 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@layer base {
+    @font-face {
+        font-family: 'Swear Banner';
+        font-style: normal;
+        font-weight: bold;
+        src: local('Swear'),
+            url(/assets/fonts/SwearBanner-Bold.otf) format('opentype');
+        font-display: swap; 
+    }
+
+    @font-face {
+        font-family: 'Inter Var';
+        font-style: normal;
+        font-weight: 200 700;
+        src: local('Inter Var'),
+            url(/assets/fonts/Inter.ttf) format('truetype');
+        font-display: swap; 
+    }
+}
