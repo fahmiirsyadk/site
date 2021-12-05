@@ -13,6 +13,24 @@
     }
 
     @font-face {
+        font-family: 'Swear Banner';
+        font-style: italic;
+        font-weight: bold;
+        src: local('Swear'),
+            url(/assets/fonts/SwearBanner-BoldItalic.otf) format('opentype');
+        font-display: swap; 
+    }
+
+    @font-face {
+        font-family: 'Swear Banner';
+        font-style: italic;
+        font-weight: 500;
+        src: local('Swear'),
+            url(/assets/fonts/SwearBanner-MediumItalic.otf) format('opentype');
+        font-display: swap; 
+    }
+
+    @font-face {
         font-family: 'Inter Var';
         font-style: normal;
         font-weight: 200 700;
