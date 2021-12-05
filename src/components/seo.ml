@@ -8,8 +8,6 @@ let description = "FAHMIIRSYADK is a personal/blog website authored by fahmi irs
 let as_type = A.custom_attr("as")
 let cross_origin = A.custom_attr("crossOrigin")
 
-let combine_elem elem list =
-  list |. Belt.List.reduce "" (fun a b -> let (k, v) = b in a ^ elem k v)
 (** 
   * just showing loop
   * same result as
@@ -18,20 +16,19 @@ let combine_elem elem list =
     ; H.meta [ A.name "title"; A.content title] []
     ; H.meta [ A.name "description"; A.content description] []
 *)
-
 let meta_info = [
     ("generator", {j|Dust $version|j})
   ; ("author", "fahmi irsyad khairi")
   ; ("description", description)
   ; ("title", title)
-] |> combine_elem (fun a b -> H.meta [ A.name a; A.content b] [])
+] |> Utils.combine_elem (fun a b -> H.meta [ A.name a; A.content b] [])
 
 let font_links = [
     ("/assets/fonts/Inter.ttf", "font/ttf")
   ; ("/assets/fonts/SwearBanner-Bold.otf", "font/otf")
   ; ("/assets/fonts/SwearBanner-Italic.otf", "font/otf")
   (* ; ("/assets/fonts/SwearBanner-MediumItalic.otf", "font/otf") *)
-] |> combine_elem (fun a b -> H.link [ A.rel_link `Preload; as_type "font"; A.href a; cross_origin "anonymous"; A.type_ b] [])
+] |> Utils.combine_elem (fun a b -> H.link [ A.rel_link `Preload; as_type "font"; A.href a; cross_origin "anonymous"; A.type_ b] [])
 
 let head ~children () = 
   H.head [] [

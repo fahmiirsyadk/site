@@ -1,4 +1,4 @@
-module H = Dust.Html.Elements
+(* module H = Dust.Html.Elements
 module A = Dust.Html.Attributes
 
 type matter = { title : string }
@@ -31,4 +31,4 @@ let main posts =
         H.p [] (H.text "Blog posts")
         ; H.div [] (listPost blog)
     ]
-  ]
+  ] *)
