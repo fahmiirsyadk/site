@@ -17,7 +17,9 @@
     "dust:dev": "dum dust w",
     "dust:build": "dum dust",
     "dev": "dum css:dev && dum dust:dev",
-    "export": "export NODE_ENV=production && dum re:build && yarn dust:build && yarn css:build"
+    "preexport": "curl -sSL https://bina.egoist.sh/egoist/dum | sh",
+    "export": "export NODE_ENV=production && dum re:build && yarn dust:build && yarn css:build",
+    "postexport": "dum re:clean"
   },
   "dependencies": {
     "@fullhuman/postcss-purgecss": "4.1.3",
