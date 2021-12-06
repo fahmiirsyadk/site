@@ -4,4 +4,7 @@ dust:
 collections:
   blog:
     layout: layout_blog
-    source: src/posts
+    source: posts/articles
+  projects:
+    layout: layout_blog
+    source: posts/projects

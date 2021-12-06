@@ -7,7 +7,7 @@ let desc = "Web developer / full-time frontend developer based in Indonesia, pas
 (** ARTICLES BLOG LISTS *)
 type matter = { title : string }
 
-type blog =
+type metadata =
   { name : string
   ; layout : string
   ; source : string
@@ -17,7 +17,7 @@ type blog =
   ; content : string
   }
 
-type posts = { blog : blog array }
+type posts = { blog : metadata array; projects : metadata array }
 
 let articleLinks list = list |. Belt.List.map (fun post ->
   H.article [ A.class_ "mt-8"] [
@@ -28,13 +28,13 @@ let articleLinks list = list |. Belt.List.map (fun post ->
   ]
 )
 
-let sections id (data_list: blog list) =
+let sections id data_list =
   let emptyContents elem = 
     match data_list |> List.length with
     | 0 -> H.text "No post yet."
     | _ -> elem
   in
-  H.div [] [
+  H.div [ A.class_ "flex-1"] [
     H.h2 [ A.class_ "font-swear italic mb-4 font-medium text-gray-800 text-2xl"] (H.text id)
   ; H.div [] (emptyContents (articleLinks data_list))
   ]
@@ -51,12 +51,13 @@ let header =
 
 let main posts =
   let blog = posts.blog |> Utils.serializeCollection in
+  let projects = posts.projects |> Utils.serializeCollection in
   H.html [] [
     Seo.head ~children:"" ()
   ; H.body [] [
       H.main [ A.class_ "max-w-5xl mx-auto min-h-screen"] [
         header
-      ; H.section [ A.class_ "my-32 mx-64 flex justify-between"] (H.text ((sections "Articles" blog) ^ sections "Projects" []))
+      ; H.section [ A.class_ "my-32 mx-64 space-x-12 flex justify-between"] (H.text ((sections "Articles" blog) ^ sections "Projects" projects))
       ]
     ; Footer.elem
     ]
