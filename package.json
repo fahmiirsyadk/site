@@ -14,10 +14,10 @@
     "re:clean": "rescript clean",
     "css:build": "tailwindcss --postcss -i src/public/assets/css/tailwind.css -o dist/assets/css/styles.css",
     "css:dev": "tailwindcss --postcss -i src/public/assets/css/tailwind.css -o src/public/assets/css/styles.css",
-    "dust:dev": "npx dust w",
-    "dust:build": "npx dust",
-    "dev": "yarn css:dev && yarn dust:dev",
-    "export": "export NODE_ENV=production && yarn re:build && yarn dust:build && yarn css:build"
+    "dust:dev": "dum dust w",
+    "dust:build": "dum dust",
+    "dev": "dum css:dev && dum dust:dev",
+    "export": "export NODE_ENV=production && dum re:build && yarn dust:build && yarn css:build"
   },
   "dependencies": {
     "@fullhuman/postcss-purgecss": "4.1.3",
