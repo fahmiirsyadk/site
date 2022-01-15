@@ -18,7 +18,7 @@
     "dust:build": "npx dust",
     "dev": "yarn css:dev && yarn dust:dev",
     "export": "export NODE_ENV=production && yarn re:build && yarn dust:build && yarn css:build",
-    "ipfs:export": "yarn install && yarn export"
+    "ipfs:export": "yarn && yarn export",
     "postexport": "yarn re:clean"
   },
   "dependencies": {
