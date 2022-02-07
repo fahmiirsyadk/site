@@ -46,18 +46,19 @@ let header =
     ; Aria.ariaHidden "true"
     ] []
   ; H.h1 [ A.class_ "font-bold font-swear text-3xl mb-8 text-gray-900"] (H.text "Fahmi Irsyad Khairi")
-  ; H.p [ A.class_ "lg:px-64 md:px-64 xl:px-64 sm:px-24 text-gray-600 font-medium"] (H.text desc)
+  ; H.p [ A.class_ "px-32 sm:px-32 md:px-64 lg:px-64 text-gray-600 font-medium"] (H.text desc)
   ]
 
 let main posts =
-  let blog = posts.blog |> Utils.serializeCollection in
-  let projects = posts.projects |> Utils.serializeCollection in
+  let blog = posts.blog |> Array.to_list in
+  let projects = posts.projects |> Array.to_list in
   H.html [] [
     Seo.head ~children:"" ()
   ; H.body [] [
       H.main [ A.class_ "max-w-5xl mx-auto min-h-screen"] [
         header
-      ; H.section [ A.class_ "my-32 mx-64 space-x-12 flex justify-between"] (H.text ((sections "Articles" blog) ^ sections "Projects" projects))
+      ; H.section [ A.class_ "my-24 px-24 sm:px-24 md:px-56 lg:px-56 space-x-12 flex justify-between"] 
+          (H.text ((sections "Articles" blog) ^ (sections "Projects" projects) ^ (sections "Notes" [])))
       ]
     ; Footer.elem
     ]
