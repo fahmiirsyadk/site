@@ -1,6 +1,7 @@
 {
   "name": "Fahmiirsyadk",
   "short_name": "Fahmiirsyadk",
+  "description": "this is fine",
   "theme_color": "#FFF1E1",
   "background_color": "#FFF1E1",
   "display": "standalone",

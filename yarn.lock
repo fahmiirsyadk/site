@@ -23,10 +23,10 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@fahmiirsyadk/dust@0.2.2":
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/@fahmiirsyadk/dust/-/dust-0.2.2.tgz#416e59864a23708f0d0ec39d0747b010c01e66bc"
-  integrity sha512-CuWa2nHeDkxcmSfFI0pKaB+5Z7fsrm0xzGImfKuJb7dD5V8xg80YLKjaQVNajcKbhScKwuIQ2oK97QiIbD+gdQ==
+"@fahmiirsyadk/dust@^0.2.3-canary.1":
+  version "0.2.3-canary.1"
+  resolved "https://registry.yarnpkg.com/@fahmiirsyadk/dust/-/dust-0.2.3-canary.1.tgz#352629336c6de2b772d4bcc4b2726e45fe9047ec"
+  integrity sha512-ELeA2oH6Du1u+ZBNt1ar+ck/Bt6PrEMH3MIQ8ttC+njW0ce95bQps711d509UFj6sWyKnIKjvDUNliW1WKs0iA==
   dependencies:
     "@ryyppy/rescript-promise" "2.1.0"
     chokidar "3.5.3"

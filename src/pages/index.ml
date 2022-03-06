@@ -2,64 +2,56 @@ module H = Dust.Html.Elements
 module A = Dust.Html.Attributes
 module E = Dust.Html.Extra
 
-let desc = "Web developer / full-time frontend developer based in Indonesia, passionate about experiment with things, build solid & performant creative software."
-
-(** ARTICLES BLOG LISTS *)
-type matter = { title : string }
-
-type metadata =
-  { name : string
-  ; layout : string
-  ; source : string
-  ; data : matter
-  ; excerpt : string
-  ; url : string
-  ; content : string
-  }
-
-type posts = { blog : metadata array; projects : metadata array }
-
-let articleLinks list = list |. Belt.List.map (fun post ->
-  H.article [ A.class_ "mt-8"] [
-    H.h3 [ A.class_ "font-medium text-md"] [
-      H.a [ A.href post.url] (H.text post.data.title)
-    ]
-  ; H.p [] (H.text "excerpt coming soon")
-  ]
-)
-
-let sections id data_list =
-  let emptyContents elem = 
-    match data_list |> List.length with
-    | 0 -> H.text "No post yet."
-    | _ -> elem
-  in
-  H.div [ A.class_ "flex-1"] [
-    H.h2 [ A.class_ "font-swear italic mb-4 font-medium text-gray-800 text-2xl"] (H.text id)
-  ; H.div [] (emptyContents (articleLinks data_list))
-  ]
-
-let header =
-  H.header [ A.class_ "text-center"] [
-    H.div [
-      A.class_ "position-absolute left-0 top-0 w-100 h-64"
-    ; Aria.ariaHidden "true"
-    ] []
-  ; H.h1 [ A.class_ "font-bold font-swear text-3xl mb-8 text-gray-900"] (H.text "Fahmi Irsyad Khairi")
-  ; H.p [ A.class_ "px-32 sm:px-32 md:px-64 lg:px-64 text-gray-600 font-medium"] (H.text desc)
-  ]
-
-let main posts =
-  let blog = posts.blog |> Array.to_list in
-  let projects = posts.projects |> Array.to_list in
+(* let main _ =
+  (* let blog = posts.blog |> Array.to_list in *)
+  (* let projects = posts.projects |> Array.to_list in *)
   H.html [] [
     Seo.head ~children:"" ()
-  ; H.body [] [
-      H.main [ A.class_ "max-w-5xl mx-auto min-h-screen"] [
+  ; H.body [
+    A.class_ "bg-black"
+  ] [
+      (* H.main [ A.class_ "max-w-5xl mx-auto min-h-screen"] [
         header
       ; H.section [ A.class_ "my-24 px-24 sm:px-24 md:px-56 lg:px-56 space-x-12 flex justify-between"] 
           (H.text ((sections "Articles" blog) ^ (sections "Projects" projects) ^ (sections "Notes" [])))
+      ] *)
+    Footer.elem
+    ]
+  ] *)
+
+let surrealScript = 
+  H.script [ A.type_ "module" ] [ E.inject "js/surreal.js" ]
+
+let wrapper = 
+    H.section [] [
+
+    ]
+  (* H.section [ A.style templateColomn; A.class_ "grid place-content-center grid-rows-3 gap-x-4 place-items-stretch my-14 w-11/12" ] [
+    H.div [ A.style mainSection; A.class_ "text-center" ] [
+      H.h1 [ A.class_ "text-white font-swear italic text-5xl" ] (H.text (PageIndex.title ^ {js| ✦ |js}))
+    ; H.p [ A.class_ "text-zinc-500 max-w-5x mt-4" ] [
+        "Crafting the star, thou can still read my writings on "
+      ; H.strong [ A.class_ "text-red-500" ] [ 
+          "/blog" 
+        ]
       ]
-    ; Footer.elem
+    ]
+  ] *)
+
+let main () =
+  H.html [] [
+    Seo.head ~children: "" ()
+  ; H.body [ A.class_ "bg-black"] [
+      H.main [ A.class_ "min-h-screen relative flex justify-center"] [
+        wrapper
+      (* ;  {|
+        <video id="video" loop crossOrigin="anonymous" playsinline style="display:none">
+          <source src="assets/images/okay.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
+        </video>
+      |} *)
+        ]
+      ; Footer.elem
+      ; H.canvas [ A.id "canvasme"; ] []
+      (* ; surrealScript *)
     ]
   ]
