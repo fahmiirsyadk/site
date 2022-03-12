@@ -3,7 +3,7 @@ module A = Dust.Html.Attributes
 module E = Dust.Html.Extra
 
 let title = "Genesis"
-let desc = "Web developer / full-time frontend developer based in Indonesia, passionate about experiment with things, build solid & performant creative software."
+let desc = ""
 
 (** ARTICLES BLOG LISTS *)
 type matter = { title : string }
