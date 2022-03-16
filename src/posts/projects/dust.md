@@ -1,7 +1,8 @@
 ---
 title: Dust
 ---
-
+Static site generator with OCaml syntax
+---
 <div align="center">
 
 # Dust
