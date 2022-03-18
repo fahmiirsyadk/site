@@ -101,7 +101,7 @@ let mainContent sources =
 let main sources =
   H.html [] [
     Seo.head ~children: "" ()
-  ; H.body [ A.class_ "bg-black"] [
+  ; H.body [ A.class_ "bg-neutral-900"] [
       H.main [ A.class_ "min-h-screen relative"] [
         mainWrapper (sidebarContent sources) (mainContent sources)
       ]
