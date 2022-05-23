@@ -29,13 +29,4 @@
             url(/assets/fonts/SwearBanner-MediumItalic.otf) format('opentype');
         font-display: swap; 
     }
-
-    @font-face {
-        font-family: 'Inter Var';
-        font-style: normal;
-        font-weight: 200 700;
-        src: local('Inter Var'),
-            url(/assets/fonts/Inter.ttf) format('truetype');
-        font-display: swap; 
-    }
 }

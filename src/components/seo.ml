@@ -34,6 +34,7 @@ let head ~children () =
     ; meta_info
     ; H.meta [ A.charset2 `UTF8 ] []
     ; E.meta_twitter ~title:title ~description:description ~card:"summary" ()
+    ; H.link [ A.rel_link `Stylesheet; A.href "/assets/css/inter.css" ] [] 
     ; H.link [ A.rel_link `Stylesheet; A.href "/assets/css/styles.css" ] []
     ; font_links
     ; H.link [ A.rel_link `Icon; A.type_ "image/x-icon"; A.href "/assets/images/logo.ico"] []

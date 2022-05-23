@@ -5,7 +5,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        'sans': ['Inter Var', 'sans-serif'],
+        'sans': ['Inter', ...fontFamily.sans],
         'swear': ['Swear Banner', ...fontFamily.serif ],
       },
     },
