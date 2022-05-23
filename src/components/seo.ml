@@ -26,6 +26,7 @@ let meta_info = [
 let font_links = [
     ("/assets/fonts/Inter.woff2", "")
   ; ("/assets/fonts/SwearBanner-Bold.otf", "font/otf")
+  ; ("/assets/fonts/SwearBanner-MediumItalic.otf", "font/otf")
 ] |> Utils.combine_elem (fun a b -> H.link [ A.rel_link `Preload; as_type "font"; A.href a; cross_origin "anonymous"; A.type_ b] [])
 
 let head ~children () = 
