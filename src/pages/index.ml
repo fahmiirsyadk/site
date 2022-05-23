@@ -2,12 +2,6 @@ module H = Dust.Html.Elements
 module A = Dust.Html.Attributes
 module E = Dust.Html.Extra
 
-<<<<<<< HEAD
-=======
-(* let surrealScript = 
-  H.script [ A.type_ "module" ] [ E.inject "js/surreal.js" ] *)
-
->>>>>>> 947a042e36dbdd7da21cc437042e51d5be43b534
   type matter = { title : string }
 
   type metadata =
