@@ -1,21 +1,31 @@
 module H = Dust.Html.Elements
 module A = Dust.Html.Attributes
 
-type dataPost = { title : string }
+type matter = { title : string }
 
-type post =
-  { content : string
-  ; data : dataPost
-  ; name : string
+type projects =
+  { name : string
   ; layout : string
   ; source : string
+  ; data : matter
   ; excerpt : string
   ; url : string
+  ; content : string
   }
 
-let markdownStyle = "p { margin-bottom: 16px }"
+type collections = { projects : projects array }
 
-let main post =
+let listProject projects =
+  projects |. Belt.List.map (fun project ->
+    H.article [] [
+      H.a [ A.href project.url ] [
+        H.h1 [ A.class_ "text-2xl text-neutral-200 font-semibold underline underline-offset-2 hover:underline-offset-4" ] (H.text project.data.title)
+      ]
+    ]
+  )
+
+let main collections =
+  let blog = collections.projects |> Array.to_list in
   H.html [] [
     Seo.head ~children:"" ()
   ; H.body [ A.class_ "bg-neutral-900" ] [
@@ -38,11 +48,8 @@ let main post =
       ]
     ; H.main [ A.class_ "max-w-4xl mx-auto min-h-screen"] [
         H.div [ A.class_ "pt-36" ] [
-          H.h1 [ A.class_ "text-neutral-100 font-swear text-center italic font-medium text-6xl" ] [
-            post.data.title ^ "."
-          ]
-          ; H.p [ A.class_ "text-neutral-500 font-medium text-center mt-4"] [ post.excerpt ]
-          ; H.article [ A.class_ "mx-auto mt-20 prose dark:prose-invert selection:bg-purple-300 selection:text-black selection:font-semibold" ] [ post.content ]
+          H.h1 [ A.class_ "text-neutral-100 font-swear text-center italic font-medium text-6xl" ] [ "Blog" ]
+          ; H.article [ A.class_ "mx-auto text-center mt-20" ] (listProject blog)
         ]
       ]
     ]
