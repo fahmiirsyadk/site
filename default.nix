@@ -1,6 +1,10 @@
 with import <nixpkgs> {};
+
 mkShell {
-  buildInputs = [ nodejs-16_x ] ++ (with ocamlPackages_4_02; [ ocaml ninja merlin ]);
+  buildInputs = [
+    nodejs
+    yarn
+  ];
   shellHook = ''
     export PATH="`pwd`/node_modules/.bin:$PATH"
   '';
