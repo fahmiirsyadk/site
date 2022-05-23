@@ -34,6 +34,7 @@ let head ~children () =
     H.title [] (H.text title)
     ; meta_info
     ; H.meta [ A.charset2 `UTF8 ] []
+    ; H.meta [ A.name "viewport"; A.content "width=device-width,initial-scale=1,viewport-fit=cover"] []
     ; E.meta_twitter ~title:title ~description:description ~card:"summary" ()
     ; H.link [ A.rel_link `Stylesheet; A.href "/assets/css/inter.css" ] [] 
     ; H.link [ A.rel_link `Stylesheet; A.href "/assets/css/styles.css" ] []

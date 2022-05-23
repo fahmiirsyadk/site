@@ -44,8 +44,8 @@ let introduction =
   H.div [ A.class_ "text-neutral-100" ] [
     H.h4 [ A.class_ "font-bold text-xl mb-4 uppercase leading-none" ] ["Fahmi Irsyad Khairi"]
   ; H.p [ A.class_ "max-w-lg text-neutral-400"] [
-      "Web developer / full-time frontend developer based in Indonesia, <strong>passionate</strong>
-      about <strong>experiment</strong> with things, build <strong>solid</strong> <strong>performant</strong> creative software."
+      {j| Web developer / full-time frontend developer based in Indonesia, <strong>passionate</strong>
+      about <strong>experiment</strong> with things, build <strong>solid</strong> <strong>performant</strong> creative software.|j}
     ]
   ]
 
@@ -96,7 +96,7 @@ let mainContent sources =
   ]
 
 let main sources =
-  H.html [] [
+  H.html [ A.lang "en" ] [
     Seo.head ~children: "" ()
   ; H.body [ A.class_ "bg-neutral-900"] [
       H.main [ A.class_ "min-h-screen relative"] [
