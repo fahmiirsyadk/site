@@ -36,7 +36,6 @@ let markdownStyle = H.style [] [
   ] *)
 
 let main post =
-  let _ = Js.log post in
   let caption = 
     match post.data.caption with
     | Some(data) -> data
