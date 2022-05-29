@@ -2,7 +2,11 @@ module H = Dust.Html.Elements
 module A = Dust.Html.Attributes
 module E = Dust.Html.Extra
 
-  type matter = { title : string }
+  type caption = 
+  | None
+  | Some of string
+
+  type matter = { title : string; caption: caption }
 
   type metadata =
     { name : string
@@ -50,7 +54,7 @@ let introduction =
   ]
 
 let mainWrapper sidebar main = 
-  H.section [ A.class_ "flex mx-auto pt-16"; A.style mainWrapperStyle ] [
+  H.section [ A.class_ "flex mx-auto py-16"; A.style mainWrapperStyle ] [
     sidebar
   ; main
   ]
@@ -71,15 +75,20 @@ let sidebarContent sources =
 let mainContent sources =
   let blog = sources.blog |> Array.to_list in
   let projects = sources.projects |> Array.to_list in
-  let processArticle source = 
+  let processArticle source =
     source |> List.map (fun meta ->
+      let caption =
+        match meta.data.caption with
+        | Some(data) -> data
+        | None -> ""
+      in
       H.li [ A.class_ "text-neutral-200 mb-4"] [
         H.a [ A.class_ "group"; A.href meta.url ] [
           H.h6 [ A.class_ "group-hover:underline group-hover:underline-offset-2 font-medium" ] [ meta.data.title ]
-        ; H.p [ A.class_ "text-sm text-neutral-400 mt-1" ] [ meta.excerpt ]
+        ; H.p [ A.class_ "text-sm text-neutral-400 mt-1" ] [ caption ]
         ]
-      ]      
-    ) 
+      ]
+    )
   in
   H.div [ A.class_ "px-28" ] [
     introduction
@@ -101,7 +110,7 @@ let main sources =
   ; H.body [ A.class_ "bg-neutral-900"] [
       H.main [ A.class_ "min-h-screen relative"] [
         mainWrapper (sidebarContent sources) (mainContent sources)
+      ; Footer.elem
       ]
-    ; Footer.elem
     ]
   ]

@@ -1,5 +1,6 @@
 dust:
   openBrowser: false
+  syntaxThemeUrl: "src/utils/monochrome-dark.json"
 
 collections:
   blog:
