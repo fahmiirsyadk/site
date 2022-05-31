@@ -1,7 +1,6 @@
 ---
 title: Dust
----
-Static site generator with OCaml syntax
+caption: Static site generator with OCaml syntax
 ---
 <div align="center">
 

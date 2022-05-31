@@ -15,6 +15,7 @@ type post =
   ; source : string
   ; excerpt : string
   ; url : string
+  ; page: string
   }
 
 let markdownStyle = H.style [] [
@@ -26,21 +27,17 @@ let markdownStyle = H.style [] [
   |}
 ]
 
-(* let mermaid = 
-  H.script [ A.type_ "module" ] [
-    {j|
-      import mermaid from "https://cdn.skypack.dev/mermaid@8.14.0";
-      console.log(mermaid);
-      mermaid.initialize({ startOnLoad: true })
-    |j}
-  ] *)
-
 let main post =
   let caption = 
     match post.data.caption with
     | Some(data) -> data
     | None -> ""
-  in
+in
+  let filterUrl = if post.name == "blog" then "articles" else post.name 
+in
+  let url = (Node.Path.join2 filterUrl (post.page |> Node.Path.basename))
+  |> Node.Path.normalize 
+in
   H.html [ A.lang "en" ] [
     Seo.head ~children: markdownStyle ()
   ; H.body [ A.class_ "bg-neutral-900" ] [
@@ -70,6 +67,6 @@ let main post =
           ; H.article [ A.class_ "mx-auto my-20 prose dark:prose-invert selection:bg-purple-300 selection:text-black selection:font-semibold" ] [ post.content ]
         ]
       ]
-    ; Footer.elem
+    ; Footer.elem ~source: {j|https://github.com/fahmiirsyadk/site/tree/master/src/posts/$url|j} ~fixed: false
     ]
   ]

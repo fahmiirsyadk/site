@@ -2,28 +2,42 @@ module H = Dust.Html.Elements
 module A = Dust.Html.Attributes
 module E = Dust.Html.Extra
 
-  type caption = 
-  | None
-  | Some of string
+type caption = 
+| None
+| Some of string
 
-  type matter = { title : string; caption: caption }
+type matter = { title : string; caption: caption }
 
-  type metadata =
-    { name : string
-    ; layout : string
-    ; source : string
-    ; data : matter
-    ; excerpt : string
-    ; url : string
-    ; content : string
-    }
+type metadata =
+  { name : string
+  ; layout : string
+  ; source : string
+  ; data : matter
+  ; excerpt : string
+  ; url : string
+  ; content : string
+  }
   
-  type sources = 
-    { blog : metadata array
-    ; projects: metadata array
-    }
+type sources = 
+  { blog : metadata array
+  ; projects: metadata array
+  }
 
-let mainWrapperStyle = "max-width: calc(100vw - (4rem * 2));"
+
+let styles = [%bs.obj {
+  mainWrapperRaw = (A.style "max-width: calc(100vw - (4rem * 2))");
+  mainWrapper = A.class_ "flex mx-auto py-16";
+  menuItemLink = A.class_ "font-medium hover:text-neutral-200";
+  headingTitle = A.class_ "font-bold text-xl mb-4 uppercase leading-none";
+  headingDesc = A.class_ "max-w-lg text-neutral-400";
+  sidebarTitle = A.class_ "text-neutral-100 font-swear italic text-5xl";
+  sidebarMenu = A.class_ "text-neutral-400 mt-6";
+  mainContentItemTitle = A.class_ "group-hover:underline group-hover:underline-offset-2 font-medium";
+  mainContentItemCaption = A.class_ "text-sm text-neutral-400 mt-1";
+  mainContentSectionWrapper = A.class_ "flex w-lg justify-between space-x-4 mt-8";
+  mainContentSectionTitle = A.class_ "font-swear italic text-neutral-100 text-xl mb-4";
+}]
+(* let mainWrapperStyle = "" *)
 
 let listMenuData sources =
   let blog = sources.blog |> Array.length in
@@ -38,7 +52,7 @@ let listMenuData sources =
 let listMenu menu =
   menu |> List.map (fun (title, link) -> 
     H.li [ A.class_ "mb-2" ] [ 
-      H.a [ A.class_ "font-medium hover:text-neutral-200"; A.href {j|/$link|j} ] [
+      H.a [ styles##menuItemLink ; A.href {j|/$link|j} ] [
         title
       ]
     ]
@@ -46,15 +60,15 @@ let listMenu menu =
 
 let introduction = 
   H.div [ A.class_ "text-neutral-100" ] [
-    H.h4 [ A.class_ "font-bold text-xl mb-4 uppercase leading-none" ] ["Fahmi Irsyad Khairi"]
-  ; H.p [ A.class_ "max-w-lg text-neutral-400"] [
+    H.h4 [ styles##headingTitle ] ["Fahmi Irsyad Khairi"]
+  ; H.p [ styles##headingDesc ] [
       {j| Web developer / full-time frontend developer based in Indonesia, <strong>passionate</strong>
       about <strong>experiment</strong> with things, build <strong>solid</strong> <strong>performant</strong> creative software.|j}
     ]
   ]
 
 let mainWrapper sidebar main = 
-  H.section [ A.class_ "flex mx-auto py-16"; A.style mainWrapperStyle ] [
+  H.section [ styles##mainWrapper; styles##mainWrapperRaw ] [
     sidebar
   ; main
   ]
@@ -64,10 +78,10 @@ let sidebarContent sources =
     H.div [ A.class_ "mb-6"; ] [
       Logo.logo 70 "#f5f5f5"
     ]
-  ; H.h1 [ A.class_ "text-neutral-100 font-swear italic text-5xl" ] [
+  ; H.h1 [ styles##sidebarTitle ] [
       {js|Fa—h.|js}
     ]
-  ; H.ul [ A.class_ "text-neutral-400 mt-6" ] (
+  ; H.ul [ styles##sidebarMenu ] (
       listMenu (listMenuData sources)
     )
   ]
@@ -84,21 +98,21 @@ let mainContent sources =
       in
       H.li [ A.class_ "text-neutral-200 mb-4"] [
         H.a [ A.class_ "group"; A.href meta.url ] [
-          H.h6 [ A.class_ "group-hover:underline group-hover:underline-offset-2 font-medium" ] [ meta.data.title ]
-        ; H.p [ A.class_ "text-sm text-neutral-400 mt-1" ] [ caption ]
+          H.h6 [ styles##mainContentItemTitle ] [ meta.data.title ]
+        ; H.p [ styles##mainContentItemCaption ] [ caption ]
         ]
       ]
     )
   in
   H.div [ A.class_ "px-28" ] [
     introduction
-  ; H.div [ A.class_ "flex w-lg justify-between space-x-4 mt-8" ] [
+  ; H.div [ styles##mainContentSectionWrapper ] [
       H.div [ A.class_ "w-64" ] [
-        H.h5 [ A.class_ "font-swear italic text-neutral-100 text-xl mb-4" ] [ "Recent article" ]
+        H.h5 [ styles##mainContentSectionTitle ] [ "Recent article" ]
       ; H.ul [] (processArticle blog)
       ]
     ; H.div [ A.class_ "w-64" ] [
-        H.h5 [ A.class_ "font-swear italic text-neutral-100 text-xl mb-4" ] [ "Recent project" ]
+        H.h5 [ styles##mainContentSectionTitle ] [ "Recent project" ]
       ; H.ul [] (processArticle projects)
       ]
     ]
@@ -110,7 +124,7 @@ let main sources =
   ; H.body [ A.class_ "bg-neutral-900"] [
       H.main [ A.class_ "min-h-screen relative"] [
         mainWrapper (sidebarContent sources) (mainContent sources)
-      ; Footer.elem
+      ; Footer.elem ~source: "" ~fixed: true
       ]
     ]
   ]
