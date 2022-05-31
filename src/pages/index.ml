@@ -60,7 +60,7 @@ let listMenu menu =
 
 let introduction = 
   H.div [ A.class_ "text-neutral-100" ] [
-    H.h4 [ styles##headingTitle ] ["Fahmi Irsyad Khairi"]
+    H.h1 [ styles##headingTitle ] ["Fahmi Irsyad Khairi"]
   ; H.p [ styles##headingDesc ] [
       {j| Web developer / full-time frontend developer based in Indonesia, <strong>passionate</strong>
       about <strong>experiment</strong> with things, build <strong>solid</strong> <strong>performant</strong> creative software.|j}
@@ -124,7 +124,7 @@ let main sources =
   ; H.body [ A.class_ "bg-neutral-900"] [
       H.main [ A.class_ "min-h-screen relative"] [
         mainWrapper (sidebarContent sources) (mainContent sources)
-      ; Footer.elem ~source: "" ~fixed: true
+      ; Footer.elem ~source: "https://github.com/fahmiirsyadk/site" ~fixed: true
       ]
     ]
   ]
