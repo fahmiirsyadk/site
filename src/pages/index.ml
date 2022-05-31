@@ -108,7 +108,7 @@ let mainContent sources =
     introduction
   ; H.div [ styles##mainContentSectionWrapper ] [
       H.div [ A.class_ "w-64" ] [
-        H.h5 [ styles##mainContentSectionTitle ] [ "Recent article" ]
+        H.h2 [ styles##mainContentSectionTitle ] [ "Recent article" ]
       ; H.ul [] (processArticle blog)
       ]
     ; H.div [ A.class_ "w-64" ] [
