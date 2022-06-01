@@ -117,7 +117,7 @@ let mainContent sources =
       ; H.ul [] (processArticle blog)
       ]
     ; H.div [ A.class_ "w-64" ] [
-        H.h5 [ styles##mainContentSectionTitle ] [ "Recent project" ]
+        H.h3 [ styles##mainContentSectionTitle ] [ "Recent project" ]
       ; H.ul [] (processArticle projects)
       ]
     ]

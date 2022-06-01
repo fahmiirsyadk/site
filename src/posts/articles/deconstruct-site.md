@@ -15,7 +15,7 @@ Crafting personal website is hard
 ![symbol](/assets/images/deathSymbol.png#center)
 
 
-I use my own static site generator tools named Dust. It's might be different like other SSG out there.
+I use my own static site generator tools named Dust. It might be different like other SSG out there.
 It's use Rescript as the main compiler, more simple explanation is Dust use Ocaml Syntax as the template engine
 and Rescript translate it to plain javascript, like Typescript but extra step. Template engine i make almost all inspired by Halogen from Haskell.
 
