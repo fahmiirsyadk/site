@@ -11,8 +11,8 @@ let dustver = Dust.Extras.getVersion()
 let renderTime = Js.Date.now() |> Js.Date.fromFloat |> Js.Date.toUTCString
 
 let styles = [%bs.obj {
-  text = A.class_ "text-center text-zinc-500 text-xs";
-  textLink = A.class_ "text-zinc-300 underline underline-offset-2"
+  text = A.class_ "text-center text-zinc-300 text-xs";
+  textLink = A.class_ "text-zinc-200 underline underline-offset-2 font-medium hover:underline-offset-4"
 }]
 
 let elem ~source ~fixed = 

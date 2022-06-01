@@ -25,9 +25,10 @@ type sources =
 
 
 let styles = [%bs.obj {
+  body = A.class_ "bg-neutral-900 selection:bg-orange-500 selection:text-black";
   mainWrapperRaw = (A.style "max-width: calc(100vw - (4rem * 2))");
   mainWrapper = A.class_ "flex mx-auto py-16";
-  menuItemLink = A.class_ "font-medium hover:text-neutral-200";
+  menuItemLink = A.class_ "font-medium hover:text-orange-400";
   headingTitle = A.class_ "font-bold text-xl mb-4 uppercase leading-none";
   headingDesc = A.class_ "max-w-lg text-neutral-400";
   sidebarTitle = A.class_ "text-neutral-100 font-swear italic text-5xl";
@@ -37,7 +38,11 @@ let styles = [%bs.obj {
   mainContentSectionWrapper = A.class_ "flex w-lg justify-between space-x-4 mt-8";
   mainContentSectionTitle = A.class_ "font-swear italic text-neutral-100 text-xl mb-4";
 }]
-(* let mainWrapperStyle = "" *)
+
+let semiCircleGradient = [%bs.obj {
+  backgroundPurple = A.style "background: radial-gradient(circle at bottom center, rgb(192 132 252 / 25%) 0%, rgb(192 132 252 / 8%) 20%, rgb(192 132 252 / 3%) 30%, rgb(23,23,23) 50%, rgb(23,23,23) 100%);";
+  background = A.style "background: radial-gradient(circle at bottom center, rgb(255 107 0 / 25%) 0%,  rgb(255 107 0 / 8%) 20%, rgb(255 107 0 / 3%) 30%, rgb(23,23,23) 50%, rgb(23,23,23) 100%)";
+}]
 
 let listMenuData sources =
   let blog = sources.blog |> Array.length in
@@ -121,8 +126,8 @@ let mainContent sources =
 let main sources =
   H.html [ A.lang "en" ] [
     Seo.head ~children: "" ()
-  ; H.body [ A.class_ "bg-neutral-900"] [
-      H.main [ A.class_ "min-h-screen relative"] [
+  ; H.body [ styles##body ] [
+      H.main [ A.class_ "min-h-screen relative"; semiCircleGradient##background ] [
         mainWrapper (sidebarContent sources) (mainContent sources)
       ; Footer.elem ~source: "https://github.com/fahmiirsyadk/site" ~fixed: true
       ]

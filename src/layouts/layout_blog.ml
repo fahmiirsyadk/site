@@ -33,21 +33,25 @@ let main post =
     | Some(data) -> data
     | None -> ""
 in
-  let filterUrl = if post.name == "blog" then "articles" else post.name 
+  let filterUrl = if post.name == "blog" then "articles" else post.name
+in
+  let selectedIsBlog = if post.name == "blog" then "text-orange-400" else "hover:text-orange-400"
+in
+  let selectedIsProjects = if post.name == "projects" then "text-orange-400" else "hover:text-orange-400"
 in
   let url = (Node.Path.join2 filterUrl (post.page |> Node.Path.basename))
   |> Node.Path.normalize 
 in
   H.html [ A.lang "en" ] [
     Seo.head ~children: markdownStyle ()
-  ; H.body [ A.class_ "bg-neutral-900" ] [
+  ; H.body [ A.class_ "bg-neutral-900 selection:bg-orange-500 selection:text-black selection:font-semibold" ] [
       H.header [ A.class_ "w-full select-none h-20 fixed top-0 text-neutral-400 flex items-center justify-center"; A.style "background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(23,23,23,0.8) 82%, rgba(23,23,23,1) 100%);" ] [
         H.nav [ A.class_ "flex items-center content-center"; ] [
           H.div [ A.class_ "space-x-6" ] [
-            H.a [ A.href "/blog"; A.class_ "font-medium text-neutral-50 cursor-pointer" ] [ "Blog" ]
-          ; H.a [ A.href "/projects"; A.class_ "font-medium hover:text-neutral-50 cursor-pointer" ] [ "Projects" ]
+            H.a [ A.href "/blog"; A.class_ {j|font-medium cursor-pointer $selectedIsBlog|j} ] [ "Blog" ]
+          ; H.a [ A.href "/projects"; A.class_ {j|font-medium cursor-pointer $selectedIsProjects|j} ] [ "Projects" ]
           ]
-        ; H.div [ A.class_ "mx-6 cursor-pointer" ] [
+        ; H.div [ A.class_ "mx-6 ease-in-out duration-300 hover:rotate-[120deg] cursor-pointer" ] [
             H.a [ A.href "/" ] [
               Logo.logoRatio 30 "#f5f5f5"
             ]
