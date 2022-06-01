@@ -103,7 +103,7 @@ let mainContent sources =
       in
       H.li [ A.class_ "text-neutral-200 mb-4"] [
         H.a [ A.class_ "group"; A.href meta.url ] [
-          H.h6 [ styles##mainContentItemTitle ] [ meta.data.title ]
+          H.h3 [ styles##mainContentItemTitle ] [ meta.data.title ]
         ; H.p [ styles##mainContentItemCaption ] [ caption ]
         ]
       ]
