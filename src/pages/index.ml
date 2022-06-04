@@ -25,7 +25,7 @@ type sources =
 
 
 let styles = [%bs.obj {
-  body = A.class_ "bg-neutral-900 selection:bg-orange-500 selection:text-black";
+  body = A.class_ "bg-[#101010] selection:bg-orange-500 selection:text-black";
   mainWrapperRaw = (A.style "max-width: calc(100vw - (4rem * 2))");
   mainWrapper = A.class_ "flex mx-auto py-16";
   menuItemLink = A.class_ "font-medium hover:text-orange-400";

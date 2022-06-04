@@ -12,7 +12,7 @@ let styles = [%bs.obj {
 let main () =
   H.html [ A.lang "en" ] [
     Seo.head ~children: "" ()
-    ; H.body [ A.class_ "bg-neutral-900"] [
+    ; H.body [ A.class_ "bg-[#101010]"] [
         H.header [ styles##header; styles##headerRaw ] [
             H.nav [ styles##nav ] [
               H.div [ A.class_ "space-x-6" ] [
