@@ -6,6 +6,6 @@ collections:
   blog:
     layout: layout_blog
     source: src/posts/articles
-  projects:
-    layout: layout_blog
-    source: src/posts/projects
+  # projects:
+  #   layout: layout_blog
+  #   source: src/posts/projects

@@ -1,0 +1,271 @@
+module H = Dust.Html.Elements
+module A = Dust.Html.Attributes
+module E = Dust.Html.Extra
+
+type caption = 
+| None
+| Some of string
+
+type matter = { title : string; caption: caption }
+
+type metadata =
+  { name : string
+  ; layout : string
+  ; source : string
+  ; data : matter
+  ; excerpt : string
+  ; url : string
+  ; content : string
+  }
+  
+type sources = 
+  { blog : metadata array
+  ; projects: metadata array
+  }
+
+let svg = {j|
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <defs>
+    <filter id="goo">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+      <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+      <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
+    </filter>
+  </defs>
+</svg>
+|j}
+
+let shader id str = H.script [ A.id id; A.type_ "x-shader/x-vertex" ] [
+  str
+]
+
+let containerBlob blobs = 
+  H.div [ A.class_ "inset-0 absolute [filter:url('#goo')]" ] blobs
+
+let blob =
+  H.div [ A.class_ "bg-white text-black w-10 h-10 p-10"] [
+    "blob"
+  ]
+
+let main () =
+  H.html [] [
+    Seo.head ~children: (H.style [] [
+      "#canvas, canvas {
+        position: relative;
+        width: 300px;
+        height: 300px;
+    }"
+     ]) ()
+  ; H.body [] [
+      H.div [ A.id "container"; A.class_ "relative w-48 h-48 bg-orange-400"] [
+        containerBlob [ blob; blob; blob ]
+      ]
+    ; svg
+    ; H.script [ A.src "/assets/js/canvas.js"; A.type_ "module" ] []
+    ; shader "snoise-function" {j|        
+        vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+        float snoise(vec2 v) {
+            const vec4 C = vec4(0.211324865405187,  // (3.0-sqrt(3.0))/6.0
+                                0.366025403784439,  // 0.5*(sqrt(3.0)-1.0)
+                                -0.577350269189626,  // -1.0 + 2.0 * C.x
+                                0.024390243902439); // 1.0 / 41.0
+            vec2 i  = floor(v + dot(v, C.yy) );
+            vec2 x0 = v -   i + dot(i, C.xx);
+            vec2 i1;
+            i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+            vec4 x12 = x0.xyxy + C.xxzz;
+            x12.xy -= i1;
+            i = mod289(i); // Avoid truncation effects in permutation
+            vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 ))
+                + i.x + vec3(0.0, i1.x, 1.0 ));
+
+            vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+            m = m*m ;
+            m = m*m ;
+            vec3 x = 2.0 * fract(p * C.www) - 1.0;
+            vec3 h = abs(x) - 0.5;
+            vec3 ox = floor(x + 0.5);
+            vec3 a0 = x - ox;
+            m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+            vec3 g;
+            g.x  = a0.x  * x0.x  + h.x  * x0.y;
+            g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+            return 130.0 * dot(m, g);
+        }
+        |j}
+      ; shader "vertex-shader" {j|
+          uniform float u_time;
+          uniform vec2 u_randomisePosition;
+
+          varying float vDistortion;
+          varying float xDistortion;
+          varying vec2 vUv;
+
+          void main() {
+              vUv = uv;
+              vDistortion = snoise(vUv.xx * 3. - u_randomisePosition * 0.15);
+              xDistortion = snoise(vUv.yy * 1. - u_randomisePosition * 0.05);
+              vec3 pos = position;
+              pos.z += (vDistortion * 35.);
+              pos.x += (xDistortion * 25.);
+
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+          }
+      |j}
+    ; shader "fragment-shader" {j|
+       
+    vec3 rgb(float r, float g, float b) {
+      return vec3(r / 255., g / 255., b / 255.);
+  }
+
+  vec3 rgb(float c) {
+      return vec3(c / 255., c / 255., c / 255.);
+  }
+
+  uniform vec3 u_bg;
+  uniform vec3 u_bgMain;
+  uniform vec3 u_color1;
+  uniform vec3 u_color2;
+  uniform float u_time;
+
+  varying vec2 vUv;
+  varying float vDistortion;
+
+  void main() {
+      vec3 bg = rgb(u_bg.r, u_bg.g, u_bg.b);
+      vec3 c1 = rgb(u_color1.r, u_color1.g, u_color1.b);
+      vec3 c2 = rgb(u_color2.r, u_color2.g, u_color2.b);
+      vec3 bgMain = rgb(u_bgMain.r, u_bgMain.g, u_bgMain.b);
+
+      float noise1 = snoise(vUv + u_time * 0.08);
+      float noise2 = snoise(vUv * 2. + u_time * 0.1);
+
+      vec3 color = bg;
+      color = mix(color, c1, noise1 * 0.6);
+      color = mix(color, c2, noise2 * .4);
+
+      color = mix(color, mix(c1, c2, vUv.x), vDistortion);
+
+      float border = smoothstep(0.1, 0.6, vUv.x);
+
+      color = mix(color, bgMain, 1. -border);
+
+      gl_FragColor = vec4(color, 1.0);
+  }
+    |j}
+    ]
+  ]
+
+(* 
+let styles = [%bs.obj {
+  body = A.class_ "bg-[#101010] selection:bg-orange-500 selection:text-black";
+  mainWrapperRaw = (A.style "max-width: calc(100vw - (4rem * 2))");
+  mainWrapper = A.class_ "flex mx-auto py-16";
+  menuItemLink = A.class_ "font-medium hover:text-orange-400";
+  headingTitle = A.class_ "font-bold text-xl mb-4 uppercase leading-none";
+  headingDesc = A.class_ "max-w-lg text-neutral-400";
+  sidebarTitle = A.class_ "text-neutral-100 font-swear italic text-5xl";
+  sidebarMenu = A.class_ "text-neutral-400 mt-6";
+  mainContentItemTitle = A.class_ "group-hover:underline group-hover:underline-offset-2 font-medium";
+  mainContentItemCaption = A.class_ "text-sm text-neutral-400 mt-1";
+  mainContentSectionWrapper = A.class_ "flex w-lg justify-between space-x-4 mt-8";
+  mainContentSectionTitle = A.class_ "font-swear italic text-neutral-100 text-xl mb-4";
+}]
+
+let semiCircleGradient = [%bs.obj {
+  backgroundPurple = A.style "background: radial-gradient(circle at bottom center, rgb(192 132 252 / 25%) 0%, rgb(192 132 252 / 8%) 20%, rgb(192 132 252 / 3%) 30%, rgb(23,23,23) 50%, rgb(23,23,23) 100%);";
+  background = A.style "background: radial-gradient(circle at bottom center, rgb(255 107 0 / 25%) 0%,  rgb(255 107 0 / 8%) 20%, rgb(255 107 0 / 3%) 30%, rgb(23,23,23) 50%, rgb(23,23,23) 100%)";
+}]
+
+let listMenuData sources =
+  let blog = sources.blog |> Array.length in
+  let projects = sources.projects |> Array.length in
+  [
+    ({j|Blog ($blog)|j}, "blog")
+  ; ({j|Projects ($projects)|j}, "projects")
+  ; ("About Me", "about")
+  ; ("Resume", "resume")
+  ]
+
+let listMenu menu =
+  menu |> List.map (fun (title, link) -> 
+    H.li [ A.class_ "mb-2" ] [ 
+      H.a [ styles##menuItemLink ; A.href {j|/$link|j} ] [
+        title
+      ]
+    ]
+  )
+
+let introduction = 
+  H.div [ A.class_ "text-neutral-100" ] [
+    H.h1 [ styles##headingTitle ] ["Fahmi Irsyad Khairi"]
+  ; H.p [ styles##headingDesc ] [
+      {j| Web developer / full-time frontend developer based in Indonesia, <strong>passionate</strong>
+      about <strong>experiment</strong> with things, build <strong>solid</strong> <strong>performant</strong> creative software.|j}
+    ]
+  ]
+
+let mainWrapper sidebar main = 
+  H.section [ styles##mainWrapper; styles##mainWrapperRaw ] [
+    sidebar
+  ; main
+  ]
+
+let sidebarContent sources = 
+  H.aside [] [
+    H.div [ A.class_ "mb-6"; ] [
+      Logo.logo 70 "#f5f5f5"
+    ]
+  ; H.h1 [ styles##sidebarTitle ] [
+      {js|Fa—h.|js}
+    ]
+  ; H.ul [ styles##sidebarMenu ] (
+      listMenu (listMenuData sources)
+    )
+  ]
+
+let mainContent sources =
+  let blog = sources.blog |> Array.to_list in
+  let projects = sources.projects |> Array.to_list in
+  let processArticle source =
+    source |> List.map (fun meta ->
+      let caption =
+        match meta.data.caption with
+        | Some(data) -> data
+        | None -> ""
+      in
+      H.li [ A.class_ "text-neutral-200 mb-4"] [
+        H.a [ A.class_ "group"; A.href meta.url ] [
+          H.h3 [ styles##mainContentItemTitle ] [ meta.data.title ]
+        ; H.p [ styles##mainContentItemCaption ] [ caption ]
+        ]
+      ]
+    )
+  in
+  H.div [ A.class_ "px-28" ] [
+    introduction
+  ; H.div [ styles##mainContentSectionWrapper ] [
+      H.div [ A.class_ "w-64" ] [
+        H.h2 [ styles##mainContentSectionTitle ] [ "Recent article" ]
+      ; H.ul [] (processArticle blog)
+      ]
+    ; H.div [ A.class_ "w-64" ] [
+        H.h3 [ styles##mainContentSectionTitle ] [ "Recent project" ]
+      ; H.ul [] (processArticle projects)
+      ]
+    ]
+  ]
+
+let main sources =
+  H.html [ A.lang "en" ] [
+    Seo.head ~children: "" ()
+  ; H.body [ styles##body ] [
+      H.main [ A.class_ "min-h-screen relative"; semiCircleGradient##background ] [
+        mainWrapper (sidebarContent sources) (mainContent sources)
+      ; Footer.elem ~source: "https://github.com/fahmiirsyadk/site" ~fixed: true
+      ]
+    ]
+  ] *)

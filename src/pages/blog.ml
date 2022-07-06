@@ -27,7 +27,7 @@ let listPost blog =
 let main posts =
   let blog = posts.blog |> Array.to_list in
   H.html [ A.lang "en" ] [
-    Seo.head ~children:"" ()
+    Seo.head ~children: [""] ()
   ; H.body [ A.class_ "bg-[#101010]" ] [
       H.header [ A.class_ "w-full select-none h-20 fixed top-0 text-neutral-400 flex items-center justify-center"; A.style "background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(23,23,23,0.8) 82%, rgba(23,23,23,1) 100%);" ] [
         H.nav [ A.class_ "flex items-center content-center"; ] [

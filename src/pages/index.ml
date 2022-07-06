@@ -2,134 +2,125 @@ module H = Dust.Html.Elements
 module A = Dust.Html.Attributes
 module E = Dust.Html.Extra
 
-type caption = 
-| None
-| Some of string
-
-type matter = { title : string; caption: caption }
-
-type metadata =
-  { name : string
-  ; layout : string
-  ; source : string
-  ; data : matter
-  ; excerpt : string
-  ; url : string
-  ; content : string
-  }
-  
-type sources = 
-  { blog : metadata array
-  ; projects: metadata array
-  }
-
-
 let styles = [%bs.obj {
-  body = A.class_ "bg-[#101010] selection:bg-orange-500 selection:text-black";
-  mainWrapperRaw = (A.style "max-width: calc(100vw - (4rem * 2))");
-  mainWrapper = A.class_ "flex mx-auto py-16";
-  menuItemLink = A.class_ "font-medium hover:text-orange-400";
-  headingTitle = A.class_ "font-bold text-xl mb-4 uppercase leading-none";
-  headingDesc = A.class_ "max-w-lg text-neutral-400";
-  sidebarTitle = A.class_ "text-neutral-100 font-swear italic text-5xl";
-  sidebarMenu = A.class_ "text-neutral-400 mt-6";
-  mainContentItemTitle = A.class_ "group-hover:underline group-hover:underline-offset-2 font-medium";
-  mainContentItemCaption = A.class_ "text-sm text-neutral-400 mt-1";
-  mainContentSectionWrapper = A.class_ "flex w-lg justify-between space-x-4 mt-8";
-  mainContentSectionTitle = A.class_ "font-swear italic text-neutral-100 text-xl mb-4";
+  customStyles = H.style [] [
+    {|
+      body {
+        scrollbar-width: none;
+      }
+      body::-webkit-scrollbar {
+        display: none;
+      }
+    |}
+  ]
+; mainSection = A.class_ {j|min-h-screen|j}
+; introSection = A.class_ "py-32 px-[14%]"
 }]
 
-let semiCircleGradient = [%bs.obj {
-  backgroundPurple = A.style "background: radial-gradient(circle at bottom center, rgb(192 132 252 / 25%) 0%, rgb(192 132 252 / 8%) 20%, rgb(192 132 252 / 3%) 30%, rgb(23,23,23) 50%, rgb(23,23,23) 100%);";
-  background = A.style "background: radial-gradient(circle at bottom center, rgb(255 107 0 / 25%) 0%,  rgb(255 107 0 / 8%) 20%, rgb(255 107 0 / 3%) 30%, rgb(23,23,23) 50%, rgb(23,23,23) 100%)";
-}]
+let locomotiveJs =
+  H.script [ A.src "/assets/js/locomotive.min.js"; ] []
 
-let listMenuData sources =
-  let blog = sources.blog |> Array.length in
-  let projects = sources.projects |> Array.length in
-  [
-    ({j|Blog ($blog)|j}, "blog")
-  ; ({j|Projects ($projects)|j}, "projects")
-  ; ("About Me", "about")
-  ; ("Resume", "resume")
+let filter = {j|
+  <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <defs>
+    <filter id="goo">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+      <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+      <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
+    </filter>
+  </defs>
+  </svg>
+|j}
+
+let patternBG = A.style {|
+  background-image: url(/assets/images/cross-pattern.svg), url(/assets/images/cross-pattern.svg);
+  background-size: calc(20 * 10px) calc(20 * 10px);
+  background-position: 0 0,calc(10 * 10px) calc(10 * 10px);
+|}
+
+let logoSection = 
+  H.div [ A.class_ "mb-4" ] [
+    {j|
+    <svg width="125" height="57" viewBox="0 0 125 57" fill="bg-neutral-900" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0.896283 29.1184C0.322916 29.6824 0 30.4529 0 31.2572V53.5C0 55.1569 1.34315 56.5 3 56.5H29.2406C30.0461 56.5 30.8179 56.176 31.382 55.601L44.8586 41.8653C46.74 39.9476 50 41.2798 50 43.9663V53.5C50 55.1569 51.3431 56.5 53 56.5H97.2406C98.0461 56.5 98.8179 56.176 99.382 55.601L123.641 30.8751C124.192 30.3142 124.5 29.5598 124.5 28.7741V3C124.5 1.34315 123.157 0 121.5 0H111.743C110.947 0 110.184 0.316071 109.621 0.87868L101.621 8.87868C99.7314 10.7686 96.5 9.43007 96.5 6.75736V3C96.5 1.34315 95.1569 0 93.5 0H81.7281C80.9411 0 80.1855 0.309303 79.6244 0.861221L61.6037 18.5865C59.7068 20.4523 56.5 19.1085 56.5 16.4477V3C56.5 1.34315 55.1569 0 53.5 0H31.7281C30.9411 0 30.1855 0.309303 29.6244 0.861222L0.896283 29.1184Z" fill="bg-neutral-900"/>
+    </svg>
+    |j}
   ]
 
-let listMenu menu =
-  menu |> List.map (fun (title, link) -> 
-    H.li [ A.class_ "mb-2" ] [ 
-      H.a [ styles##menuItemLink ; A.href {j|/$link|j} ] [
-        title
-      ]
-    ]
-  )
+  
 
-let introduction = 
-  H.div [ A.class_ "text-neutral-100" ] [
-    H.h1 [ styles##headingTitle ] ["Fahmi Irsyad Khairi"]
-  ; H.p [ styles##headingDesc ] [
-      {j| Web developer / full-time frontend developer based in Indonesia, <strong>passionate</strong>
-      about <strong>experiment</strong> with things, build <strong>solid</strong> <strong>performant</strong> creative software.|j}
-    ]
+let logoSectionBG = 
+  H.div [] [
+    {j|
+    <svg preserveAspectRatio="xMidYMid meet" width="100%" viewBox="0 0 125 57" fill="white" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0.896283 29.1184C0.322916 29.6824 0 30.4529 0 31.2572V53.5C0 55.1569 1.34315 56.5 3 56.5H29.2406C30.0461 56.5 30.8179 56.176 31.382 55.601L44.8586 41.8653C46.74 39.9476 50 41.2798 50 43.9663V53.5C50 55.1569 51.3431 56.5 53 56.5H97.2406C98.0461 56.5 98.8179 56.176 99.382 55.601L123.641 30.8751C124.192 30.3142 124.5 29.5598 124.5 28.7741V3C124.5 1.34315 123.157 0 121.5 0H111.743C110.947 0 110.184 0.316071 109.621 0.87868L101.621 8.87868C99.7314 10.7686 96.5 9.43007 96.5 6.75736V3C96.5 1.34315 95.1569 0 93.5 0H81.7281C80.9411 0 80.1855 0.309303 79.6244 0.861221L61.6037 18.5865C59.7068 20.4523 56.5 19.1085 56.5 16.4477V3C56.5 1.34315 55.1569 0 53.5 0H31.7281C30.9411 0 30.1855 0.309303 29.6244 0.861222L0.896283 29.1184Z" fill="white"/>
+    </svg>
+    |j}
   ]
 
-let mainWrapper sidebar main = 
-  H.section [ styles##mainWrapper; styles##mainWrapperRaw ] [
-    sidebar
-  ; main
+let descriptionSection =
+  let italicStyle = A.class_ "font-swear text-orange-600" in
+  let exp = H.i [ italicStyle ] [ "Experiment" ] in
+  let cr = H.i [ italicStyle ] [ "creative" ] in
+  H.div [ A.class_ "max-w-lg" ] [
+    H.h1 [ A.class_ "text-4xl font-bold leading-snug text-neutral-900" ] [
+      {j|$exp with things, build solid performant $cr software.|j}
+    ]
+  ; H.p [ A.class_ "mt-20 mb-8 text-base text-neutral-700 font-medium leading-loose" ] [
+      "<strong>Fahmi</strong> is a front-end developer based in Banyuwangi, Indonesia. Through this site, he writes journals, portfolios, or shows some of his experiments."
+    ]
+  ; H.i [ A.class_ "font-swear text-xl font-bold" ] [ {js|⁜ Current state|js} ]
+  ; H.p [ A.class_ "mt-4 text-base text-neutral-700 font-medium leading-loose" ] [
+      "Right now, learning & building react stuff. Beside that i also learn about web3, a little bit of backend and design exploration. I listen to playlists a, b, c to increase my productivity."
+    ] 
   ]
 
-let sidebarContent sources = 
-  H.aside [] [
-    H.div [ A.class_ "mb-6"; ] [
-      Logo.logo 70 "#f5f5f5"
-    ]
-  ; H.h1 [ styles##sidebarTitle ] [
-      {js|Fa—h.|js}
-    ]
-  ; H.ul [ styles##sidebarMenu ] (
-      listMenu (listMenuData sources)
-    )
+let introSection children = 
+  H.div [ styles##introSection ] children
+
+let rulerNavigator =
+  let sm = H.div [ A.class_ "w-5 h-1 bg-zinc-200 rounded-md" ] [] in
+  let lg = H.div [ A.class_ "w-9 h-1 bg-zinc-300 rounded-md" ] [] in
+  let rec ruler total counter elem isFive =
+    (* TODO:
+        elements iterators with rule every 5th element is lg otherwise sm
+    *)
+    let isFiveBool = isFive + 1 == 5 in
+    let elemCount = if isFiveBool then lg else sm in
+    if counter > total then []
+    else elem :: ruler 15 (counter + 1) elemCount (if isFiveBool then 0 else (isFive + 1)) 
+  in
+  H.nav [ A.class_ "fixed flex flex-col items-end space-y-2 top-1/3 right-8"] 
+  (ruler 15 0 lg 0)
+
+let jsScript = 
+  H.script [] [
+    E.inject "js/main.js"
   ]
 
-let mainContent sources =
-  let blog = sources.blog |> Array.to_list in
-  let projects = sources.projects |> Array.to_list in
-  let processArticle source =
-    source |> List.map (fun meta ->
-      let caption =
-        match meta.data.caption with
-        | Some(data) -> data
-        | None -> ""
-      in
-      H.li [ A.class_ "text-neutral-200 mb-4"] [
-        H.a [ A.class_ "group"; A.href meta.url ] [
-          H.h3 [ styles##mainContentItemTitle ] [ meta.data.title ]
-        ; H.p [ styles##mainContentItemCaption ] [ caption ]
+let main () = 
+  H.html [] [
+    Seo.head ~children: [
+      styles##customStyles
+    ; locomotiveJs
+    ] ()
+  ; H.body [] [
+      (* container *)
+      H.main [ A.class_ " min-h-screen bg-white" ] [
+        rulerNavigator
+      ; H.section [ A.class_ "h-screen w-full bg-black px-10 py-6" ] [
+          logoSectionBG
+        ]
+      ; H.section [ styles##mainSection ] [
+          introSection [
+            H.div [ A.class_ "flex"] [
+              logoSection
+              ]
+          ; descriptionSection
+          ]
+        ; filter
         ]
       ]
-    )
-  in
-  H.div [ A.class_ "px-28" ] [
-    introduction
-  ; H.div [ styles##mainContentSectionWrapper ] [
-      H.div [ A.class_ "w-64" ] [
-        H.h2 [ styles##mainContentSectionTitle ] [ "Recent article" ]
-      ; H.ul [] (processArticle blog)
-      ]
-    ; H.div [ A.class_ "w-64" ] [
-        H.h3 [ styles##mainContentSectionTitle ] [ "Recent project" ]
-      ; H.ul [] (processArticle projects)
-      ]
-    ]
-  ]
-
-let main sources =
-  H.html [ A.lang "en" ] [
-    Seo.head ~children: "" ()
-  ; H.body [ styles##body ] [
-      H.main [ A.class_ "min-h-screen relative"; semiCircleGradient##background ] [
-        mainWrapper (sidebarContent sources) (mainContent sources)
-      ; Footer.elem ~source: "https://github.com/fahmiirsyadk/site" ~fixed: true
-      ]
+    ; jsScript
     ]
   ]

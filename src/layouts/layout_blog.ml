@@ -28,6 +28,16 @@ let markdownStyle = H.style [] [
 ]
 
 let main post =
+  (* let _ = 
+   match post.content |> Syntax.getString with
+   | Some content -> Js.log content
+   | None -> Js.log "no content"
+in *)
+  (* let _ =
+    match post.content |> Syntax.splitCodeBlock with
+    | Some _ -> Js.log "has"
+    | None -> Js.log "no codeblock"
+in *)
   let caption = 
     match post.data.caption with
     | Some(data) -> data
@@ -43,7 +53,7 @@ in
   |> Node.Path.normalize 
 in
   H.html [ A.lang "en" ] [
-    Seo.head ~children: markdownStyle ()
+    Seo.head ~children: [markdownStyle] ()
   ; H.body [ A.class_ "bg-[#101010] selection:bg-orange-500 selection:text-black selection:font-semibold" ] [
       H.header [ A.class_ "w-full select-none h-20 fixed top-0 text-neutral-400 flex items-center justify-center"; A.style "background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(23,23,23,0.8) 82%, rgba(23,23,23,1) 100%);" ] [
         H.nav [ A.class_ "flex items-center content-center"; ] [
@@ -73,4 +83,5 @@ in
       ]
     ; Footer.elem ~source: {j|https://github.com/fahmiirsyadk/site/tree/master/src/posts/$url|j} ~fixed: false
     ]
+  ; H.script [ A.src "/assets/js/highlight.js"; A.async true ] []
   ]

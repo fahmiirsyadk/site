@@ -24,13 +24,13 @@ let meta_info = [
 ] |> Utils.combine_elem (fun a b -> H.meta [ A.name a; A.content b] [])
 
 let font_links = [
-    ("/assets/fonts/Inter.woff2", "")
+    ("/assets/fonts/Inter.var.woff2", "")
   ; ("/assets/fonts/SwearBanner-Bold.otf", "font/otf")
   ; ("/assets/fonts/SwearBanner-MediumItalic.otf", "font/otf")
 ] |> Utils.combine_elem (fun a b -> H.link [ A.rel_link `Preload; as_type "font"; A.href a; cross_origin "anonymous"; A.type_ b] [])
 
-let head ~children () = 
-  H.head [] [
+let head ~children () =
+  let elements = [
     H.title [] (H.text title)
     ; meta_info
     ; H.meta [ A.charset2 `UTF8 ] []
@@ -39,6 +39,7 @@ let head ~children () =
     ; H.link [ A.rel_link `Stylesheet; A.href "/assets/css/inter.css" ] [] 
     ; H.link [ A.rel_link `Stylesheet; A.href "/assets/css/styles.css" ] []
     ; font_links
-    ; H.link [ A.rel_link `Icon; A.type_ "image/x-icon"; A.href "/assets/images/logo.ico"] []
-    ; children
-  ]
+    ; H.link [ A.rel_link `Icon; A.type_ "image/png"; A.sizes "16x16"; A.href "/assets/images/16x16.png" ] []
+    ; H.link [ A.rel_link `Icon; A.type_ "image/png"; A.sizes "32x32"; A.href "/assets/images/32x32.png" ] []
+  ] in
+  H.head [] (List.append elements children)
