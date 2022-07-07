@@ -14,7 +14,7 @@
     "re:clean": "rescript clean",
     "css:build": "tailwindcss -i tailwind/tailwind.css -o dist/assets/css/styles.css --minify",
     "css:dev": "tailwindcss -i tailwind/tailwind.css -o src/public/assets/css/styles.css -w",
-    "dust:dev": "npx dust w",
+    "dust:dev": "bun run dust w",
     "dust:build": "npx dust",
     "export": "export NODE_ENV=production && yarn re:build && yarn dust:build && yarn css:build",
     "postexport": "yarn re:clean"
