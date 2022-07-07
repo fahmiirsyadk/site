@@ -27,7 +27,7 @@ let font_links = [
     ("/assets/fonts/Inter.var.woff2", "font/woff2")
   ; ("/assets/fonts/SwearBanner-Bold.otf", "font/otf")
   ; ("/assets/fonts/SwearBanner-MediumItalic.otf", "font/otf")
-] |> Utils.combine_elem (fun a b -> H.link [ A.rel_link `Preload; as_type "font"; A.href a; A.type_ b] [])
+] |> Utils.combine_elem (fun a b -> H.link [ A.rel_link `Preload; as_type "font"; A.href a; cross_origin ""; A.type_ b] [])
 
 let head ~children () =
   let elements = [
