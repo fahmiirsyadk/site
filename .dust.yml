@@ -3,7 +3,7 @@ dust:
   syntaxThemeUrl: "src/utils/monochrome-dark.json"
 
 collections:
-  blog:
+  writings:
     layout: layout_blog
     source: src/posts/articles
   # projects:
