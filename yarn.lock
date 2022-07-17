@@ -2,12 +2,11 @@
 # yarn lockfile v1
 
 
-"@fahmiirsyadk/dust@0.2.8":
-  version "0.2.8"
-  resolved "https://registry.yarnpkg.com/@fahmiirsyadk/dust/-/dust-0.2.8.tgz#bc5d7d5d4375ede2c7913a502b6318f2a7a1ed24"
-  integrity sha512-jEjdGvO0xsgX0NsVhEX1yxwacQus51gwvsEumyrCi043roejVTkQheoak5fZZYxLqiEfS4vdhFmFjNpliL/FUw==
+"@fahmiirsyadk/dust@0.2.7":
+  version "0.2.7"
+  resolved "https://registry.yarnpkg.com/@fahmiirsyadk/dust/-/dust-0.2.7.tgz#91851ef64b007683bb41acec3df72676ff750318"
+  integrity sha512-8TiqmdlhQFtTH/lvex4qZIR/L+0RY6Acow96JdvD1NGL4qtkGY8b+nfKgKSHdy/1KrsBcBISsQ2J3bvkTtswqA==
   dependencies:
-    "@minify-html/js" "^0.8.0"
     "@ryyppy/rescript-promise" "2.1.0"
     chokidar "3.5.3"
     fast-glob "3.2.11"
@@ -20,11 +19,6 @@
     recursive-copy "2.0.14"
     rescript "9.1.4"
     shiki "^0.10.1"
-
-"@minify-html/js@^0.8.0":
-  version "0.8.1"
-  resolved "https://registry.yarnpkg.com/@minify-html/js/-/js-0.8.1.tgz#ddf7c77c4ab3258826c4b80256b25f8ced02a85b"
-  integrity sha512-U3uNTS54r02rNSbiI67OoMrd6cIQThRKMgziqfGfwYgyG6wTq2rcJVswNFdkQGoONRUH+QKvPuJHE3t66tVb/w==
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
