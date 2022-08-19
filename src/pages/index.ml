@@ -100,11 +100,16 @@ let mainContent w p =
   ; (sectionContents ~writings: w ~projects: p ())
   ] *)
 
-  let asciiToElem list =
-    list |> List.map 
-      (fun s -> 
-        H.code [ A.class_ "block font-sans" ] [ s ])
-  
+let customCSS = 
+  H.style [] [
+    {|#terminal::-webkit-scrollbar { width: 0; }|}
+  ]
+
+let asciiToElem list =
+  list |> List.map 
+    (fun s -> 
+      H.code [ A.class_ "block font-sans" ] [ s ])
+
 let bannerASCII = 
   [
     ({|+-------------------------------------+|})
@@ -121,9 +126,9 @@ let bannerASCII =
 
 let swordASCII =
   [
-    ({|         /                         |})
+    ({|        /                         |})
   ; ({j| */////{<>ΞΞΞΞΞΞΞΞΞΞΞ===========- |j})
-  ; ({|         \                         |})
+  ; ({|        \                         |})
   ] |> asciiToElem
 
 
@@ -171,10 +176,35 @@ let footer =
   ; flower2 "left-56"
   ]
 
+let btnLogs =
+  let text = H.span [ A.class_ "group-hover:text-orange-600 font-bold" ] [ "Show/Hide terminal" ] in
+  H.div [ A.id "terminal-btn"; A.class_ "fixed z-10 text-neutral-800 text-sm bottom-0 left-0 p-4 cursor-pointer group" ] [ {j|[ $text ]|j} ]
+
+let logs =
+  H.div [ A.id "terminal"; A.class_ "w-full z-10 max-w-fit fixed space-y-2 top-0 bottom-0 left-0 overflow-y-scroll  p-4 text-neutral-500 overflow-y text-xs" ] [
+    (* H.div [ A.class_ "rotate-90" ] swordASCII *)
+    H.p [] [ "Load system kernel v1.0.1..." ]
+  ; H.p [] [ "Success kernel v1.0.1..." ]
+  ; H.p [] [ "Processing modules 1/85" ]
+  ; H.p [] [ "Processing modules 83/85" ]
+  ; H.p [] [ "Modules loaded successfully" ]
+  ; H.p [] [ "Mounting OS..." ]
+  ; H.p [] [ "." ]
+  ; H.p [] [ "." ]
+  ; H.pre [] swordASCII
+  ; H.p [] [ "." ]
+  ; H.p [ A.class_ "text-orange-600" ] [ "ChaOS v1.0" ]
+  ; H.p [] [ "Welcome to the system!" ]
+  ; H.div [ A.id "input-panel"; A.class_ "flex" ] [
+      H.p [] [ "~# "]
+    ; H.input [ A.id "input-cmd"; A.type_ "text"; A.class_ "bg-transparent outline-none pl-2 w-full"] []
+    ]
+  ]
+
 let main sources =
   (* let writings = sources.writings |> Array.to_list in *)
   H.html [] [
-    Seo.head ~children: [""] ()
+    Seo.head ~children: [ customCSS ] ()
   ; H.body [ A.class_"text-md bg-neutral-100" ] [
       H.main [ A.class_ "flex items-start justify-center min-h-screen" ] [
         H.div [ A.id "loading-state" ] []
@@ -189,6 +219,9 @@ let main sources =
         ; tocSection
         ]
       ]
+      ; logs
+      ; btnLogs
       ; footer
+      ; H.script [ A.src "/assets/js/cmd.js" ] []
     ]
   ]

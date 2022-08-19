@@ -12,7 +12,11 @@ node_modules/
 .merlin
 lib/
 .merlin
-src/**/*.js
+src/pages/*.js
+src/layouts/*.js
+src/components/*.js
+src/helpers/*.js
+
 dist/
 .vscode
 styles.css
