@@ -25,6 +25,15 @@ type sources =
   }
 
 let logoSection w h =
+  H.div [] [
+    {j|
+    <svg width="$w" height="$h" viewBox="0 0 125 57" fill="black" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0.896283 29.1184C0.322916 29.6824 0 30.4529 0 31.2572V53.5C0 55.1569 1.34315 56.5 3 56.5H29.2406C30.0461 56.5 30.8179 56.176 31.382 55.601L44.8586 41.8653C46.74 39.9476 50 41.2798 50 43.9663V53.5C50 55.1569 51.3431 56.5 53 56.5H97.2406C98.0461 56.5 98.8179 56.176 99.382 55.601L123.641 30.8751C124.192 30.3142 124.5 29.5598 124.5 28.7741V3C124.5 1.34315 123.157 0 121.5 0H111.743C110.947 0 110.184 0.316071 109.621 0.87868L101.621 8.87868C99.7314 10.7686 96.5 9.43007 96.5 6.75736V3C96.5 1.34315 95.1569 0 93.5 0H81.7281C80.9411 0 80.1855 0.309303 79.6244 0.861221L61.6037 18.5865C59.7068 20.4523 56.5 19.1085 56.5 16.4477V3C56.5 1.34315 55.1569 0 53.5 0H31.7281C30.9411 0 30.1855 0.309303 29.6244 0.861222L0.896283 29.1184Z" fill="black" />
+      </svg>
+    |j}
+  ]
+
+(* let logoSection w h =
   (* let w = 125 - in *)
    H.div [] [
     {j|
@@ -89,19 +98,97 @@ let mainContent w p =
       "Right now, he is learning react, a little bit of backend and design exploration. In addition, he is also interested in web3 & low-level programming."
     ]
   ; (sectionContents ~writings: w ~projects: p ())
+  ] *)
+
+  let asciiToElem list =
+    list |> List.map 
+      (fun s -> 
+        H.code [ A.class_ "block font-sans" ] [ s ])
+  
+let bannerASCII = 
+  [
+    ({|+-------------------------------------+|})
+  ; ({||      _________________________      ||})
+  ; ({||      \_____  ,__, ,__, ,_____/      ||})
+  ; ({||       _____| |__| |__| |_____       ||})
+  ; ({||       \____, ,_______, ,____/       ||})
+  ; ({||            | |       | |            ||})
+  ; ({||@           | |       | |           @||})
+  ; ({||@@;;;       | |   *   | |       ;;;@@||})
+  ; ({||@@@;;@;;@;;@| |,,.|.,,| |@;;@;;@;;@@@||})
+  ; ({|+------------| |-------| |------------+|})
+  ] |> asciiToElem
+
+let swordASCII =
+  [
+    ({|         /                         |})
+  ; ({j| */////{<>ΞΞΞΞΞΞΞΞΞΞΞ===========- |j})
+  ; ({|         \                         |})
+  ] |> asciiToElem
+
+
+let tocSection = 
+  H.section [ A.class_ "space-y-4"] [
+    H.h2 [] [ {|[01] <b>Writing</b>........................................[ <a href='#' class="hover:text-orange-600">More</a> ]|} ]
+  ; H.h2 [] [ {|[02] <b>Projects</b>.......................................[ <a href='#' class="hover:text-orange-600">More</a> ]|} ]
+  ; H.h2 [] [ {|[03] <b>About</b>..........................................[ <a href='#' class="hover:text-orange-600">More</a> ]|} ]
+  ; H.p [] ["I'm <b class='text-orange-600'>fahmi</b>, a front-end developer who <i>kinda</i> like experiment with things. Through this site, I write journals, portfolios, or showcases some of my experiments."]
+  ]
+
+let footer =
+  let renderYear = 
+    Js.Date.now () 
+    |> Js.Date.fromFloat 
+    |> Js.Date.getFullYear 
+    |> Js.Float.toString
+  in
+  let dustver = Dust.Extras.getVersion() in
+  let renderTime = Js.Date.now() |> Js.Date.fromFloat |> Js.Date.toUTCString in
+  let flower1 pos =
+    H.pre [ A.class_ {j|text-sm absolute bottom-0 $pos|j}] [
+      H.code [ A.class_ "block font-sans text-orange-600 font-bold" ] [ "***" ]
+    ; H.code [ A.class_ "block font-sans text-orange-600 font-bold" ] [ "***" ]
+    ; H.code [ A.class_ "block font-sans" ] [ " |" ]
+    ; H.code [ A.class_ "block font-sans" ] [ " |" ]
+    ] in
+  let flower2 pos =
+    H.pre [ A.class_ {j|text-sm absolute bottom-0 $pos|j} ] [
+      H.code [ A.class_ "block font-sans" ] [ " " ]
+    ; H.code [ A.class_ "block font-sans" ] [ " " ]
+    ; H.code [ A.class_ "block font-sans text-orange-600 font-bold" ] [ {|@|} ]
+    ; H.code [ A.class_ "block font-sans" ] [ {|||} ]
+    ] in
+  H.footer [ A.class_ "relative h-64 bg-neutral-100" ] [
+    H.div [ A.class_ "text-xs absolute z-0 bottom-2 text-neutral-600 w-full text-center" ] [
+      {j|fa-h $renderYear | Dust $dustver at $renderTime |j}
+    ]
+  ;  flower2 "right-14"
+  ; flower1 "right-56"
+  ; flower2 "right-64"
+  ; flower1 "left-14"
+  ; flower2 "right-32"
+  ; flower1 "right-20"
+  ; flower2 "left-56"
   ]
 
 let main sources =
-  let writings = sources.writings |> Array.to_list in
+  (* let writings = sources.writings |> Array.to_list in *)
   H.html [] [
     Seo.head ~children: [""] ()
-  ; H.body [ A.class_" bg-[#101010] text-white" ] [
-      H.div [ A.class_ "p-10" ] [
-        topNav
-      ; H.main [ A.class_ "pt-20 flex flex-wrap flex-row antialised" ] [
-          sidebar
-        ; mainContent writings []
+  ; H.body [ A.class_"text-md bg-neutral-100" ] [
+      H.main [ A.class_ "flex items-start justify-center min-h-screen" ] [
+        H.div [ A.id "loading-state" ] []
+      ; H.section [ A.class_ "p-10 max-w-2xl w-full" ] [
+        H.div [ A.class_ "flex w-full justify-center items-center"] [
+          logoSection 60 30
+        ]
+        ; H.pre [ A.class_ "text-sm text-center my-4"; ] bannerASCII
+        (* ; H.pre [ A.class_ "text-sm"; ] swordASCII *)
+        ; H.p [ A.class_ "text-sm italic text-center" ] ["Personal journal as place for thoughts."]
+        ; H.p [ A.class_ "text-sm text-center my-4"] [ "~~*~~"]
+        ; tocSection
         ]
       ]
+      ; footer
     ]
   ]

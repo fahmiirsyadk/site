@@ -24,7 +24,10 @@ let meta_info = [
 ] |> Utils.combine_elem (fun a b -> H.meta [ A.name a; A.content b] [])
 
 let font_links = [
-    ("/assets/fonts/Inter.var.woff2", "font/woff2")
+    ("/assets/fonts/JetBrainsMono-Regular.woff2", "font/woff2")
+  ; ("/assets/fonts/JetBrainsMono-Italic.woff2", "font/woff2")
+  ; ("/assets/fonts/JetBrainsMono-Medium.woff2", "font/woff2")
+  ; ("/assets/fonts/JetBrainsMono-Bold.woff2", "font/woff2")
   ; ("/assets/fonts/SwearBanner-BoldItalic.otf", "font/otf")
   ; ("/assets/fonts/SwearBanner-MediumItalic.otf", "font/otf")
 ] |> Utils.combine_elem (fun a b -> H.link [ A.rel_link `Preload; as_type "font"; A.href a; cross_origin ""; A.type_ b] [])
@@ -37,8 +40,8 @@ let head ~children () =
     ; H.meta [ A.name "viewport"; A.content "width=device-width,initial-scale=1,viewport-fit=cover"] []
     ; E.meta_twitter ~title:title ~description:description ~card:"summary" ()
     ; font_links
-    ; H.link [ A.rel_link `Preload; A.href "/assets/css/inter.css"; as_type "style" ] [] 
-    ; H.link [ A.rel_link `Stylesheet; A.href "/assets/css/inter.css" ] [] 
+    ; H.link [ A.rel_link `Preload; A.href "/assets/css/fonts.css"; as_type "style" ] [] 
+    ; H.link [ A.rel_link `Stylesheet; A.href "/assets/css/fonts.css" ] [] 
     ; H.link [ A.rel_link `Stylesheet; A.href "/assets/css/styles.css" ] []
     ; H.link [ A.rel_link `Icon; A.type_ "image/png"; A.sizes "16x16"; A.href "/assets/images/16x16.png" ] []
     ; H.link [ A.rel_link `Icon; A.type_ "image/png"; A.sizes "32x32"; A.href "/assets/images/32x32.png" ] []
