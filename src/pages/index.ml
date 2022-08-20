@@ -141,7 +141,7 @@ let logs =
 let main sources =
   let writings = sources.writings |> Array.to_list in
   (* let projects = sources.projects |> Array.to_list in *)
-  H.html [] [
+  H.html [ A.lang "id" ] [
     Seo.head ~children: [ customCSS ] ()
   ; H.body [ A.class_"text-md bg-neutral-100" ] [
       H.main [ A.class_ "flex items-start justify-center min-h-screen" ] [
