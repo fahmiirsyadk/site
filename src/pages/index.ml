@@ -133,10 +133,17 @@ let swordASCII =
 
 
 let tocSection = 
+  let menus = [("01", "writings");("02", "Projects");("03","About")] in
+  let menuElem num title =
+    H.h2 [ A.class_ "relative flex justify-between w-full before:absolute before:bottom-[0.4rem] before:w-full before:leading-[0px] before:border-black before:border-b-2 before:border-dotted" ] [
+      H.span [ A.class_ "bg-neutral-100 pr-1 relative z-10" ] [
+        {j|[$num] |j} ^ H.b [] [ title ]
+      ]
+    ; H.span [ A.class_ "bg-neutral-100 relative z-10" ] [ {|[ <a href="#" class="hover:text-orange-600">More</a> ]|} ]
+    ]
+  in
   H.section [ A.class_ "space-y-4"] [
-    H.h2 [] [ {|[01] <b>Writing</b>........................................[ <a href='#' class="hover:text-orange-600">More</a> ]|} ]
-  ; H.h2 [] [ {|[02] <b>Projects</b>.......................................[ <a href='#' class="hover:text-orange-600">More</a> ]|} ]
-  ; H.h2 [] [ {|[03] <b>About</b>..........................................[ <a href='#' class="hover:text-orange-600">More</a> ]|} ]
+    (menus |> Utils.combine_elem (fun a b -> menuElem a b ))
   ; H.p [] ["I'm <b class='text-orange-600'>fahmi</b>, a front-end developer who <i>kinda</i> like experiment with things. Through this site, I write journals, portfolios, or showcases some of my experiments."]
   ]
 
