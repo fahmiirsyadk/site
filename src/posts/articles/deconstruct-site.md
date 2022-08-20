@@ -2,61 +2,37 @@
 title: "Deconstruct the site"
 caption: "Breakdown what's going on behind"
 ---
+<style>
+  @media query 
+</style>
+<p class="text-center italic">( Incomplete by design )</p>
+<p class="text-center" style="opacity: 0.6;">.</p>
+<p class="text-center" style="opacity: 0.6;">.</p>
+<p class="text-center" style="opacity: 0.6;">.</p>
+<p class="text-center" style="opacity: 0.6;">.</p>
+<p class="text-center" style="opacity: 0.6;">.</p>
+<div style="height: 900px;">
+<div style="width: 300px; background: black; height: 200px; transform: translate(10rem, 8rem);"></div>
+<div style="width: 100%; height: 500px; background: black; display: flex; justify-content: center; align-items: center;">
+<pre style="background: black;">
++-------+
+|       |
+|   x   |
+|       |
++-------+
+   /|\
+  / | \
+</pre>
+</div>
+<div style="width: 200px; height: 300px; background: black; transform: translate(-2rem, -11rem);"></div>
+<div style="width: 200px; height: 300px; background: black; transform: translate(12rem, -30rem) rotate(90deg);"></div>
+<div style="width: 200px; height: 300px; background: black; transform: translate(30rem, -45rem) rotate(90deg);"></div>
+</div>
 
-Making personal website is hard
+## Incomplete
 
-Crafting personal website is hard
+Making a personal web is hard, tho because the creator wants to create the best web they ever made. they liken it to a canvas, painting and assembling as water flows following the imagination and mood of the painter. They often forget the time, making the art left incomplete and the painter is burnout. Or halfway, they feel bored or get distracted with another idea then they threw the canvas and start a new painting. This cycle repeated.
 
-
-I use my own static site generator tools named Dust. It might be different like other SSG out there.
-It's use Rescript as the main compiler, more simple explanation is Dust use Ocaml Syntax as the template engine
-and Rescript translate it to plain javascript, like Typescript but extra step. Template engine i make almost all inspired by Halogen from Haskell.
-
-
-i'm gonna explain every part of it.
-### Template Engine
-
-```
-module Html = {
-  module Elements = {
-    open Internal__Dust_Syntax_Compiler
-    let text = (node: string) => list{node}
-    let a = (attrs, children) => Paired->render("a", attrs, children)
-    let abbr = (attrs, children) => Paired->render("abbr", attrs, children)
-    let address = (attrs, children) => Paired->render("address", attrs, children)
-    let area = (attrs, children) => Paired->render("area", attrs, children)
-    ...
-  }
-  
-  module Attributes = {
-    ...
-    let datetime = (p: Js.Date.t) => AttrString("datetime", p->Js.Date.toString)->attrFormat
-    let default = p => AttrBool("default", p)->attrFormat
-    let defer = p => AttrBool("defer", p)->attrFormat
-    let dir = p => {
-      let toString = switch p {
-      | #Ltr => "ltr"
-      | #Rtl => "rtl"
-      | #Auto => "auto"
-      }
-      AttrString("dir", toString)->attrFormat
-    }
-    ...     
-  }
-}
-```
-
-```haskell
-article :: forall w i. KeyedNode I.HTMLarticle w i
-article = keyed (ElemName "article")
-article_ :: forall w i. Array (Tuple String (HTML w i)) -> HTML w i
-article_ = article []
-colgroup :: forall w i. KeyedNode I.HTMLcolgroup w i
-colgroup = keyed (ElemName "colgroup")
-posInSet :: forall r i. String -> IProp r i
-posInSet = attr (AttrName "aria-posinset")
-pressed :: forall r i. String -> IProp r i
-pressed = attr (AttrName "aria-pressed")
-readOnly :: forall r i. String -> IProp r i
-readOnly = attr (AttrName "aria-readonly")
-```
+<p class="text-neutral-500 sidenote">
+The way to break it is to mark that the painting is <b>Done</b>.
+</p>

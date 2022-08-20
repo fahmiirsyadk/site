@@ -24,8 +24,57 @@ let markdownStyle = H.style [] [
       display: block;
       margin: auto;
     }
+    .sidenote {
+      font-size: 14px; 
+      width: 224px;
+      padding: 1rem;
+      transform: translate(42rem, -12rem);
+    }
+    @media(max-width: 1200px) {
+      .sidenote {
+        transform: translate(0, 0);
+        width: auto;
+        padding: 0;
+      }
+    }
   |}
 ]
+
+let footer =
+  let renderYear = 
+    Js.Date.now () 
+    |> Js.Date.fromFloat 
+    |> Js.Date.getFullYear 
+    |> Js.Float.toString
+  in
+  let dustver = Dust.Extras.getVersion() in
+  let renderTime = Js.Date.now() |> Js.Date.fromFloat |> Js.Date.toUTCString in
+  let flower1 pos =
+    H.pre [ A.class_ {j|text-sm absolute bottom-0 $pos|j}] [
+      H.code [ A.class_ "block font-sans text-orange-600 font-bold" ] [ "***" ]
+    ; H.code [ A.class_ "block font-sans text-orange-600 font-bold" ] [ "***" ]
+    ; H.code [ A.class_ "block font-sans" ] [ " |" ]
+    ; H.code [ A.class_ "block font-sans" ] [ " |" ]
+    ] in
+  let flower2 pos =
+    H.pre [ A.class_ {j|text-sm absolute bottom-0 $pos|j} ] [
+      H.code [ A.class_ "block font-sans" ] [ " " ]
+    ; H.code [ A.class_ "block font-sans" ] [ " " ]
+    ; H.code [ A.class_ "block font-sans text-orange-600 font-bold" ] [ {|@|} ]
+    ; H.code [ A.class_ "block font-sans" ] [ {|||} ]
+    ] in
+  H.footer [ A.class_ "relative h-64 bg-neutral-100" ] [
+    H.div [ A.class_ "text-xs absolute z-0 bottom-2 text-neutral-600 w-full text-center" ] [
+      {j|fa-h $renderYear | Dust $dustver at $renderTime |j}
+    ]
+  ;  flower2 "right-14"
+  ; flower1 "right-56"
+  ; flower2 "right-64"
+  ; flower1 "left-14"
+  ; flower2 "right-32"
+  ; flower1 "right-20"
+  ; flower2 "left-56"
+  ]
 
 let main post =
   (* let _ = 
@@ -49,13 +98,13 @@ in
 in
   let selectedIsProjects = if post.name == "projects" then "text-orange-400" else "hover:text-orange-400"
 in
-  let url = (Node.Path.join2 filterUrl (post.page |> Node.Path.basename))
-  |> Node.Path.normalize 
-in
+  (* let url = (Node.Path.join2 filterUrl (post.page |> Node.Path.basename))
+  |> Node.Path.normalize  *)
+(* in *)
   H.html [ A.lang "en" ] [
     Seo.head ~children: [markdownStyle] ()
-  ; H.body [ A.class_ "bg-[#101010] selection:bg-orange-500 selection:text-black selection:font-semibold" ] [
-      H.header [ A.class_ "w-full select-none h-20 fixed top-0 text-neutral-400 flex items-center justify-center"; A.style "background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(23,23,23,0.8) 82%, rgba(23,23,23,1) 100%);" ] [
+  ; H.body [ A.class_ "bg-neutral-100" ] [
+      (* H.header [ A.class_ "w-full select-none h-20 fixed top-0 text-neutral-400 flex items-center justify-center"; ] [
         H.nav [ A.class_ "flex items-center content-center"; ] [
           H.div [ A.class_ "space-x-6" ] [
             H.a [ A.href "/blog"; A.class_ {j|font-medium cursor-pointer $selectedIsBlog|j} ] [ "Blog" ]
@@ -71,17 +120,17 @@ in
           ; H.a [ A.href "/resume"; A.class_ "font-medium hover:text-neutral-50 cursor-pointer" ] [ "Resume" ]
           ]
         ]
-      ]
-    ; H.main [ A.class_ "max-w-4xl mx-auto min-h-screen"] [
+      ] *)
+      H.main [ A.class_ "max-w-4xl mx-auto min-h-screen"] [
         H.div [ A.class_ "pt-36" ] [
-          H.h1 [ A.class_ "text-neutral-100 font-swear text-center italic font-medium text-6xl" ] [
+          H.h1 [ A.class_ "font-swear text-center italic font-medium text-6xl" ] [
             post.data.title ^ "."
           ]
           ; H.p [ A.class_ "text-neutral-500 font-medium text-center mt-4"] [ caption ]
-          ; H.article [ A.class_ "mx-auto my-20 prose dark:prose-invert selection:bg-purple-300 selection:text-black selection:font-semibold" ] [ post.content ]
+          ; H.article [ A.class_ "mx-auto my-20 prose prose-neutral text-neutral-900 prose-p:tracking-tighter text-md" ] [ post.content ]
         ]
       ]
-    ; Footer.elem ~source: {j|https://github.com/fahmiirsyadk/site/tree/master/src/posts/$url|j} ~fixed: false
+    ; footer
+    (* ; Footer.elem ~source: {j|https://github.com/fahmiirsyadk/site/tree/master/src/posts/$url|j} ~fixed: false *)
     ]
-  ; H.script [ A.src "/assets/js/highlight.js"; A.async true ] []
   ]
