@@ -21,7 +21,7 @@ let meta_info = [
   ; ("author", "fahmi irsyad khairi")
   ; ("description", description)
   ; ("title", title)
-] |> Utils.combine_elem (fun a b -> H.meta [ A.name a; A.content b] [])
+] |> Utils.combineElement2 (fun a b -> H.meta [ A.name a; A.content b] [])
 
 let font_links = [
     ("/assets/fonts/JetBrainsMono-Regular.woff2", "font/woff2")
@@ -30,7 +30,7 @@ let font_links = [
   ; ("/assets/fonts/JetBrainsMono-Bold.woff2", "font/woff2")
   (* ; ("/assets/fonts/SwearBanner-BoldItalic.otf", "font/otf") *)
   (* ; ("/assets/fonts/SwearBanner-MediumItalic.otf", "font/otf") *)
-] |> Utils.combine_elem (fun a b -> H.link [ A.rel_link `Preload; as_type "font"; A.href a; cross_origin ""; A.type_ b] [])
+] |> Utils.combineElement2 (fun a b -> H.link [ A.rel_link `Preload; as_type "font"; A.href a; cross_origin ""; A.type_ b] [])
 
 let head ~children () =
   let elements = [
