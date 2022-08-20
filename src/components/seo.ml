@@ -46,4 +46,4 @@ let head ~children () =
     ; H.link [ A.rel_link `Icon; A.type_ "image/png"; A.sizes "16x16"; A.href "/assets/images/16x16.png" ] []
     ; H.link [ A.rel_link `Icon; A.type_ "image/png"; A.sizes "32x32"; A.href "/assets/images/32x32.png" ] []
   ] in
-  H.head [ A.lang "id" ] (List.append elements children)
+  H.head [] (List.append elements children)
