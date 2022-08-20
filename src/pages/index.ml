@@ -105,33 +105,6 @@ let customCSS =
     {|#terminal::-webkit-scrollbar { width: 0; }|}
   ]
 
-let asciiToElem list =
-  list |> List.map 
-    (fun s -> 
-      H.code [ A.class_ "block font-sans" ] [ s ])
-
-let bannerASCII = 
-  [
-    ({|+-------------------------------------+|})
-  ; ({||      _________________________      ||})
-  ; ({||      \_____  ,__, ,__, ,_____/      ||})
-  ; ({||       _____| |__| |__| |_____       ||})
-  ; ({||       \____, ,_______, ,____/       ||})
-  ; ({||            | |       | |            ||})
-  ; ({||@           | |       | |           @||})
-  ; ({||@@;;;       | |   *   | |       ;;;@@||})
-  ; ({||@@@;;@;;@;;@| |,,.|.,,| |@;;@;;@;;@@@||})
-  ; ({|+------------| |-------| |------------+|})
-  ] |> asciiToElem
-
-let swordASCII =
-  [
-    ({|        /                         |})
-  ; ({j| */////{<>ΞΞΞΞΞΞΞΞΞΞΞ===========- |j})
-  ; ({|        \                         |})
-  ] |> asciiToElem
-
-
 let tocSection = 
   let menus = [("01", "writings");("02", "Projects");("03","About")] in
   let menuElem num title =
@@ -189,7 +162,6 @@ let btnLogs =
 
 let logs =
   H.div [ A.id "terminal"; A.class_ "w-full z-10 max-w-fit fixed space-y-2 top-0 bottom-0 left-0 overflow-y-scroll  p-4 text-neutral-500 overflow-y text-xs" ] [
-    (* H.div [ A.class_ "rotate-90" ] swordASCII *)
     H.p [] [ "Load system kernel v1.0.1..." ]
   ; H.p [] [ "Success kernel v1.0.1..." ]
   ; H.p [] [ "Processing modules 1/85" ]
@@ -198,7 +170,7 @@ let logs =
   ; H.p [] [ "Mounting OS..." ]
   ; H.p [] [ "." ]
   ; H.p [] [ "." ]
-  ; H.pre [] swordASCII
+  ; H.pre [] Ascii.swordASCII
   ; H.p [] [ "." ]
   ; H.p [ A.class_ "text-orange-600" ] [ "ChaOS v1.0" ]
   ; H.p [] [ "Welcome to the system!" ]
@@ -219,8 +191,10 @@ let main sources =
         H.div [ A.class_ "flex w-full justify-center items-center"] [
           logoSection 60 30
         ]
-        ; H.pre [ A.class_ "text-sm text-center my-4"; ] bannerASCII
-        (* ; H.pre [ A.class_ "text-sm"; ] swordASCII *)
+        ; H.div [ A.class_ "relative h-[200px] my-4 flex justify-center" ] [
+            H.pre [ A.class_ "text-sm text-center absolute"; ] Ascii.bannerASCII
+          ; H.pre [ A.class_ "text-sm text-center absolute font-bold"; ] Ascii.banner2ASCII
+          ]
         ; H.p [ A.class_ "text-sm italic text-center" ] ["Personal journal as place for thoughts."]
         ; H.p [ A.class_ "text-sm text-center my-4"] [ "~~*~~"]
         ; tocSection
