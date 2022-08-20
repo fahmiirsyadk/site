@@ -191,9 +191,13 @@ let main sources =
         H.div [ A.class_ "flex w-full justify-center items-center"] [
           logoSection 60 30
         ]
-        ; H.div [ A.class_ "relative h-[200px] my-4 flex justify-center" ] [
-            H.pre [ A.class_ "text-sm text-center absolute"; ] Ascii.bannerASCII
-          ; H.pre [ A.class_ "text-sm text-center absolute font-bold"; ] Ascii.banner2ASCII
+        ; H.div [ A.class_ "relative h-[200px] my-4 flex justify-center"] [
+            H.div [ A.class_ "w-[328px] relative overflow-hidden cursor-pointer group subpixel-antialiased" ] [
+              H.pre [ A.class_ "text-sm text-center absolute select-none z-10"; ] Ascii.borderASCII
+            ; H.pre [ A.class_ "text-sm text-center select-none absolute font-bold translate ease-in-out z-0 duration-[1.2s] group-hover:scale-150 group-hover:translate-y-[-50px]"; ] Ascii.banner1ASCII
+            ; H.pre [ A.class_ "text-sm text-center select-none absolute font-bold translate ease-in-out z-0 duration-1000 group-hover:scale-150 group-hover:opacity-0"; ] Ascii.banner3ASCII
+            ; H.pre [ A.class_ "text-sm text-center translate ease-in-out z-0 duration-1000 group-hover:scale-[10.0] group-hover:-translate-y-24 select-none absolute font-bold"; ] Ascii.banner2ASCII
+            ]
           ]
         ; H.p [ A.class_ "text-sm italic text-center" ] ["Personal journal as place for thoughts."]
         ; H.p [ A.class_ "text-sm text-center my-4"] [ "~~*~~"]
