@@ -2,15 +2,7 @@
 title: "Deconstruct the site"
 caption: "Breakdown what's going on behind"
 ---
-<style>
-  @media query 
-</style>
 <p class="text-center italic">( Incomplete by design )</p>
-<p class="text-center" style="opacity: 0.6;">.</p>
-<p class="text-center" style="opacity: 0.6;">.</p>
-<p class="text-center" style="opacity: 0.6;">.</p>
-<p class="text-center" style="opacity: 0.6;">.</p>
-<p class="text-center" style="opacity: 0.6;">.</p>
 <div class="bg-orange-600 flex flex-row items-center w-full h-[500px] justify-around flex-wrap">
 <pre class="transition duration-300 ease-out hover:scale-90 select-none cursor-pointer subpixel-antialiased" style="background: radial-gradient(circle at 50% 50%,#421802, #020100);">
 +-------+
