@@ -28,8 +28,6 @@ let font_links = [
   ; ("/assets/fonts/JetBrainsMono-Italic.woff2", "font/woff2")
   ; ("/assets/fonts/JetBrainsMono-Medium.woff2", "font/woff2")
   ; ("/assets/fonts/JetBrainsMono-Bold.woff2", "font/woff2")
-  (* ; ("/assets/fonts/SwearBanner-BoldItalic.otf", "font/otf") *)
-  (* ; ("/assets/fonts/SwearBanner-MediumItalic.otf", "font/otf") *)
 ] |> Utils.combineElement2 (fun a b -> H.link [ A.rel_link `Preload; as_type "font"; A.href a; cross_origin ""; A.type_ b] [])
 
 let head ~children () =

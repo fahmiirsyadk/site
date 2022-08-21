@@ -27,18 +27,24 @@ let markdownStyle = H.style [] [
     .sidenote {
       font-size: 14px; 
       width: 224px;
-      padding: 1rem;
-      transform: translate(42rem, -12rem);
+      height: 0;
     }
     @media(max-width: 1200px) {
       .sidenote {
-        transform: translate(0, 0);
+        transform: translate(0, 0) !important;
         width: auto;
-        padding: 0;
+        height: auto;
       }
     }
   |}
 ]
+
+let as_type = A.custom_attr("as")
+let cross_origin = A.custom_attr("crossOrigin")
+let font_swear = [
+    ("/assets/fonts/SwearBanner-BoldItalic.otf", "font/otf")
+  ; ("/assets/fonts/SwearBanner-MediumItalic.otf", "font/otf")
+] |> Utils.combineElement2 (fun a b -> H.link [ A.rel_link `Preload; as_type "font"; A.href a; cross_origin ""; A.type_ b] [])
 
 let footer =
   let renderYear = 
@@ -102,8 +108,8 @@ in
   |> Node.Path.normalize  *)
 (* in *)
   H.html [ A.lang "en" ] [
-    Seo.head ~children: [markdownStyle] ()
-  ; H.body [ A.class_ "bg-neutral-100" ] [
+    Seo.head ~children: [ markdownStyle; font_swear ] ()
+  ; H.body [ A.class_ "bg-neutral-100 antialised" ] [
       (* H.header [ A.class_ "w-full select-none h-20 fixed top-0 text-neutral-400 flex items-center justify-center"; ] [
         H.nav [ A.class_ "flex items-center content-center"; ] [
           H.div [ A.class_ "space-x-6" ] [
@@ -121,13 +127,13 @@ in
           ]
         ]
       ] *)
-      H.main [ A.class_ "max-w-4xl mx-auto min-h-screen"] [
+      H.main [ A.class_ "max-w-4xl mx-auto mx-auto px-4 sm:px-6 md:px-8 min-h-screen"] [
         H.div [ A.class_ "pt-36" ] [
           H.h1 [ A.class_ "font-swear text-center italic font-medium text-6xl" ] [
             post.data.title ^ "."
           ]
           ; H.p [ A.class_ "text-neutral-500 font-medium text-center mt-4"] [ caption ]
-          ; H.article [ A.class_ "mx-auto my-20 prose prose-neutral text-neutral-900 prose-p:tracking-tighter text-md" ] [ post.content ]
+          ; H.article [ A.class_ "mx-auto my-20 prose prose-neutral text-neutral-800 prose-p:tracking-tighter" ] [ post.content ]
         ]
       ]
     ; footer

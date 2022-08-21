@@ -38,13 +38,16 @@ let customCSS =
     {|#terminal::-webkit-scrollbar { width: 0; }|}
   ]
 
+let smallIntroduction =
+  H.p [] ["I'm <strong>fahmi</strong>, a front-end developer who <i>kinda</i> like experiment with things. Through this site, I write journals, portfolios, or showcases some of my experiments."]  
+  
 let tocSection writings =
   let articleItem res =
     let title = res.data.title in
     let link = res.url in
-    H.a [ A.href {j|$link|j}; A.class_ "flex justify-between group items-center text-md" ] [
-      H.div [ A.class_ "flex space-x-2 font-bold"] [
-        H.span [] [ {j|↪|j} ]
+    H.a [ A.href {j|$link|j}; A.class_ "flex justify-between group items-center" ] [
+      H.div [ A.class_ "flex space-x-2 font-bold sm:-ml-2"] [
+        H.span [ A.class_ "sm:hidden sm:invisible" ] [ {j|↪|j} ]
         ; H.h3 [ A.class_ "flex-1 underline decoration-wavy decoration-neutral-400 underline-offset-2 group-hover:decoration-orange-600" ] [ {j|$title|j} ]
         ; H.span [ A.class_ "text-transparent group-hover:text-orange-600" ] [{j|⁕|j} ] 
       ]
@@ -53,9 +56,9 @@ let tocSection writings =
   in
   let menus =
     [
-      ("01", "Writings", (writings |> Utils.combineElement (fun res -> articleItem res)))
-    ; ("02", "Projects", "")
-    ; ("03", "About", "")
+      ("01", "About", smallIntroduction)
+    ; ("02", "Writings", (writings |> Utils.combineElement (fun res -> articleItem res)))
+    ; ("03", "Projects", "")
     ]
   in
   let menuElem num title menu =
@@ -74,8 +77,7 @@ let tocSection writings =
     ]
   in
   H.section [] [
-    ( menus |> Utils.combineElement3 (fun a b c -> menuElem a b c) )
-  ; H.p [] ["I'm <strong>fahmi</strong>, a front-end developer who <i>kinda</i> like experiment with things. Through this site, I write journals, portfolios, or showcases some of my experiments."]  
+    ( menus |> Utils.combineElement3 (fun a b c -> menuElem a b c))
   ]
 
 let footer =
@@ -143,19 +145,19 @@ let main sources =
   (* let projects = sources.projects |> Array.to_list in *)
   H.html [ A.lang "id" ] [
     Seo.head ~children: [ customCSS ] ()
-  ; H.body [ A.class_"text-md bg-neutral-100" ] [
+  ; H.body [ A.class_"bg-neutral-100" ] [
       H.main [ A.class_ "flex items-start justify-center min-h-screen" ] [
         H.div [ A.id "loading-state" ] []
       ; H.section [ A.class_ "p-10 max-w-2xl w-full" ] [
         H.div [ A.class_ "flex w-full justify-center items-center"] [
           logoSection 60 30
         ]
-        ; H.div [ A.class_ "relative h-[200px] my-4 flex justify-center"] [
-            H.div [ A.class_ "w-[328px] relative overflow-hidden cursor-pointer group subpixel-antialiased" ] [
-              H.pre [ A.class_ "text-sm text-center absolute select-none z-10"; ] Ascii.borderASCII
-            ; H.pre [ A.class_ "text-sm text-center select-none absolute font-bold translate ease-in-out z-0 duration-[1.2s] group-hover:scale-150 group-hover:translate-y-[-50px]"; ] Ascii.banner1ASCII
-            ; H.pre [ A.class_ "text-sm text-center select-none absolute font-bold translate ease-in-out z-0 duration-1000 group-hover:scale-150 group-hover:opacity-0"; ] Ascii.banner3ASCII
-            ; H.pre [ A.class_ "text-sm text-center translate ease-in-out z-0 duration-1000 group-hover:scale-[10.0] group-hover:-translate-y-24 select-none absolute font-bold"; ] Ascii.banner2ASCII
+        ; H.div [ A.class_ "relative my-4 oveflow-hidden"] [
+            H.div [ A.class_ "w-full h-[200px] sm:h-[160px] flex justify-center relative overflow-hidden cursor-pointer group" ] [
+              H.pre [ A.class_ "text-sm text-center absolute select-none z-10 sm:text-xs"; ] Ascii.borderASCII
+            ; H.pre [ A.class_ "text-sm text-center subpixel-antialiased select-none absolute font-bold translate ease-in-out z-0 duration-[1.2s] group-hover:scale-150 group-hover:translate-y-[-50px] sm:text-xs"; ] Ascii.banner1ASCII
+            ; H.pre [ A.class_ "text-sm text-center subpixel-antialiased select-none absolute font-bold translate ease-in-out z-0 duration-1000 group-hover:scale-150 group-hover:opacity-0 sm:text-xs"; ] Ascii.banner3ASCII
+            ; H.pre [ A.class_ "text-sm text-center subpixel-antialiased translate ease-in-out z-0 duration-1000 group-hover:scale-[10.0] group-hover:-translate-y-24 select-none absolute font-bold sm:text-xs"; ] Ascii.banner2ASCII
             ]
           ]
         ; H.p [ A.class_ "text-sm italic text-center" ] ["Personal journal as place for thoughts."]
