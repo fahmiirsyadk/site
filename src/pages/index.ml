@@ -39,7 +39,7 @@ let customCSS =
   ]
 
 let smallIntroduction =
-  H.h1 [ A.class_ "sm:text-sm" ] ["I'm <strong>fahmi</strong>, a front-end developer who <i>kinda</i> like experiment with things. Through this site, I write journals, portfolios, or showcases some of my experiments."]  
+  H.h1 [ A.class_ "text-base sm:text-sm" ] ["I'm <strong>fahmi</strong>, a front-end developer who <i>kinda</i> like experiment with things. Through this site, I write journals, portfolios, or showcases some of my experiments."]  
   
 let tocSection writings =
   let articleItem res =

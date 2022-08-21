@@ -24,18 +24,6 @@ let markdownStyle = H.style [] [
       display: block;
       margin: auto;
     }
-    .sidenote {
-      font-size: 14px; 
-      width: 224px;
-      height: 0;
-    }
-    @media(max-width: 1200px) {
-      .sidenote {
-        transform: translate(0, 0) !important;
-        width: auto;
-        height: auto;
-      }
-    }
   |}
 ]
 
@@ -129,11 +117,11 @@ in
       ] *)
       H.main [ A.class_ "max-w-4xl mx-auto mx-auto px-4 sm:px-6 md:px-8 min-h-screen"] [
         H.div [ A.class_ "pt-36" ] [
-          H.h1 [ A.class_ "font-swear text-center italic font-medium text-6xl" ] [
+          H.h1 [ A.class_ "font-swear text-center italic font-medium text-6xl sm:text-4xl" ] [
             post.data.title ^ "."
           ]
-          ; H.p [ A.class_ "text-neutral-500 font-medium text-center mt-4"] [ caption ]
-          ; H.article [ A.class_ "mx-auto my-20 prose prose-neutral text-neutral-800 prose-p:tracking-tighter" ] [ post.content ]
+          ; H.p [ A.class_ "text-neutral-500 font-medium text-center mt-4 sm:text-sm"] [ caption ]
+          ; H.article [ A.class_ "mx-auto my-20 prose prose-neutral sm:prose-sm text-neutral-800 prose-p:tracking-tighter" ] [ post.content ]
         ]
       ]
     ; footer
