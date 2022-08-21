@@ -39,7 +39,7 @@ let customCSS =
   ]
 
 let smallIntroduction =
-  H.p [] ["I'm <strong>fahmi</strong>, a front-end developer who <i>kinda</i> like experiment with things. Through this site, I write journals, portfolios, or showcases some of my experiments."]  
+  H.h1 [] ["I'm <strong>fahmi</strong>, a front-end developer who <i>kinda</i> like experiment with things. Through this site, I write journals, portfolios, or showcases some of my experiments."]  
   
 let tocSection writings =
   let articleItem res =
@@ -160,8 +160,8 @@ let main sources =
             ; H.pre [ A.class_ "text-sm text-center subpixel-antialiased translate ease-in-out z-0 duration-1000 group-hover:scale-[10.0] group-hover:-translate-y-24 select-none absolute font-bold sm:text-xs"; ] Ascii.banner2ASCII
             ]
           ]
-        ; H.p [ A.class_ "text-sm italic text-center" ] ["Personal journal as place for thoughts."]
-        ; H.p [ A.class_ "text-sm text-center my-4"] [ "~~*~~"]
+        ; H.h4 [ A.class_ "text-sm italic text-center" ] ["Personal journal as place for thoughts."]
+        ; H.h4 [ A.class_ "text-sm text-center my-4"] [ "~~*~~"]
         ; tocSection writings
         ]
       ]
