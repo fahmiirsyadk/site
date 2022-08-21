@@ -121,10 +121,9 @@ in
             post.data.title ^ "."
           ]
           ; H.p [ A.class_ "text-neutral-500 font-medium text-center mt-4 sm:text-sm"] [ caption ]
-          ; H.article [ A.class_ "mx-auto my-20 prose prose-neutral sm:prose-sm  text-neutral-800 prose-p:tracking-tighter" ] [ post.content ]
+          ; H.article [ A.class_ "mx-auto my-20 prose prose-neutral sm:prose-sm text-neutral-800 prose-p:tracking-tighter" ] [ post.content ]
         ]
       ]
     ; footer
-    (* ; Footer.elem ~source: {j|https://github.com/fahmiirsyadk/site/tree/master/src/posts/$url|j} ~fixed: false *)
     ]
   ]

@@ -53,3 +53,37 @@ The way to break it is to mark that the painting is <b>Done</b>.
 <p class="text-neutral-500 text-sm w-[220px] h-0 xl:w-auto xl:h-auto xl:translate-x-0 xl:translate-y-0 translate-x-[42rem] translate-y-[-3rem]">
 As version 1.0 :P
 </p>
+
+## Concept
+
+I've think bringing old style & modern art style together with keywords like *ASCII*, *monospace typeface*, *cyberpunk*, *gradient*, *blur* & *grain* 
+yet keeping the simplicity for documenting journals.
+
+here's moodboard i've been collect:
+
+<ul class="p-0 grid grid-cols-4 gap-4">
+  <li class="p-0 m-0 cursor-pointer group">
+    <img class="object-cover m-0 transition ease-out duration-100 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-orange-600/20 rounded-md min-w-full max-h-full align-bottom" src="/assets/images/deconstruct-site/terminal-1.gif" alt="evangelion chart UI" loading="lazy">
+  </li>
+  <li class="p-0 m-0 cursor-pointer group">
+    <img class="object-cover m-0 transition ease-out duration-100 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-orange-600/20 rounded-md min-w-full max-h-full align-bottom" src="/assets/images/deconstruct-site/terminal-2.gif" alt="evangelion files deleted UI" loading="lazy">
+  </li>
+  <li class="p-0 m-0 cursor-pointer group">
+    <img class="object-cover m-0 transition ease-out duration-100 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-orange-600/20 rounded-md min-w-full max-h-full align-bottom" src="/assets/images/deconstruct-site/ascii.jpg" alt="black terminal" loading="lazy">
+  </li>
+  <li class="p-0 m-0 cursor-pointer group">
+    <img class="object-cover m-0 transition ease-out duration-100 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-orange-600/20 rounded-md min-w-full max-h-full align-bottom" src="/assets/images/deconstruct-site/moodboard-4.jpg" alt="black terminal" loading="lazy">
+  </li>
+  <li class="p-0 m-0 cursor-pointer group">
+    <img class="object-cover m-0 transition ease-out duration-100 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-orange-600/20 rounded-md min-w-full max-h-full align-bottom" src="/assets/images/deconstruct-site/moodboard-2.jpg" alt="black terminal" loading="lazy">
+  </li>
+  <li class="p-0 m-0 cursor-pointer group">
+    <img class="object-cover m-0 transition ease-out duration-100 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-orange-600/20 rounded-md min-w-full max-h-full align-bottom" src="/assets/images/deconstruct-site/moodboard-3.jpg" alt="black terminal" loading="lazy">
+  </li>
+  <li class="p-0 m-0 cursor-pointer group">
+    <img class="object-cover m-0 transition ease-out duration-100 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-orange-600/20 rounded-md min-w-full max-h-full align-bottom" src="/assets/images/deconstruct-site/moodboard-5.gif" alt="black terminal" loading="lazy">
+  </li>
+  <li class="p-0 m-0 cursor-pointer group">
+    <img class="object-cover m-0 transition ease-out duration-100 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-orange-600/20 rounded-md min-w-full max-h-full align-bottom" src="/assets/images/deconstruct-site/moodboard-6.gif" alt="black terminal" loading="lazy">
+  </li>
+</ul>
