@@ -1,5 +1,5 @@
-module H = Dust.Html.Elements
-module A = Dust.Html.Attributes
+module H = Elements
+module A = Attributes
 
 let asciiToElem list css =
   list |> List.map

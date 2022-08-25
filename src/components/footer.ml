@@ -1,5 +1,5 @@
-module H = Dust.Html.Elements
-module A = Dust.Html.Attributes
+module H = Elements
+module A = Attributes
 
 let renderYear = 
   Js.Date.now () 
@@ -7,7 +7,7 @@ let renderYear =
   |> Js.Date.getFullYear 
   |> Js.Float.toString
 
-let dustver = Dust.Extras.getVersion()
+let dustver = Extras.getVersion()
 let renderTime = Js.Date.now() |> Js.Date.fromFloat |> Js.Date.toUTCString
 
 let styles = [%bs.obj {

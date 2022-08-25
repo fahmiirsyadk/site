@@ -1,6 +1,6 @@
-module H = Dust.Html.Elements
-module A = Dust.Html.Attributes
-module E = Dust.Extras
+module H = Elements
+module A = Attributes
+(* module E = Extra *)
 
 
 type caption =
@@ -39,7 +39,7 @@ let customCSS =
   ]
 
 let smallIntroduction =
-  H.h1 [ A.class_ "text-base sm:text-sm" ] ["I'm <strong>fahmi</strong>, a front-end developer who <i>kinda</i> like experiment with things. Through this site, I write journals, portfolios, or showcases some of my experiments."]  
+  H.h1 [ A.class_ "text-base sm:text-sm" ] ["I'm <strong>fah</strong>, a front-end developer who <i>kinda</i> like experiment with things. Through this site, I write journals, portfolios, or showcases some of my experiments."]  
   
 let tocSection writings =
   let articleItem res =
@@ -87,7 +87,7 @@ let footer =
     |> Js.Date.getFullYear 
     |> Js.Float.toString
   in
-  let dustver = Dust.Extras.getVersion() in
+  let dustver = Extras.getVersion() in
   let renderTime = Js.Date.now() |> Js.Date.fromFloat |> Js.Date.toUTCString in
   let flower1 pos =
     H.pre [ A.class_ {j|text-sm absolute bottom-0 $pos|j}] [

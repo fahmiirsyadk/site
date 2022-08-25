@@ -1,5 +1,5 @@
-module H = Dust.Html.Elements
-module A = Dust.Html.Attributes
+module H = Elements
+module A = Attributes
 
 type caption = 
 | None
@@ -41,7 +41,7 @@ let footer =
     |> Js.Date.getFullYear 
     |> Js.Float.toString
   in
-  let dustver = Dust.Extras.getVersion() in
+  let dustver = Extras.getVersion() in
   let renderTime = Js.Date.now() |> Js.Date.fromFloat |> Js.Date.toUTCString in
   let flower1 pos =
     H.pre [ A.class_ {j|text-sm absolute bottom-0 $pos|j}] [

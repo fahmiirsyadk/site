@@ -1,8 +1,8 @@
-module H = Dust.Html.Elements
-module A = Dust.Html.Attributes
-module E = Dust.Html.Extra
+module H = Elements
+module A = Attributes
+module E = Extras
 
-let version = Dust.Extras.getVersion()
+let version = Site.Extras.getVersion()
 let title = "fahmiirsyadk"
 let description = "FAHMIIRSYADK is a personal/blog website authored by fahmi irsyad khairi"
 let as_type = A.custom_attr("as")
@@ -36,7 +36,7 @@ let head ~children () =
     ; meta_info
     ; H.meta [ A.charset2 `UTF8 ] []
     ; H.meta [ A.name "viewport"; A.content "width=device-width,initial-scale=1,viewport-fit=cover"] []
-    ; E.meta_twitter ~title:title ~description:description ~card:"summary" ()
+    (* ; E.meta_twitter ~title:title ~description:description ~card:"summary" () *)
     ; font_links
     ; H.link [ A.rel_link `Preload; A.href "/assets/css/fonts.css"; as_type "style" ] [] 
     ; H.link [ A.rel_link `Stylesheet; A.href "/assets/css/fonts.css" ] [] 

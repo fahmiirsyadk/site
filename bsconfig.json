@@ -1,20 +1,23 @@
 {
   "name": "fahmiirsyadk-site",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "sources": [
     {
       "dir": "src",
       "subdirs": true
+    },
+    {
+      "dir": "engine",
+      "subdirs": true
     }
   ],
   "package-specs": {
-    "module": "commonjs",
-    "in-source": true
+    "module": "commonjs"
   },
-  "suffix": ".js",
+  "suffix": ".bs.js",
   "namespace": "site",
   "bs-dependencies": [
-    "@fahmiirsyadk/dust"
+    "@ryyppy/rescript-promise"
   ],
   "warnings": {
     "error": "+101"

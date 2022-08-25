@@ -5,22 +5,32 @@
   "author": "fahmiirsyadk <fahmiirsyad10@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "@fahmiirsyadk/dust": "0.2.7",
-    "rescript": "9.1.4"
+    "esy": "^0.6.12"
   },
   "scripts": {
-    "re:dev": "rescript build -w",
-    "re:build": "rescript build",
-    "re:clean": "rescript clean",
+    "build": "esy",
+    "watch": "esy && esy build:watch",
     "css:build": "tailwindcss -i tailwind/tailwind.css -o dist/assets/css/styles.css --minify",
     "css:dev": "tailwindcss -i tailwind/tailwind.css -o src/public/assets/css/styles.css -w",
-    "dust:dev": "npx dust w",
-    "dust:build": "npx dust",
+    "dust:dev": "node ./engine/dust w",
+    "dust:build": "node ./engine/dust",
     "export": "export NODE_ENV=production && yarn re:build && yarn dust:build && yarn css:build",
     "postexport": "yarn re:clean"
   },
   "dependencies": {
     "@tailwindcss/typography": "0.5.2",
-    "tailwindcss": "3.0.24"
+    "tailwindcss": "3.0.24",
+    "@ryyppy/rescript-promise": "2.1.0",
+    "chokidar": "3.5.3",
+    "decache": "^4.6.1",
+    "fast-glob": "3.2.11",
+    "fs-extra": "10.1.0",
+    "gray-matter": "4.0.3",
+    "js-yaml": "4.1.0",
+    "kleur": "4.1.4",
+    "live-server": "1.2.2",
+    "markdown-it": "13.0.1",
+    "recursive-copy": "2.0.14",
+    "shiki": "^0.10.1"
   }
 }

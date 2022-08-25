@@ -1,3 +1,3 @@
-module A = Dust.Html.Attributes
+module A = Attributes
 
 let ariaHidden = A.custom_attr "aria-hidden"
