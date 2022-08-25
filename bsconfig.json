@@ -7,7 +7,7 @@
       "subdirs": true
     },
     {
-      "dir": "engine",
+      "dir": "generator",
       "subdirs": true
     }
   ],

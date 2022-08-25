@@ -1,4 +1,0 @@
-#!/usr/bin/env node
-// var engine = require("./src/Utils/Internal__Dust_CLI.js")
-var engine = require('../_build/default/engine/Utils/Internal__Dust_CLI.bs.js')
-engine.exec()

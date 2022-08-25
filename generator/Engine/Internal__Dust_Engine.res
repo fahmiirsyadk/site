@@ -28,7 +28,7 @@ let cleanOutputFolder = () => Utils.emptyDir(Config.getFolderOutput())
 let generateHtml = (htmlContent, location) => {
   location->Utils.outputFile(
     htmlContent,
-    ~options=Utils.writeFileOptions(~encoding=#"utf-8", ()),
+    ~options=Utils.writeFileOptions(~encoding="utf-8", ()),
     (),
   )
 }
@@ -51,8 +51,8 @@ let parseCollection = (meta, output, filename, props): metadataML => {
     process(meta, output, filename, props)
   } else {
     let basename = Node.Path.basename(meta["layout"])->Js.String2.slice(~from=0, ~to_=-3)
-    Utils.ErrorMessage.logMessage(#error(`Template [${basename}] not exist`))
-    Utils.ErrorMessage.logMessage(#info(`Create a file named ${basename}.ml in folder layouts`))
+    Utils.ErrorMessage.logMessage(Errors(`Template [${basename}] not exist`))
+    Utils.ErrorMessage.logMessage(Info(`Create a file named ${basename}.ml in folder layouts`))
     {status: false, filename: filename, path: filename, content: ``}
   }
 }
@@ -62,8 +62,8 @@ let parsePages = (metadata, path, output): metadataML => {
     Utils.readImportML(metadata, path, output)
   } else {
     let basename = Node.Path.basename(path)->Js.String2.slice(~from=0, ~to_=-3)
-    Utils.ErrorMessage.logMessage(#error(`Page [${basename}] not exist`))
-    Utils.ErrorMessage.logMessage(#info(`Create a file named ${path}.ml in folder pages`))
+    Utils.ErrorMessage.logMessage(Errors(`Page [${basename}] not exist`))
+    Utils.ErrorMessage.logMessage(Info(`Create a file named ${path}.ml in folder pages`))
     {status: false, filename: path, path: output, content: ``}
   }
 }

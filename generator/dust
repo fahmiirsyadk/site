@@ -1,0 +1,3 @@
+#!/usr/bin/env node
+var engine = require('../_build/default/generator/Utils/Internal__Dust_CLI.bs.js')
+engine.exec()
