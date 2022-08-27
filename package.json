@@ -10,12 +10,13 @@
   "scripts": {
     "build": "esy",
     "watch": "esy && esy build:watch",
+    "clean": "rm -rf _build",
     "css:build": "tailwindcss -i tailwind/tailwind.css -o dist/assets/css/styles.css --minify",
     "css:dev": "tailwindcss -i tailwind/tailwind.css -o src/public/assets/css/styles.css -w",
-    "dust:dev": "node ./engine/dust w",
-    "dust:build": "node ./engine/dust",
-    "export": "export NODE_ENV=production && yarn re:build && yarn dust:build && yarn css:build",
-    "postexport": "yarn re:clean"
+    "dust:dev": "node ./generator/dust w",
+    "dust:build": "node ./generator/dust",
+    "export": "export NODE_ENV=production && yarn build && yarn dust:build && yarn css:build",
+    "postexport": "yarn clean"
   },
   "dependencies": {
     "@tailwindcss/typography": "0.5.2",

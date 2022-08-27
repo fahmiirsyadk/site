@@ -159,7 +159,7 @@ let sortGlobalCollectionMeta = %raw("
 ")
 
 let copyPublic = () => {
-  let publicPath = [Config.getFolderBase(), "public"]->Node.Path.join
+  let publicPath = Config.config.public
   publicPath->Node.Fs.existsSync
     ? publicPath->Utils.recCopy(
         Config.getFolderOutput(),
