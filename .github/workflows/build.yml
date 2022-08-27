@@ -1,0 +1,60 @@
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+on:
+  pull_request:
+  push:
+   branches:
+     - master
+jobs:
+  build-sample-project:
+    name: Build faah.me
+    strategy:
+      matrix:
+        system: [ubuntu-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.system }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: current
+      - name: Restore cache
+        uses: actions/cache@v3
+        id: restore-cache
+        with:
+          # The entire ~/.esy directory has to be cached because esy's
+          # import/export commands don't import/export the Melange JS runtime
+          # files
+          path: ~/.esy
+          key: ${{ matrix.system }}-esy-${{ hashFiles('esy.lock/index.json') }}
+          restore-keys: |
+            ${{ matrix.system }}-esy-
+      - name: npm install
+        run: npm install
+      # Separating the esy steps provides more fine-grained insight when
+      # debugging failed jobs
+      - name: esy install
+        run: npx esy install
+      - name: Build esy dependencies
+        run: npx esy build-dependencies --release
+      - name: Build project
+        run: npx esy build --release
+      - name: Bundle JS app
+        run: npm run export
+      - name: Install Vercel CLI
+        run: npm install --global vercel@canary
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy Project Artifacts to Vercel
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}        
+      # - name: Vercel Action
+      #   uses: amondnet/vercel-action@v25.1.0
+      #   with:
+      #     vercel-token: ${{ secrets.VERCEL_TOKEN }} # Required
+      #     github-token: ${{ secrets.GH_TOKEN }} #Optional 
+      #     vercel-args: '--prod' #Optional
+      #     vercel-org-id: ${{ secrets.ORG_ID}}  #Required
+      #     vercel-project-id: ${{ secrets.PROJECT_ID}} #Required 
