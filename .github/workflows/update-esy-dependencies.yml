@@ -37,7 +37,7 @@ jobs:
         run: npm run bundle
       - name: Create pull request to update dependencies
         if: steps.check-for-updates.outcome == 'success'
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         with:
           commit-message: Update esy dependencies
           branch: update-esy-dependencies
