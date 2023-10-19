@@ -501,10 +501,10 @@ esprima@^4.0.0:
   resolved "https://registry.yarnpkg.com/esprima/-/esprima-4.0.1.tgz#13b04cdb3e6c5d19df91ab6987a8695619b0aa71"
   integrity sha512-eGuFFw7Upda+g4p+QHvnW0RyTX/SVeJBDM/gCtMARO0cLuT2HcEKnTPvhjV6aGeqrCB/sbNop0Kszm0jsaWU4A==
 
-esy@0.6.12:
-  version "0.6.12"
-  resolved "https://registry.yarnpkg.com/esy/-/esy-0.6.12.tgz#e4043677d36a3b39e48046d2bcb1ac7322c5140b"
-  integrity sha512-EJAbVSOA+KRAK86ZY3tSZUpbh9cYaUxIITycXFJp9yuH+XAuLrCSdTJsH+wvQniRrzAgUBJ6B2vYC2hFB09lTQ==
+esy@0.7.2:
+  version "0.7.2"
+  resolved "https://registry.yarnpkg.com/esy/-/esy-0.7.2.tgz#43624175f0320af84e065e2f186cc2d6f2dac530"
+  integrity sha512-l8JktgiCkMk8MB9HaSISzSaSSKX19pHtLsRTymZGHHrzk47GrOQLXmez6OJNSgUh07rfasybABAT6yasppC5Zg==
 
 etag@~1.8.1:
   version "1.8.1"
