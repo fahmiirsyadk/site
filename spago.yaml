@@ -1,0 +1,43 @@
+package:
+  name: site
+  dependencies:
+    - aff
+    - argonaut-codecs
+    - arrays
+    - console
+    - datetime
+    - effect
+    - either
+    - foldable-traversable
+    - foreign-object
+    - luna
+    - maybe
+    - node-fs
+    - node-path
+    - node-process
+    - now
+    - nullable
+    - prelude
+    - routing
+    - routing-duplex
+    - strings
+    - transformation-matrix
+    - tuples
+    - unsafe-coerce
+    - web-dom
+    - web-html
+  # Used by `pnpm bundle` (dev). Production uses purs-backend-es bundle-app + --minify in build.sh.
+  bundle:
+    platform: browser
+    type: app
+    module: Main
+    outfile: dist/app.js
+  run:
+    main: PrerenderMain
+workspace:
+  packageSet:
+    registry: 75.7.0
+  extraPackages:
+    luna:
+      git: https://github.com/fahmiirsyadk/luna.git
+      ref: 37ae92731e68b701ac04de4418e56a0bdbf6f572

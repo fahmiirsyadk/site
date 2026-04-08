@@ -1,0 +1,31 @@
+{
+  "name": "site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bash build.sh",
+    "content": "node scripts/build-content.js",
+    "prerender": "pnpm exec spago run -p site --main PrerenderMain",
+    "bundle": "pnpm exec spago bundle -p site --platform browser --bundle-type app --module Main --outfile dist/app.js",
+    "bundle:prod": "mkdir -p dist && pnpm exec purs-backend-es build --int-tags && pnpm exec purs-backend-es bundle-app -m Main -p browser --minify --no-build -t dist/app.js",
+    "spago:build": "pnpm exec spago build",
+    "serve": "serve dist -l 8080",
+    "tunnel": "cloudflared tunnel run --token \"$CLOUDFLARED_TUNNEL_TOKEN\"",
+    "format": "purs-tidy format-in-place src"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "markdown-it": "^14.1.0",
+    "markdown-it-collapsible": "^2.0.2",
+    "serve": "^14.2.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19",
+    "esbuild": "^0.28.0",
+    "purescript": "0.15.15",
+    "purs-backend-es": "1.4.3",
+    "spago": "^1.0.4",
+    "tailwindcss": "^3.4.17"
+  }
+}

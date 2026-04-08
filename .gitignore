@@ -1,0 +1,43 @@
+# Purescript
+.psci_modules/
+.psc-ide-port
+.purs-repl
+output/
+output-es/
+.spago/
+.cache/
+src_temp/
+generated/
+
+# Node.js
+node_modules/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Build output
+dist/
+build/
+tmp/
+_site/
+_site*/
+_build/
+_build_melange/
+src/public/assets/css/fonts.css
+
+# Build artifacts
+/dist/
+/output/
+/.output/
+
+# Content Collections (generated files and cache)
+.content-collections/
+src/lib/.content-collections/
+
+# Keep CSS dist file tracked if needed
+!/dist/assets/
+!/dist/assets/css/
+!/dist/assets/css/styles.css
