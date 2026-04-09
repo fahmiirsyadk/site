@@ -1,6 +1,6 @@
 ---
 title: Deconstruct the site
-date: 2023-10-15
+date: 2026-04-09
 slug: deconstruct-site
 section: articles
 status: published
@@ -62,7 +62,7 @@ Folder layout follows that decision. Source markdown lives in `content/`. Normal
 
 ## Content Pipeline from Markdown to Manifest
 
-I wanted content ingestion to be deterministic, so I pushed everything through one script: `scripts/build-content.js`. It reads frontmatter and markdown body, renders HTML, computes normalized fields, and groups entries by section. Result is one manifest file at `generated/posts.json`.
+I wanted content ingestion to be deterministic, so I pushed everything through one build entry point: `BuildContentMain`. It walks `content/` recursively, parses frontmatter and markdown body, renders HTML, computes normalized fields, and groups entries by section. Result is still one manifest file at `generated/posts.json`, but the active pipeline is now PureScript-first instead of a custom JS content script.
 
 Single manifest became the contract between two worlds. Prerender needs typed input to build every route. Hydration needs the same data shape to avoid runtime drift. Using one artifact for both removed a lot of subtle mismatch bugs.
 
@@ -73,23 +73,22 @@ type SiteManifest =
   { posts :: Array Post
   , thoughts :: Array Thought
   , tags :: Array String
-  , articles :: Array Post
-  , projects :: Array Post
   }
 ```
 
-This explicit schema is one of the most useful parts of the stack because it removes many categories of runtime mismatch between content and templates.
+This explicit schema is one of the most useful parts of the stack because it removes many categories of runtime mismatch between content and templates. The interesting detail now is that discovery, frontmatter parsing, markdown rendering, heading-id generation, TOC extraction, and date normalization all happen inside the PureScript content pipeline.
 
 ## Build and Delivery Pipeline
 
-I kept `build.sh` strict and linear so each step has one job. Content generation runs first because everything else depends on the manifest. PureScript compile runs next so type errors fail early. Prerender writes static HTML after that. Browser bundle follows. CSS and assets are the final stage.
+I kept the build strict and linear so each step has one job. Content generation runs first because everything else depends on the manifest. PureScript compile runs next so type errors fail early. Prerender writes static HTML after that. Browser bundle follows. CSS and assets are the final stage.
 
 ```bash
-node scripts/build-content.js
-pnpm exec spago build
-pnpm exec spago run -p site --main PrerenderMain
-pnpm exec spago bundle -p site --platform browser --bundle-type app --module Main --outfile dist/app.js
-pnpm exec tailwindcss -i css/style.css -o dist/css/style.css --minify
+pnpm run content
+pnpm run spago:build
+pnpm run prerender
+pnpm run bundle:prod
+pnpm run css
+pnpm run copy:assets
 ```
 
 Keeping prerender and browser bundle separate was one of the best decisions in this repo. Static pages give fast first paint and simple hosting. Client bundle adds route updates, interactivity, and animation. That separation made debugging routing migration much less chaotic.
@@ -101,21 +100,18 @@ I started routing from one algebraic type and forced everything through it. Ever
 ```purescript
 data Route
   = Home
-  | Article String
-  | Project String
-  | Collection String
   | About
-  | ArticlesIndex
-  | ProjectsIndex
+  | SectionIndex String
+  | SectionPost String String
 ```
 
-Path printing appends trailing slashes to stay consistent with generated folder based output. Parsing normalizes incoming paths so both `/articles/foo` and `/articles/foo/` resolve to the same route value. Adapter in `Routes.purs` exposes this codec as `lunaRouteCodec` for `Luna.Routing`, so browser events and app route logic stay aligned.
+Path printing appends trailing slashes to stay consistent with generated folder based output. Parsing normalizes incoming paths so both `/articles/foo` and `/articles/foo/` resolve to the same route value. The important change from the earlier version is that URLs now mirror content sections directly: `/articles/{slug}/`, `/projects/{slug}/`, and `/til/{slug}/`, with section indexes at `/articles/`, `/projects/`, and `/til/`. The old `collection/*` path family is gone because it drifted away from the actual content model.
 
 ## Static Site Generation Process
 
 `PrerenderMain` is where I turn content into deployable pages. It reads the manifest, computes all routes, resolves output paths, and writes complete HTML documents.
 
-I use Luna document builders to keep this typed end to end. Each page gets title, charset, stylesheet, root app HTML, deferred client script, and inline serialized model. Inline model is not a shortcut. It is what lets hydration recover the exact same manifest without extra network fetches.
+I use Luna document builders to keep this typed end to end. Each page gets title, charset, stylesheet, root app HTML, deferred client script, and inline serialized model. That part changed recently in an important way: the inline model is now sliced for most pages so the browser does not receive every `bodyHtml` string up front. Full content still exists in `dist/site-manifest.json`, and the client loads that lazily when it needs a full post body during navigation.
 
 ```purescript
 renderPage title outputFile manifest route =
@@ -125,7 +121,7 @@ renderPage title outputFile manifest route =
       # withCharset "UTF-8"
       # withStylesheet stylesheetHref
       # withBodyHtml bodyHtml
-      # withInlineScript (serializeModelScript (toJsonString (encodeJson manifest)))
+      # withInlineScript (serializeModelScript (toJsonString (encodeJson slicedManifest)))
       # withScriptDefer scriptSrc
 ```
 
@@ -143,14 +139,16 @@ I moved to this shape because I did not want route logic spread across random DO
 type Model =
   { route :: Route
   , manifest :: SiteManifest
+  , activeTocId :: Maybe String
   }
 
 data Action
   = RouteChanged (Maybe Route)
   | NavigatePath String
+  | ReplaceManifest SiteManifest
 ```
 
-`Main.purs` boots runtime in a sequence I can read at a glance. It finds `#app`, deserializes manifest from `window.__LUNA_INITIAL_MODEL__`, derives initial route from `window.location.pathname`, creates initial model, hydrates Luna, wires route inputs, mounts the WebGL logo, and runs the app.
+`Main.purs` boots runtime in a sequence I can read at a glance. It finds `#app`, deserializes the sliced manifest from `window.__LUNA_INITIAL_MODEL__`, derives initial route from `window.location.pathname`, creates initial model, hydrates Luna, wires route inputs, mounts the WebGL logo, and runs the app. When navigation targets a post route and the browser only has sliced data, the app fetches `site-manifest.json` once, replaces manifest state, and then continues the route transition.
 
 Hydration call is:
 
@@ -201,23 +199,17 @@ I also kept a tiny active-link color transition in the rail. It is a small detai
 
 I built this part after getting annoyed at my own reading flow. Posts kept growing, and scrolling felt like guessing. Left rail links were static, so they were good for site navigation but useless for navigating a single long article. I wanted a rail that understands the document in front of me, not a rail that always says the same thing.
 
-I decided to generate TOC at build time, not at runtime. Reason is simple. Build time extraction is deterministic, easy to test, and gives me one source of truth that both prerender and hydration can share. In `scripts/build-content.js`, markdown tokens are scanned, headings are normalized, ids are generated, and only the levels I care about are stored. I keep `h2` and `h3`, and I explicitly skip headings like `Table of Contents` so a meta section never appears as a real navigation target in the side rail.
+I decided to generate TOC at build time, not at runtime. Reason is simple. Build time extraction is deterministic, easy to test, and gives me one source of truth that both prerender and hydration can share. Now that work lives in the PureScript content pipeline: markdown tokens are scanned in `BuildContent.MdHtml`, headings are normalized, ids are generated, and only the levels I care about are stored. I keep `h2` and `h3`, and I explicitly skip headings like `Table of Contents` so a meta section never appears as a real navigation target in the side rail.
 
 Snippet from the generator:
 
-```javascript
-function shouldIncludeTocHeading(title, idBase) {
-  const normalized = String(title || "").trim().toLowerCase();
-  if (!normalized) return false;
-  if (normalized === "table of contents") return false;
-  if (normalized === "toc") return false;
-  if (idBase === "table-of-contents") return false;
-  return true;
-}
-
-if (level >= 2 && level <= 3 && shouldIncludeTocHeading(title, idBase)) {
-  toc.push({ id, title, level });
-}
+```purescript
+shouldSkipTocHeading :: String -> String -> Boolean
+shouldSkipTocHeading title idBase =
+  let
+    n = String.trim $ String.toLower title
+  in
+    n == "" || n == "table of contents" || n == "toc" || idBase == "table-of-contents"
 ```
 
 Core shape in the manifest is intentionally small so it is stable and easy to reason about:
@@ -292,7 +284,7 @@ Full flow in one ASCII diagram:
 ```text
 content/*.md
    |
-   | build-content.js
+   | BuildContentMain
    v
 generated/posts.json  ---->  SiteManifest (typed in PureScript)
    |                                |
@@ -303,6 +295,13 @@ dist/**/index.html            Main.purs initialModel
    | includes toc links             | activeTocId starts as Nothing
    v                                v
 Left rail static HTML  <----  Luna makeHydrate attaches safely
+                                    |
+                                    | on post navigation if bodyHtml is sliced
+                                    v
+                           fetch /site-manifest.json once
+                                    |
+                                    v
+                           ReplaceManifest -> continue route transition
                                     |
                                     | user scrolls #content-scroll
                                     v
@@ -326,6 +325,6 @@ Current architecture favors clarity. Manifest schema is explicit and typed. Rout
 
 The biggest open work is still Luna itself, not this repo’s content. Hydration needs to get genuinely boring: fewer edge cases, clearer guarantees around event props, and tighter alignment between string rendered HTML and what the client machine expects to attach to. Static export already feels solid. Client navigation after load feels solid. The gap is polish on the handoff between those two worlds.
 
-Most useful product level work is already visible from current constraints. Manifest payload can be split into metadata and on demand content for larger archives. Search can move from lightweight island to indexed lookup. Code block highlighting can be applied at content generation stage. Theme system can be layered without changing route model. Each of those can land without abandoning Luna because the boundaries are already drawn.
+Most useful product level work is already visible from current constraints. The manifest is already partially split in practice by using sliced inline hydration plus a lazily loaded full `site-manifest.json`, but larger archives may still want finer-grained content fetches later. Search can move from lightweight island to indexed lookup. Code block highlighting can be applied at content generation stage. Theme system can be layered without changing route model. Each of those can land without abandoning Luna because the boundaries are already drawn.
 
 Version in production today feels stable because each part has one job and one clear boundary. Content pipeline transforms text. Prerender builds pages. Luna hydrates state and owns VDOM. Routing updates model. Patches hit the tree instead of replacing the document. WebGL logo stays isolated and fast. This made the project finally feel finished enough to publish, while Luna still has room to grow into the library I wish had existed when I started.
