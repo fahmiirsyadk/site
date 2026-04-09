@@ -13,8 +13,8 @@ navBar current =
     [ H.classes [ "navbar", "flex", "items-center", "justify-between", "p-4" ] ]
     [ H.div [ H.classes [ "nav-brand" ] ]
         [ navLink Home "Home" current
-        , navLink ArticlesIndex "Articles" current
-        , navLink ProjectsIndex "Projects" current
+        , navLink (SectionIndex "articles") "Articles" current
+        , navLink (SectionIndex "projects") "Projects" current
         , navLink About "About" current
         ]
     ]

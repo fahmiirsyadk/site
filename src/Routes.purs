@@ -10,17 +10,14 @@ import Routing.Duplex (RouteDuplex', parse, print, root, segment)
 import Types (Route)
 import Routing.Duplex.Generic (noArgs, sum)
 import Routing.Duplex.Generic.Syntax ((/))
-
-routeCodec :: RouteDuplex' Route
+routeCodec ::
+  RouteDuplex' Route
 routeCodec =
   root $ sum
     { "Home": noArgs
     , "About": "about" / noArgs
-    , "ArticlesIndex": "articles" / noArgs
-    , "ProjectsIndex": "projects" / noArgs
-    , "Collection": "collection" / segment
-    , "Article": "articles" / segment
-    , "Project": "projects" / segment
+    , "SectionPost": segment / segment
+    , "SectionIndex": segment
     }
 
 printRoutePath :: Route -> String

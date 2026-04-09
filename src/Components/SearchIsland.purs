@@ -2,7 +2,8 @@ module Components.SearchIsland where
 
 import Prelude
 
-import Types (Post, SearchModel, initialSearchModel)
+import Routes (printRoutePath)
+import Types (Post, Route(..), SearchModel, initialSearchModel)
 import Luna.Html as H
 import Luna.Html (Html)
 import Luna.PureApp (PureApp)
@@ -32,7 +33,7 @@ render model =
   renderPostItem p =
     H.div [ H.classes [ "p-2", "hover:bg-zinc-800", "rounded" ] ]
       [ H.a 
-          [ H.href ("/articles/" <> p.slug <> "/")
+          [ H.href (printRoutePath (postRoute p))
           , H.classes [ "text-white", "hover:underline" ]
           ]
           [ H.text p.title ]
@@ -44,6 +45,9 @@ app =
   , update
   , init: initialSearchModel
   }
+
+postRoute :: Post -> Route
+postRoute p = SectionPost p.section p.slug
 
 initialPosts :: Array Post -> SearchModel
 initialPosts posts = initialSearchModel { posts = posts }

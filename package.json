@@ -4,12 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bash build.sh",
-    "content": "node scripts/build-content.js",
+    "content": "pnpm exec spago run -p site --main BuildContentMain",
+    "copy:assets": "mkdir -p dist/assets dist/fonts && (cp -r public/assets/* dist/assets/ 2>/dev/null || true) && (cp -r public/fonts/* dist/fonts/ 2>/dev/null || true)",
+    "css": "mkdir -p dist/css && BROWSERSLIST_IGNORE_OLD_DATA=1 pnpm exec tailwindcss -c tailwind.config.cjs -i ./css/style.css -o ./dist/css/style.css --minify",
     "prerender": "pnpm exec spago run -p site --main PrerenderMain",
     "bundle": "pnpm exec spago bundle -p site --platform browser --bundle-type app --module Main --outfile dist/app.js",
     "bundle:prod": "mkdir -p dist && pnpm exec purs-backend-es build --int-tags && pnpm exec purs-backend-es bundle-app -m Main -p browser --minify --no-build -t dist/app.js",
+    "bundle:with-css": "pnpm run bundle && pnpm run css",
+    "bundle:prod:with-css": "pnpm run bundle:prod && pnpm run css",
     "spago:build": "pnpm exec spago build",
+    "build": "pnpm run content && pnpm run spago:build && pnpm run prerender && pnpm run bundle:prod && pnpm run css && pnpm run copy:assets",
     "serve": "serve dist -l 8080",
     "tunnel": "cloudflared tunnel run --token \"$CLOUDFLARED_TUNNEL_TOKEN\"",
     "format": "purs-tidy format-in-place src"

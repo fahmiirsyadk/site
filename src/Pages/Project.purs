@@ -16,7 +16,7 @@ view slug posts =
       H.div [ H.classes [ "space-y-3" ] ]
         [ H.h1 [ H.classes [ "text-[12px]", "leading-[1.7]", "font-semibold", "text-[#171717]" ] ] [ H.text "Project not found" ] ]
     Just p ->
-      H.article [ H.classes [ "space-y-6" ] ]
+      H.article [ H.classes [ "min-w-0", "space-y-6", "overflow-x-auto" ] ]
         [ H.div
             [ H.classes [ "flex", "w-full", "items-end", "gap-3", "text-[12px]", "leading-[1.7]" ] ]
             [ H.h1 [ H.classes [ "shrink-0", "font-medium", "text-[#171717]" ] ] [ H.text p.title ]
@@ -33,7 +33,7 @@ view slug posts =
                 , "prose-sm"
                 , "prose-headings:text-[#171717]"
                 , "prose-p:text-neutral-700"
-                 , "prose-li:text-neutral-700"
+                , "prose-li:text-neutral-700"
                 , "prose-ul:list-none"
                 , "prose-ol:list-none"
                 , "prose-ul:pl-0"
@@ -41,6 +41,14 @@ view slug posts =
                 , "prose-strong:text-[#171717]"
                 , "prose-a:text-[#FF4B26]"
                 , "prose-a:decoration-[#FF4B26]/40"
+                , "prose-img:max-w-full"
+                , "prose-img:h-auto"
+                , "prose-video:max-w-full"
+                , "prose-video:h-auto"
+                , "prose-canvas:max-w-full"
+                , "prose-canvas:h-auto"
+                , "prose-pre:max-w-full"
+                , "prose-pre:overflow-x-auto"
                 ]
             ]
             [ unsafeRawHtml p.bodyHtml ]

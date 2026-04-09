@@ -13,9 +13,7 @@ import Luna.Html as H
 import Luna.Transition (Transition, purely)
 import Pages.About as AboutPage
 import Pages.Article as ArticlePage
-import Pages.Collection as CollectionPage
 import Pages.Home as HomePage
-import Pages.Project as ProjectPage
 import Routes (parseRoutePath)
 import Types (Post, Route(..), SiteManifest, TocItem)
 
@@ -28,6 +26,7 @@ type Model =
 data Action
   = RouteChanged (Maybe Route)
   | NavigatePath String
+  | ReplaceManifest SiteManifest
   | SetActiveToc String
 
 app :: Model -> LunaApp.App (Const Void) (Const Void) Model Action
@@ -48,6 +47,8 @@ update model = case _ of
     purely case parseRoutePath path of
       Nothing -> model
       Just route -> model { route = route, activeTocId = Nothing }
+  ReplaceManifest manifest ->
+    purely model { manifest = manifest }
   SetActiveToc id ->
     purely model { activeTocId = Just id }
 
@@ -64,21 +65,17 @@ renderPage manifest route =
   case route of
     Home -> HomePage.view manifest.posts
     About -> AboutPage.view
-    ArticlesIndex -> HomePage.view manifest.articles
-    ProjectsIndex -> HomePage.view manifest.projects
-    Article slug -> ArticlePage.view slug manifest.posts
-    Project slug -> ProjectPage.view slug manifest.posts
-    Collection tag -> CollectionPage.view tag manifest.posts
+    SectionIndex section -> HomePage.view (Array.filter (\p -> p.section == section) manifest.posts)
+    SectionPost section slug -> ArticlePage.view slug section manifest.posts
 
 currentToc :: SiteManifest -> Route -> Array TocItem
 currentToc manifest route = case route of
-  Article slug -> maybe [] _.toc (findPostBySlug manifest.posts slug)
-  Project slug -> maybe [] _.toc (findPostBySlug manifest.posts slug)
+  SectionPost section slug -> maybe [] _.toc (findPostBySectionSlug manifest.posts section slug)
   _ -> []
 
-findPostBySlug :: Array Post -> String -> Maybe Post
-findPostBySlug posts slug =
-  Array.find (\p -> p.slug == slug) posts
+findPostBySectionSlug :: Array Post -> String -> String -> Maybe Post
+findPostBySectionSlug posts section slug =
+  Array.find (\p -> p.slug == slug && p.section == section) posts
 
 siteLayout :: Route -> Array TocItem -> Maybe String -> Maybe (String -> Action) -> Html Action -> Html Action
 siteLayout current toc activeTocId onTocSelect pageContent =

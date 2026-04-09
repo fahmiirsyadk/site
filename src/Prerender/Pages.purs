@@ -3,30 +3,31 @@ module Prerender.Pages where
 import Prelude
 
 import Types (Post, Route(..), SiteManifest)
-import Data.Array (filter, head)
 import Data.Maybe (Maybe(..))
+import Data.Array as Array
 
 allRoutes :: SiteManifest -> Array Route
 allRoutes manifest =
-  [ Home, About, ArticlesIndex, ProjectsIndex ] 
-  <> map (Article <<< _.slug) manifest.articles
-  <> map (Project <<< _.slug) manifest.projects
-  <> map Collection manifest.tags
+  let
+    sections = Array.nub $ map _.section manifest.posts
+  in
+    [ Home, About ]
+      <> map SectionIndex sections
+      <> map (\p -> SectionPost p.section p.slug) manifest.posts
 
 titleFor :: Array Post -> Route -> String
 titleFor posts = case _ of
   Home -> "Home"
   About -> "About"
-  ArticlesIndex -> "Articles"
-  ProjectsIndex -> "Projects"
-  Collection tag -> "Collection: " <> tag
-  Article slug -> case findPostBySlug slug posts of
-    Nothing -> "Article"
-    Just p -> p.title
-  Project slug -> case findPostBySlug slug posts of
-    Nothing -> "Project"
+  SectionIndex s -> case s of
+    "articles" -> "Articles"
+    "projects" -> "Projects"
+    "til" -> "TIL"
+    _ -> s
+  SectionPost section slug -> case findPostBySectionAndSlug posts section slug of
+    Nothing -> "Post"
     Just p -> p.title
 
-findPostBySlug :: String -> Array Post -> Maybe Post
-findPostBySlug slug posts = 
-  head $ filter (_.slug >>> (==) slug) posts
+findPostBySectionAndSlug :: Array Post -> String -> String -> Maybe Post
+findPostBySectionAndSlug posts section slug =
+  Array.find (\p -> p.slug == slug && p.section == section) posts

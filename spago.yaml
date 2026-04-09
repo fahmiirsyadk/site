@@ -10,7 +10,9 @@ package:
     - either
     - foldable-traversable
     - foreign-object
+    - js-date
     - luna
+    - markdown-it-js
     - maybe
     - node-fs
     - node-path
@@ -20,7 +22,9 @@ package:
     - prelude
     - routing
     - routing-duplex
+    - simple-json
     - strings
+    - yaml-next
     - transformation-matrix
     - tuples
     - unsafe-coerce

@@ -6,7 +6,7 @@ import App (renderStatic)
 import Content (readSiteManifest)
 import Prerender.Pages as Pages
 import Routes (printRoutePath)
-import Types (Route, SiteManifest)
+import Types (Post, Route(..), SiteManifest, Thought)
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Foldable (for_)
@@ -26,11 +26,31 @@ import Luna.Html.Document
   , withBodyHtml
   , withCharset
   , withInlineScript
+  , withMeta
   , withScriptDefer
   , withStylesheet
   , withTitle
   )
 import Luna.Html.ModelState (serializeModelScript)
+
+stripBodyHtml :: Post -> Post
+stripBodyHtml p = p { bodyHtml = "" }
+
+stripThoughtBody :: Thought -> Thought
+stripThoughtBody t = t { bodyHtml = "" }
+
+sliceManifest :: Route -> SiteManifest -> SiteManifest
+sliceManifest route manifest =
+  let
+    thoughtsStripped = map stripThoughtBody manifest.thoughts
+  in case route of
+    Home -> manifest { posts = map stripBodyHtml manifest.posts, thoughts = thoughtsStripped }
+    About -> manifest { posts = map stripBodyHtml manifest.posts, thoughts = thoughtsStripped }
+    SectionIndex _ -> manifest { posts = map stripBodyHtml manifest.posts, thoughts = thoughtsStripped }
+    SectionPost section slug -> manifest { posts = map (keepIfCurrentPost section slug) manifest.posts, thoughts = thoughtsStripped }
+  where
+  keepIfCurrentPost section slug post =
+    if post.slug == slug && post.section == section then post else stripBodyHtml post
 
 toOutputFile :: Route -> String
 toOutputFile route =
@@ -60,11 +80,13 @@ renderPage title outputFile manifest route =
     emptyDocument
       # withTitle title
       # withCharset "UTF-8"
+      # withMeta "viewport" "width=device-width, initial-scale=1"
       # withStylesheet stylesheetHref
       # withBodyHtml bodyHtml
-      # withInlineScript (serializeModelScript (toJsonString (encodeJson manifest)))
+      # withInlineScript (serializeModelScript (toJsonString (encodeJson slicedManifest)))
       # withScriptDefer scriptSrc
   where
+  slicedManifest = sliceManifest route manifest
   bodyHtml = void $ H.div [ H.id_ "app" ] [ renderStatic manifest route ]
   scriptSrc = relativeAssetPath "app.js" outputFile
   stylesheetHref = relativeAssetPath "css/style.css" outputFile
@@ -78,6 +100,7 @@ main = do
   case manifestResult of
     Left err -> log $ "Error reading manifest: " <> err
     Right manifest -> do
+      FS.writeTextFile Enc.UTF8 (concat [ outDir, "site-manifest.json" ]) (toJsonString (encodeJson manifest))
       for_ (Pages.allRoutes manifest) \route -> do
         let outputFile = toOutputFile route
         let fullOutputFile = concat [ outDir, outputFile ]

@@ -2,6 +2,7 @@ module Types where
 
 import Prelude
 
+import Data.Array as Array
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
 
@@ -33,31 +34,33 @@ type Thought =
   , excerpt :: String
   }
 
-type SiteManifest = 
+type SiteManifest =
   { posts :: Array Post
   , thoughts :: Array Thought
   , tags :: Array String
-  , articles :: Array Post
-  , projects :: Array Post
   }
+
+articlesFromManifest :: SiteManifest -> Array Post
+articlesFromManifest = Array.filter (_.section >>> (==) "articles") <<< _.posts
+
+projectsFromManifest :: SiteManifest -> Array Post
+projectsFromManifest = Array.filter (_.section >>> (==) "projects") <<< _.posts
+
+tilFromManifest :: SiteManifest -> Array Post
+tilFromManifest = Array.filter (_.section >>> (==) "til") <<< _.posts
 
 emptySiteManifest :: SiteManifest
 emptySiteManifest =
   { posts: []
   , thoughts: []
   , tags: []
-  , articles: []
-  , projects: []
   }
 
 data Route
   = Home
-  | Article String
-  | Project String
-  | Collection String
   | About
-  | ArticlesIndex
-  | ProjectsIndex
+  | SectionIndex String
+  | SectionPost String String
 
 derive instance eqRoute :: Eq Route
 derive instance genericRoute :: Generic Route _

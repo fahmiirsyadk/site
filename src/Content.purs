@@ -2,6 +2,7 @@ module Content where
 
 import Prelude
 
+import ManifestCodec (decodeSiteManifestString)
 import Types (Post, SiteManifest)
 import Data.Argonaut.Decode (decodeJson) as AD
 import Data.Argonaut.Parser (jsonParser) as Parser
@@ -30,6 +31,4 @@ readSiteManifest :: Effect (Either String SiteManifest)
 readSiteManifest = do
   jsonPath <- postsJsonPath
   content <- FS.readTextFile Enc.UTF8 jsonPath
-  pure do
-    json <- Parser.jsonParser content
-    lmap (const "Failed to decode site manifest JSON") (AD.decodeJson json)
+  pure $ decodeSiteManifestString content

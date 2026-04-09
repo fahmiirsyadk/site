@@ -34,8 +34,7 @@ leftRail current toc activeTocId onTocSelect =
     ]
   where
   showToc = case current of
-    Article _ -> true
-    Project _ -> true
+    SectionPost _ _ -> true
     _ -> false
 
 tocBlock :: forall i. Array TocItem -> Maybe String -> Maybe (String -> i) -> Html i
@@ -79,9 +78,9 @@ defaultRail current =
         [ H.text "Notes, projects, and experiments in public" ]
     , H.div [ H.classes [ "flex", "flex-col", "gap-1" ] ]
         [ H.p [ H.classes [ "mb-1", "text-[10px]", "font-medium", "uppercase", "tracking-[0.07em]", "text-neutral-500" ] ] [ H.text "MENU" ]
-        , navLink ProjectsIndex "projects" current
-        , navLink ArticlesIndex "articles" current
-        , navLink (Collection "til") "TIL" current
+        , navLink (SectionIndex "projects") "projects" current
+        , navLink (SectionIndex "articles") "articles" current
+        , navLink (SectionIndex "til") "TIL" current
         ]
     , H.div [ H.classes [ "flex", "flex-col", "gap-1" ] ]
         [ H.p [ H.classes [ "mb-1", "text-[10px]", "font-medium", "uppercase", "tracking-[0.07em]", "text-neutral-500" ] ] [ H.text "LAB" ]

@@ -14,7 +14,9 @@
             "either",
             "foldable-traversable",
             "foreign-object",
+            "js-date",
             "luna",
+            "markdown-it-js",
             "maybe",
             "node-fs",
             "node-path",
@@ -24,12 +26,14 @@
             "prelude",
             "routing",
             "routing-duplex",
+            "simple-json",
             "strings",
             "transformation-matrix",
             "tuples",
             "unsafe-coerce",
             "web-dom",
-            "web-html"
+            "web-html",
+            "yaml-next"
           ]
         },
         "test": {
@@ -1176,6 +1180,12 @@
         "web-uievents"
       ]
     },
+    "markdown-it-js": {
+      "type": "registry",
+      "version": "0.1.0",
+      "integrity": "sha256-bjP2P1cW1rXCuJbrj7pB9PlYV2IXHTUxjLVCB1iUkIw=",
+      "dependencies": []
+    },
     "maybe": {
       "type": "registry",
       "version": "6.0.0",
@@ -1523,6 +1533,31 @@
         "prelude"
       ]
     },
+    "simple-json": {
+      "type": "registry",
+      "version": "9.0.0",
+      "integrity": "sha256-9PIR1i5DtHn4ApFptn+c2BfnGMok0ESlYe4TnZiBvgs=",
+      "dependencies": [
+        "arrays",
+        "bifunctors",
+        "control",
+        "effect",
+        "either",
+        "exceptions",
+        "foldable-traversable",
+        "foreign",
+        "foreign-object",
+        "identity",
+        "lists",
+        "maybe",
+        "nullable",
+        "partial",
+        "prelude",
+        "record",
+        "transformers",
+        "variant"
+      ]
+    },
     "st": {
       "type": "registry",
       "version": "6.2.0",
@@ -1672,6 +1707,22 @@
         "prelude"
       ]
     },
+    "variant": {
+      "type": "registry",
+      "version": "8.0.0",
+      "integrity": "sha256-Ydrgl8liWEwYQOWW76PdZtg3vxKpoKgsnmFyTLgZkoU=",
+      "dependencies": [
+        "control",
+        "enums",
+        "foldable-traversable",
+        "lists",
+        "maybe",
+        "partial",
+        "prelude",
+        "type-equality",
+        "unsafe-coerce"
+      ]
+    },
     "web-clipboard": {
       "type": "registry",
       "version": "6.0.0",
@@ -1819,6 +1870,23 @@
         "unsafe-coerce",
         "web-events",
         "web-html"
+      ]
+    },
+    "yaml-next": {
+      "type": "registry",
+      "version": "3.1.1",
+      "integrity": "sha256-kpiHQ7oSrPIcdQMT9BKEruByu7xH9S1okRHifZ/U8Hg=",
+      "dependencies": [
+        "argonaut-core",
+        "arrays",
+        "foreign",
+        "functions",
+        "lists",
+        "maybe",
+        "ordered-collections",
+        "prelude",
+        "tuples",
+        "unsafe-coerce"
       ]
     }
   }
