@@ -27,6 +27,12 @@ data Action
   = RouteChanged (Maybe Route)
   | NavigatePath String
   | ReplaceManifest SiteManifest
+  | MergePostContent
+      { section :: String
+      , slug :: String
+      , bodyHtml :: String
+      , toc :: Array TocItem
+      }
   | SetActiveToc String
 
 app :: Model -> LunaApp.App (Const Void) (Const Void) Model Action
@@ -49,8 +55,20 @@ update model = case _ of
       Just route -> model { route = route, activeTocId = Nothing }
   ReplaceManifest manifest ->
     purely model { manifest = manifest }
+  MergePostContent payload ->
+    purely model
+      { manifest = model.manifest
+          { posts = map (mergeContent payload) model.manifest.posts
+          }
+      }
   SetActiveToc id ->
     purely model { activeTocId = Just id }
+  where
+  mergeContent payload post =
+    if post.section == payload.section && post.slug == payload.slug then
+      post { bodyHtml = payload.bodyHtml, toc = payload.toc }
+    else
+      post
 
 render :: Model -> Html Action
 render model =

@@ -29,9 +29,9 @@ In the first serious article about this site I want to be blunt about one thing 
 
 purescript-spork was the mental model I wanted. Small surface, clear update loop, easy to hold in your head. Spork is also effectively stuck in an older era. It targets an older PureScript story, it still leans on Bower era packaging, and moving it forward to the toolchain I use every day would have meant maintaining a fork of a fork just to keep dependencies honest. I did not want my blog to depend on that kind of glue.
 
-Halogen’s VDOM layer is excellent, and there is work around a hydration oriented fork of halogen-vdom that gets partway toward attaching to server rendered trees. That path still hit walls for what I cared about: predictable static export, a clean story for prerendered HTML as the source of truth, and hydration behavior that does not surprise you on edge cases. I kept running into limitations that are nobody’s fault, they are just the cost of general purpose machinery that was not built exactly for my narrow static site plus hydrate workflow.
+Halogen's VDOM layer is excellent, and there is work around a hydration oriented fork of halogen-vdom that gets partway toward attaching to server rendered trees. That path still hit walls for what I cared about: predictable static export, a clean story for prerendered HTML as the source of truth, and hydration behavior that does not surprise you on edge cases. I kept running into limitations that are nobody's fault, they are just the cost of general purpose machinery that was not built exactly for my narrow static site plus hydrate workflow.
 
-So Luna is mostly a fusion of ideas from Spork’s app shape and Halogen VDOM machinery, with a hydration path stitched in and adjusted until static HTML from `renderDocument` could load in the browser and attach without throwing away the first paint. Prerender uses Luna’s HTML builders on the Node side. The client bundle hydrates the same conceptual tree. Same types, same render function family, one story end to end.
+So Luna is mostly a fusion of ideas from Spork's app shape and Halogen VDOM machinery, with a hydration path stitched in and adjusted until static HTML from `renderDocument` could load in the browser and attach without throwing away the first paint. Prerender uses Luna's HTML builders on the Node side. The client bundle hydrates the same conceptual tree. Same types, same render function family, one story end to end.
 
 What Luna gives me today is a single place to do both jobs. Static export for SSG. Client runtime for SPA style navigation after load. The honest part is hydration is still not quite good. Some cases are brittle. Some attributes and event wiring need more hardening. I am shipping anyway because the site works, first paint is real HTML, and incremental fixes are easier inside a library I control than inside three upstreams I do not.
 
@@ -111,7 +111,7 @@ Path printing appends trailing slashes to stay consistent with generated folder 
 
 `PrerenderMain` is where I turn content into deployable pages. It reads the manifest, computes all routes, resolves output paths, and writes complete HTML documents.
 
-I use Luna document builders to keep this typed end to end. Each page gets title, charset, stylesheet, root app HTML, deferred client script, and inline serialized model. That part changed recently in an important way: the inline model is now sliced for most pages so the browser does not receive every `bodyHtml` string up front. Full content still exists in `dist/site-manifest.json`, and the client loads that lazily when it needs a full post body during navigation.
+I use Luna document builders to keep this typed end to end. Each page gets title, charset, stylesheet, root app HTML, deferred client script, and inline serialized model. That part changed recently in an important way: the inline model carries only what the browser needs to boot and navigate — post metadata, TOC structures, tags, and routing state. It does not carry `bodyHtml` for any post, because post body is already in the page as rendered HTML nodes. There is no reason to serialize it again into JSON.
 
 ```purescript
 renderPage title outputFile manifest route =
@@ -119,11 +119,14 @@ renderPage title outputFile manifest route =
     emptyDocument
       # withTitle title
       # withCharset "UTF-8"
+      # withMeta "viewport" "width=device-width, initial-scale=1"
       # withStylesheet stylesheetHref
       # withBodyHtml bodyHtml
       # withInlineScript (serializeModelScript (toJsonString (encodeJson slicedManifest)))
       # withScriptDefer scriptSrc
 ```
+
+`slicedManifest` here means every post has `bodyHtml` stripped before serialization. The rendered HTML is already in the document. Putting the same content into a JSON blob inside a script tag would be pure duplication — same bytes, twice, in the same file, serving no purpose on a direct visit.
 
 I chose `index.html` per route directory because it keeps URLs clean and static hosting straightforward. Home maps to root `index.html`. Nested routes map to folder indexes. Route printing and browser history stay consistent with generated files.
 
@@ -148,7 +151,7 @@ data Action
   | ReplaceManifest SiteManifest
 ```
 
-`Main.purs` boots runtime in a sequence I can read at a glance. It finds `#app`, deserializes the sliced manifest from `window.__LUNA_INITIAL_MODEL__`, derives initial route from `window.location.pathname`, creates initial model, hydrates Luna, wires route inputs, mounts the WebGL logo, and runs the app. When navigation targets a post route and the browser only has sliced data, the app fetches `site-manifest.json` once, replaces manifest state, and then continues the route transition.
+`Main.purs` boots runtime in a sequence I can read at a glance. It finds `#app`, deserializes the sliced manifest from `window.__LUNA_INITIAL_MODEL__`, derives initial route from `window.location.pathname`, creates initial model, hydrates Luna, wires route inputs, mounts the WebGL logo, and runs the app.
 
 Hydration call is:
 
@@ -157,6 +160,10 @@ inst <- LunaApp.makeHydrate (never `merge` never) (SiteApp.app initialModel) app
 ```
 
 That line matters because Luna attaches to prerendered DOM instead of replacing it. When hydration goes wrong on edge cases, I can debug machine and prop hydration paths directly instead of chasing ad hoc DOM replacements.
+
+One thing worth being precise about here: the markdown body content does not need hydration. It is already in the DOM as real HTML nodes painted on first load. Luna does not need to own or reconstruct it. What hydration actually handles is everything around the content — route state, TOC active tracking, event listeners on internal links, left rail interactivity. The body is inert from the framework's perspective on a direct visit, and that is correct. The mistake would be to pull it back through JSON just to have it in the typed model.
+
+Where `bodyHtml` does matter is client-side navigation. When a reader navigates from the home page to a post, the browser never loaded that post's HTML. The body has to arrive somehow. The current approach fetches `/site-manifest.json` lazily at that point and replaces manifest state, which gives Luna the rendered HTML string it needs to patch the DOM. That fetch is the only moment `bodyHtml` has a job to do in the client runtime, and it is a navigation event, not a hydration event.
 
 Route input wiring was extracted into `RouteInput.purs` so `Main` stays small. `setupRouteInputs` subscribes to decoded browser route changes and internal link navigation input in one place, then feeds those events into Luna actions.
 
@@ -279,7 +286,7 @@ export function setupScrollSpyImpl(containerId, callback) {
 }
 ```
 
-Full flow in one ASCII diagram:
+Full flow in one diagram:
 
 ```text
 content/*.md
@@ -288,20 +295,27 @@ content/*.md
    v
 generated/posts.json  ---->  SiteManifest (typed in PureScript)
    |                                |
-   | prerender                      | hydrate
+   | prerender                      | sliced: bodyHtml stripped
    v                                v
-dist/**/index.html            Main.purs initialModel
-   |                                |
-   | includes toc links             | activeTocId starts as Nothing
+dist/**/index.html            window.__LUNA_INITIAL_MODEL__
+   |                          (metadata, toc, tags, routing only)
+   | body content is                |
+   | real HTML nodes                | hydrate
    v                                v
-Left rail static HTML  <----  Luna makeHydrate attaches safely
-                                    |
-                                    | on post navigation if bodyHtml is sliced
+DOM: post body         <----  Luna makeHydrate attaches
+(already painted,             does NOT need to own body content
+ Luna leaves it alone)              |
+                                    | activeTocId starts as Nothing
                                     v
-                           fetch /site-manifest.json once
+                           hydration matches prerendered DOM safely
+                                    |
+                                    | on client navigation to a post
+                                    v
+                           fetch /data/posts/{section}/{slug}.json
+                           (body arrives only when needed)
                                     |
                                     v
-                           ReplaceManifest -> continue route transition
+                           ReplaceManifest -> Luna patches body region
                                     |
                                     | user scrolls #content-scroll
                                     v
@@ -323,8 +337,12 @@ After this, everything lines up in a way I trust. Client navigation swaps route 
 
 Current architecture favors clarity. Manifest schema is explicit and typed. Route logic is centralized. Static output remains primary delivery mode. Hydration upgrades interaction without requiring a server rendering runtime.
 
-The biggest open work is still Luna itself, not this repo’s content. Hydration needs to get genuinely boring: fewer edge cases, clearer guarantees around event props, and tighter alignment between string rendered HTML and what the client machine expects to attach to. Static export already feels solid. Client navigation after load feels solid. The gap is polish on the handoff between those two worlds.
+The biggest open work is still Luna itself, not this repo's content. Hydration needs to get genuinely boring: fewer edge cases, clearer guarantees around event props, and tighter alignment between string rendered HTML and what the client machine expects to attach to. Static export already feels solid. Client navigation after load feels solid. The gap is polish on the handoff between those two worlds.
 
-Most useful product level work is already visible from current constraints. The manifest is already partially split in practice by using sliced inline hydration plus a lazily loaded full `site-manifest.json`, but larger archives may still want finer-grained content fetches later. Search can move from lightweight island to indexed lookup. Code block highlighting can be applied at content generation stage. Theme system can be layered without changing route model. Each of those can land without abandoning Luna because the boundaries are already drawn.
+The next concrete improvement on the content side is replacing the whole-manifest lazy fetch with per-post payload files. Right now when any client-side navigation targets a post, the browser fetches all of `site-manifest.json` regardless of which post was requested. The fix is to emit `dist/data/posts/{section}/{slug}.json` during prerender — each containing only that post's `bodyHtml` and `toc` — and fetch only the file for the current route. The inline manifest stays slim for navigation and listing. Post bodies arrive on demand, scoped to what the reader actually opened, and each file is independently cacheable at the CDN level.
+
+`bodyHtml` in the typed model exists for one reason: client-side navigation between posts, where the browser has never loaded the destination page's HTML. On a direct visit the body is already in the DOM and the model field is empty by design. That distinction matters for understanding what the lazy fetch is actually solving. It is not a hydration mechanism. It is a content delivery mechanism for the SPA navigation layer on top.
+
+Other work is already visible from current constraints. Search can move from lightweight island to indexed lookup. Code block highlighting can be applied at content generation stage. Theme system can be layered without changing route model. Each of those can land without abandoning Luna because the boundaries are already drawn.
 
 Version in production today feels stable because each part has one job and one clear boundary. Content pipeline transforms text. Prerender builds pages. Luna hydrates state and owns VDOM. Routing updates model. Patches hit the tree instead of replacing the document. WebGL logo stays isolated and fast. This made the project finally feel finished enough to publish, while Luna still has room to grow into the library I wish had existed when I started.
