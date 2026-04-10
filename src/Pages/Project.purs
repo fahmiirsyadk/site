@@ -5,12 +5,12 @@ import Prelude
 import Types (Post)
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
-import RelativeTime (relativeTimeLabel)
+import RelativeTime (postDateLabel)
 import Luna.Html as H
 import Luna.Html (Html, unsafeRawHtml)
 
-view :: forall i. String -> Array Post -> Html i
-view slug posts =
+view :: forall i. String -> Array Post -> Boolean -> Html i
+view slug posts useRelativeDates =
   case Array.find (\p -> p.slug == slug && p.section == "projects") posts of
     Nothing ->
       H.div [ H.classes [ "space-y-3" ] ]
@@ -18,12 +18,12 @@ view slug posts =
     Just p ->
       H.article [ H.classes [ "min-w-0", "space-y-6", "overflow-x-auto" ] ]
         [ H.div
-            [ H.classes [ "flex", "w-full", "items-end", "gap-3", "text-[12px]", "leading-[1.7]" ] ]
+            [ H.classes [ "flex", "w-full", "items-center", "gap-3", "text-[12px]", "leading-[1.7]" ] ]
             [ H.h1 [ H.classes [ "shrink-0", "font-medium", "text-[#171717]" ] ] [ H.text p.title ]
             , H.span
-                [ H.classes [ "mb-[5px]", "min-h-px", "min-w-[1.5rem]", "flex-1", "border-b", "border-dotted", "border-neutral-300" ] ]
+                [ H.classes [ "min-h-px", "min-w-[1.5rem]", "flex-1", "border-b", "border-dotted", "border-neutral-300" ] ]
                 []
-            , H.span [ H.classes [ "shrink-0", "text-right", "text-neutral-500" ] ] [ H.text (relativeTimeLabel p.date) ]
+            , H.span [ H.classes [ "shrink-0", "text-right", "text-neutral-500" ] ] [ H.text (postDateLabel useRelativeDates p.date) ]
             ]
         , H.div
             [ H.classes

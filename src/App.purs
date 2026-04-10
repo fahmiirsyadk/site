@@ -21,6 +21,8 @@ type Model =
   { route :: Route
   , manifest :: SiteManifest
   , activeTocId :: Maybe String
+  , useRelativeDates :: Boolean
+  , relativeTimeTick :: Int
   }
 
 data Action
@@ -34,6 +36,8 @@ data Action
       , toc :: Array TocItem
       }
   | SetActiveToc String
+  | EnableRelativeDates
+  | TickRelativeDates
 
 app :: Model -> LunaApp.App (Const Void) (Const Void) Model Action
 app initialModel =
@@ -63,6 +67,14 @@ update model = case _ of
       }
   SetActiveToc id ->
     purely model { activeTocId = Just id }
+  EnableRelativeDates ->
+    purely model { useRelativeDates = true }
+  TickRelativeDates ->
+    purely
+      if model.useRelativeDates then
+        model { relativeTimeTick = model.relativeTimeTick + 1 }
+      else
+        model
   where
   mergeContent payload post =
     if post.section == payload.section && post.slug == payload.slug then
@@ -72,19 +84,20 @@ update model = case _ of
 
 render :: Model -> Html Action
 render model =
-  siteLayout model.route (currentToc model.manifest model.route) model.activeTocId (Just SetActiveToc) (renderPage model.manifest model.route)
+  siteLayout model.route (currentToc model.manifest model.route) model.activeTocId (Just SetActiveToc)
+    (renderPage model.useRelativeDates model.manifest model.route)
 
 renderStatic :: forall i. SiteManifest -> Route -> Html i
 renderStatic manifest route =
-  siteLayoutStatic route (currentToc manifest route) (renderPage manifest route)
+  siteLayoutStatic route (currentToc manifest route) (renderPage false manifest route)
 
-renderPage :: forall i. SiteManifest -> Route -> Html i
-renderPage manifest route =
+renderPage :: forall i. Boolean -> SiteManifest -> Route -> Html i
+renderPage useRelativeDates manifest route =
   case route of
-    Home -> HomePage.view manifest.posts
+    Home -> HomePage.view useRelativeDates manifest.posts
     About -> AboutPage.view
-    SectionIndex section -> HomePage.view (Array.filter (\p -> p.section == section) manifest.posts)
-    SectionPost section slug -> ArticlePage.view slug section manifest.posts
+    SectionIndex section -> HomePage.view useRelativeDates (Array.filter (\p -> p.section == section) manifest.posts)
+    SectionPost section slug -> ArticlePage.view slug section manifest.posts useRelativeDates
 
 currentToc :: SiteManifest -> Route -> Array TocItem
 currentToc manifest route = case route of

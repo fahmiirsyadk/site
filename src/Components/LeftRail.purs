@@ -56,8 +56,6 @@ tocLink item activeId onSelect =
         <>
           [ H.classes
               ( [ "block"
-                , "underline"
-                , "underline-offset-[3px]"
                 , "transition-colors"
                 , "duration-200"
                 , "ease-out"
@@ -69,7 +67,7 @@ tocLink item activeId onSelect =
               )
           ]
     )
-    [ H.text item.title ]
+    [ H.text ("- " <> item.title) ]
 
 defaultRail :: forall i. Route -> Html i
 defaultRail current =

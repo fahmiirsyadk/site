@@ -39,6 +39,7 @@ mkPost section baseName parsed =
     , section
     , tags
     , excerpt: fromMaybe "" parsed.fields.excerpt
+    , banner: fromMaybe "" parsed.fields.banner
     }
 
 mkThought :: String -> ParsedDocument -> Thought

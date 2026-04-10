@@ -4,13 +4,16 @@ import Prelude
 
 import App as SiteApp
 import AnchorNav (scrollToHashId)
+import Components.Banner (disposeBannerIfAny, mountBannerFilter)
+import Components.Banner.FFI (BannerHandle)
 import Components.Logo (mountCubeLogo)
 import Data.Argonaut.Decode (decodeJson) as AD
 import Data.Argonaut.Parser (jsonParser) as Parser
+import Data.Array as Array
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..), either)
-import Data.Set as Set
 import Data.Maybe (Maybe(..))
+import Data.Set as Set
 import Data.String as String
 import Effect (Effect)
 import Effect.Console (warn)
@@ -23,7 +26,7 @@ import Luna.Routing as Routing
 import RouteInput (setupRouteInputs)
 import Routes (lunaRouteCodec, parseRoutePath)
 import TocActive (setupScrollSpy)
-import Types (Route(..), TocItem, emptySiteManifest)
+import Types (Route(..), SiteManifest, TocItem, emptySiteManifest)
 import Web.DOM.Element (toNode) as DOMElement
 import Web.DOM.Node (Node) as DOMNode
 import Web.DOM.ParentNode (QuerySelector(..), querySelector) as DOM
@@ -34,6 +37,13 @@ import Web.HTML.Window (document)
 import Web.HTML.Window (location) as Window
 
 foreign import fetchText :: String -> (String -> Effect Unit) -> (String -> Effect Unit) -> Effect Unit
+foreign import extractRawHtmlContent :: Effect String
+
+-- | Fire `eff` every `ms` milliseconds
+foreign import everyMsInterval :: Int -> Effect Unit -> Effect Unit
+
+-- | Run `eff` after the next paint frame (rAF), ensuring VDOM patches are visible.
+foreign import afterPaint :: Effect Unit -> Effect Unit
 
 data ManifestState
   = NotRequested
@@ -67,6 +77,17 @@ decodePostContentPayload raw = do
   json <- Parser.jsonParser raw
   lmap show (AD.decodeJson json)
 
+mergeHydrationBody :: String -> String -> String -> SiteManifest -> SiteManifest
+mergeHydrationBody section slug bodyHtml manifest =
+  manifest
+    { posts = map mergeBody manifest.posts }
+  where
+  mergeBody post =
+    if post.section == section && post.slug == slug then
+      post { bodyHtml = bodyHtml }
+    else
+      post
+
 main :: Effect Unit
 main = do
   win <- window
@@ -86,10 +107,24 @@ startClient appRootNode = do
     initialRoute = case parseRoutePath path of
       Nothing -> Home
       Just route -> route
+  -- Rehydrate article body from SSR DOM so we can keep __LUNA_INITIAL_MODEL__
+  -- small. Upstream Luna improvement: skip innerHTML re-apply in
+  -- Halogen.VDom.DOM.Prop hydrateApplyProp for even leaner hydration.
+  hydratedManifest <- case initialRoute of
+    SectionPost section slug -> do
+      bodyHtml <- extractRawHtmlContent
+      if String.length bodyHtml > 0 then
+        pure (mergeHydrationBody section slug bodyHtml manifest)
+      else
+        pure manifest
+    _ -> pure manifest
+  let
     initialModel =
       { route: initialRoute
-      , manifest
+      , manifest: hydratedManifest
       , activeTocId: Nothing
+      , useRelativeDates: false
+      , relativeTimeTick: 0
       }
     app = SiteApp.app initialModel
     interpreter = never `merge` never
@@ -101,6 +136,7 @@ startClient appRootNode = do
         LunaApp.make interpreter app appRootNode)
       pure
       hydrateResult
+  bannerHandleRef <- Ref.new Nothing :: Effect (Ref.Ref (Maybe BannerHandle))
   postContentStateRef <- Ref.new { loaded: Set.empty, failed: Set.empty }
   manifestStateRef <- Ref.new NotRequested
   case initialRoute of
@@ -108,6 +144,23 @@ startClient appRootNode = do
       Ref.modify_ (\st -> st { loaded = Set.insert (postKey section slug) st.loaded }) postContentStateRef
     _ -> pure unit
   let
+    syncBannerForRoute :: Maybe Route -> Effect Unit
+    syncBannerForRoute maybeRoute =
+      case maybeRoute of
+        Just (SectionPost section slug) -> do
+          let
+            mbPost = Array.find (\p -> p.slug == slug && p.section == section) hydratedManifest.posts
+            bannerSrc = case mbPost of
+              Just p | String.length p.banner > 0 -> p.banner
+              _ -> "/assets/banners/" <> slug <> ".png"
+          cur <- Ref.read bannerHandleRef
+          next <- mountBannerFilter cur bannerSrc
+          Ref.write next bannerHandleRef
+        _ -> do
+          cur <- Ref.read bannerHandleRef
+          next <- disposeBannerIfAny cur
+          Ref.write next bannerHandleRef
+
     ensurePostContent :: String -> String -> Effect Unit -> Effect Unit
     ensurePostContent section slug continue = do
       let key = postKey section slug
@@ -156,6 +209,11 @@ startClient appRootNode = do
 
   mountCubeLogo
   inst.run
+  syncBannerForRoute (Just initialRoute)
+  -- VDOM: switch post dates from calendar (hydration-safe) to Intl relative time.
+  inst.pushAndRun SiteApp.EnableRelativeDates
+  -- Re-render once per minute so "8h ago" etc.
+  everyMsInterval 60000 (inst.pushAndRun SiteApp.TickRelativeDates)
   _ <-
     setupRouteInputs
       appRootNode
@@ -163,15 +221,26 @@ startClient appRootNode = do
       Routing.PathRouting
       (\maybeRoute ->
         if needsFullManifest maybeRoute then
-          ensureRouteContent maybeRoute (inst.pushAndRun (SiteApp.RouteChanged maybeRoute))
+          ensureRouteContent maybeRoute do
+            inst.pushAndRun (SiteApp.RouteChanged maybeRoute)
+            afterPaint (syncBannerForRoute maybeRoute)
         else
-          inst.pushAndRun (SiteApp.RouteChanged maybeRoute)
+          do
+            inst.pushAndRun (SiteApp.RouteChanged maybeRoute)
+            afterPaint (syncBannerForRoute maybeRoute)
       )
       (\path' ->
-        if needsFullManifest (parseRoutePath path') then
-          ensurePathContent path' (inst.pushAndRun (SiteApp.NavigatePath path'))
-        else
-          inst.pushAndRun (SiteApp.NavigatePath path')
+        let
+          route = parseRoutePath path'
+        in
+          if needsFullManifest route then
+            ensurePathContent path' do
+              inst.pushAndRun (SiteApp.NavigatePath path')
+              afterPaint (syncBannerForRoute route)
+          else
+            do
+              inst.pushAndRun (SiteApp.NavigatePath path')
+              afterPaint (syncBannerForRoute route)
       )
       (\id -> inst.pushAndRun (SiteApp.SetActiveToc id))
   setupScrollSpy "content-scroll" \maybeId ->

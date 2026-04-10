@@ -33,6 +33,8 @@ import Luna.Html.Document
   )
 import Luna.Html.ModelState (serializeModelScript)
 
+foreign import buildTimestamp :: Effect String
+
 type PostContentPayload =
   { section :: String
   , slug :: String
@@ -52,18 +54,15 @@ sliceManifest route manifest =
     Home -> manifest { posts = map stripBodyHtml manifest.posts, thoughts = map stripThoughtBody manifest.thoughts }
     About -> manifest { posts = map stripBodyHtml manifest.posts, thoughts = map stripThoughtBody manifest.thoughts }
     SectionIndex _ -> manifest { posts = map stripBodyHtml manifest.posts, thoughts = map stripThoughtBody manifest.thoughts }
-    SectionPost section slug -> manifest { posts = map (keepIfCurrentPost section slug) manifest.posts, thoughts = map stripThoughtBody manifest.thoughts }
-  where
-  keepIfCurrentPost section slug post =
-    if post.slug == slug && post.section == section then post else stripBodyHtml post
+    SectionPost _ _ -> manifest { posts = map stripBodyHtml manifest.posts, thoughts = map stripThoughtBody manifest.thoughts }
 
 toOutputFile :: Route -> String
 toOutputFile route =
   case printRoutePath route of
     "/" -> "index.html"
-    path -> stripLeadingSlash path <> "/index.html"
-  where
-  stripLeadingSlash p = fromMaybe p (String.stripPrefix (String.Pattern "/") p)
+    path ->
+      let bare = fromMaybe path (String.stripPrefix (String.Pattern "/") path)
+      in bare <> "/index.html"
 
 ensureDir :: String -> Effect Unit
 ensureDir path =
@@ -87,19 +86,21 @@ writePostPayload outDir post = do
         }
   FS.writeTextFile Enc.UTF8 (concat [ outDir, outputFile ]) (toJsonString (encodeJson payload))
 
-renderPage :: SiteManifest -> Route -> String
-renderPage manifest route =
+renderPage :: String -> SiteManifest -> Route -> String
+renderPage buildHash manifest route =
   renderDocument $
     emptyDocument
       # withTitle title
       # withCharset "UTF-8"
       # withMeta "viewport" "width=device-width, initial-scale=1"
-      # withStylesheet stylesheetHref
+      # withStylesheet (stylesheetHref <> "?v=" <> buildHash)
       # withBodyHtml bodyHtml
       # withInlineScript (serializeModelScript (toJsonString (encodeJson slicedManifest)))
-      # withScriptDefer scriptSrc
+      # withScriptDefer (scriptSrc <> "?v=" <> buildHash)
   where
   title = Pages.titleFor manifest.posts route
+  -- Use the SAME sliced manifest for both rendering and hydration data,
+  -- but keep server-rendered body HTML complete so hard loads show content.
   slicedManifest = sliceManifest route manifest
   bodyHtml = void $ H.div [ H.id_ "app" ] [ renderStatic manifest route ]
   scriptSrc = "/app.js"
@@ -108,6 +109,7 @@ renderPage manifest route =
 main :: Effect Unit
 main = do
   projectRoot <- cwd
+  buildHash <- buildTimestamp
   let outDir = concat [ projectRoot, "dist" ]
   ensureDir outDir
   manifestResult <- readSiteManifest
@@ -122,7 +124,7 @@ main = do
         let outputDir = dirname outputFile
         when (outputDir /= ".") do
           ensureDir (concat [ outDir, outputDir ])
-        let doc = renderPage manifest route
+        let doc = renderPage buildHash manifest route
         FS.writeTextFile Enc.UTF8 fullOutputFile doc
 
       log "Prerendered site to dist/"

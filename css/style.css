@@ -3,34 +3,103 @@
 @tailwind utilities;
 
 @import url("https://rsms.me/inter/inter.css");
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap");
 
 @layer base {
   html {
-    @apply scroll-smooth;
+    @apply h-full scroll-smooth;
   }
 
   body {
-    @apply overflow-x-clip antialiased font-sans bg-[#F5F5F5] text-[#171717];
+    @apply min-h-full overflow-x-clip antialiased font-sans bg-[#F5F5F5] text-[#171717];
     font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     font-size: 12px;
     line-height: 1.7;
   }
 }
 
-/* Visually hidden (banner slug label) */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
+/* On desktop we want `#content-scroll` to be the only vertical scroller. */
+@media (min-width: 768px) {
+  body {
+    overflow-y: hidden;
+  }
+
+  /* Prevent scroll anchoring jumps inside the real scroller. */
+  #content-scroll {
+    overflow-anchor: none;
+  }
+}
+
+/* Fenced tool/diff cards (BuildContent.MdHtml): :has scopes expand to this card only — required
+   inside .luna-raw-html where many siblings share one parent; Tailwind peer-checked ~ can hit the
+   wrong elements and blow up layout height. */
+.tool-display-toggle {
+  position: fixed;
+  inset: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-component="tool-display-card"] .tool-display-body {
+  max-height: 200px;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  transition: max-height 0.3s ease-in-out;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 1rem), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 1rem), transparent 100%);
+}
+
+[data-component="tool-display-card"] {
+  /* Prevent scroll anchoring “jumps” when expanding/collapsing inside #content-scroll. */
+  overflow-anchor: none;
+  contain: layout paint;
+}
+
+[data-component="tool-display-card"]:has(.tool-display-toggle:checked) .tool-display-body {
+  max-height: min(70vh, 42rem);
+  overflow: auto;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.terminal-card {
+  contain: layout paint;
+  overflow-anchor: none;
+}
+
+.terminal-card button svg {
+  transition: transform 0.2s ease;
+}
+
+.terminal-copy[data-copied="1"]::after {
+  content: "Copied";
+  position: absolute;
+  right: 0;
+  top: -0.4rem;
+  transform: translateY(-100%);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.375rem;
+  background: #171717;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
   white-space: nowrap;
-  border-width: 0;
+}
+
+.tool-display-chevron {
+  transition: transform 0.2s ease;
+}
+
+[data-component="tool-display-card"]:has(.tool-display-toggle:checked) .tool-display-chevron {
+  transform: rotate(180deg);
 }
 
 @layer utilities {
+  .font-instrument {
+    font-family: "Instrument Serif", Georgia, "Times New Roman", serif;
+  }
+
   @keyframes spin-x {
     0% {
       transform: rotateX(0deg);
@@ -45,57 +114,3 @@
     transform-style: preserve-3d;
   }
 }
-
-/* Dither overlay (ported from Tailwind v4 @utility in 846fd84) */
-.dither {
-  --dither-gray: 1;
-  --dither-contrast: 120;
-  --dither-bright: 1;
-  --dither-blur: 0px;
-  --dither-cell: 20px;
-  --dither-opacity: 1;
-  --dither-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAu0lEQVQ4T6WSMQqFMBBEE2wDXiVgB8gtglilCuIpcoogVqlEPIVgK3gVIa2Qzw9YbIpttlqGgbcMM5wxlr33LMbI/nccx3I/PQwD0LXPj+OgAaSUBWCtLZ+2bSv308uyAF37/HkeGkAIASL0fQ8yT9MEdO3z67poAKUUiDDPM8i87zvQtc/f96UBmqZBazTG4Ds4z5MG6LoOrTGEgO8gpUQDtG2L1uicw3dw3zcNoLVGa1zXFd9BzpkE+AFp94/4eKx9+AAAAABJRU5ErkJggg==");
-
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  z-index: 0;
-  background: #000;
-  filter: grayscale(var(--dither-gray)) brightness(var(--dither-bright)) blur(var(--dither-blur))
-    contrast(var(--dither-contrast));
-}
-
-.dither::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  background-image: var(--dither-image);
-  background-repeat: repeat;
-  background-size: var(--dither-cell) var(--dither-cell);
-  background-position: 0 0;
-  image-rendering: pixelated;
-  opacity: var(--dither-opacity);
-  mix-blend-mode: screen;
-}
-
-.dither-xs {
-  --dither-cell: 8px;
-}
-.dither-sm {
-  --dither-cell: 12px;
-}
-.dither-md {
-  --dither-cell: 16px;
-}
-.dither-lg {
-  --dither-cell: 20px;
-}
-.dither-xl {
-  --dither-cell: 28px;
-}
-.dither-2xl {
-  --dither-cell: 40px;
-}
-

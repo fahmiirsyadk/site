@@ -8,6 +8,7 @@
             "aff",
             "argonaut-codecs",
             "arrays",
+            "canvas",
             "console",
             "datetime",
             "effect",
@@ -15,6 +16,7 @@
             "foldable-traversable",
             "foreign-object",
             "js-date",
+            "js-intl",
             "luna",
             "markdown-it-js",
             "maybe",
@@ -791,6 +793,19 @@
         "tuples"
       ]
     },
+    "canvas": {
+      "type": "registry",
+      "version": "6.0.0",
+      "integrity": "sha256-AZZOi/ZOhFdN7Lhpng/GPEebJiSaEsMGXeen5F8SowE=",
+      "dependencies": [
+        "arraybuffer-types",
+        "effect",
+        "exceptions",
+        "functions",
+        "maybe",
+        "prelude"
+      ]
+    },
     "console": {
       "type": "registry",
       "version": "6.1.0",
@@ -829,6 +844,15 @@
       "dependencies": [
         "newtype",
         "prelude"
+      ]
+    },
+    "convertable-options": {
+      "type": "registry",
+      "version": "1.0.0",
+      "integrity": "sha256-X7jNa4e7T8f1VoOQUMnm/6GS6t9XZvWNsaey1c5ul/M=",
+      "dependencies": [
+        "prelude",
+        "record"
       ]
     },
     "datetime": {
@@ -1080,6 +1104,29 @@
         "integers",
         "maybe",
         "prelude"
+      ]
+    },
+    "js-intl": {
+      "type": "registry",
+      "version": "1.3.0",
+      "integrity": "sha256-YogZXfHbBhDxk+ShrqaKnb8WiuasZq86hN5XcodL5NA=",
+      "dependencies": [
+        "arrays",
+        "convertable-options",
+        "datetime",
+        "effect",
+        "foreign",
+        "functions",
+        "js-date",
+        "maybe",
+        "nullable",
+        "ordered-collections",
+        "partial",
+        "prelude",
+        "safe-coerce",
+        "tuples",
+        "unfoldable",
+        "unsafe-coerce"
       ]
     },
     "js-promise": {

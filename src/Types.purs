@@ -16,6 +16,7 @@ type Post =
   , section :: String
   , tags :: Array String
   , excerpt :: String
+  , banner :: String
   }
 
 type TocItem =

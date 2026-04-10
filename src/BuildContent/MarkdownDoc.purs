@@ -32,6 +32,7 @@ type FrontFields =
   , date :: Maybe String
   , description :: Maybe String
   , excerpt :: Maybe String
+  , banner :: Maybe String
   , tags :: Maybe (Array String)
   , status :: Maybe String
   , pinned :: Maybe Boolean
@@ -97,6 +98,7 @@ parseFrontFields j =
       , date: Nothing
       , description: Nothing
       , excerpt: Nothing
+      , banner: Nothing
       , tags: Nothing
       , status: Nothing
       , pinned: Nothing
@@ -110,6 +112,7 @@ parseFrontFields j =
         , date: lk "date" >>= readDateAsString
         , description: lk "description" >>= readJsonString
         , excerpt: lk "excerpt" >>= readJsonString
+        , banner: lk "banner" >>= readJsonString
         , tags: lk "tags" >>= readJsonStringArray
         , status: lk "status" >>= readJsonString
         , pinned: lk "pinned" >>= hush <<< decodeJson

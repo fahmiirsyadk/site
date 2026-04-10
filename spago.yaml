@@ -4,6 +4,7 @@ package:
     - aff
     - argonaut-codecs
     - arrays
+    - canvas
     - console
     - datetime
     - effect
@@ -11,6 +12,7 @@ package:
     - foldable-traversable
     - foreign-object
     - js-date
+    - js-intl
     - luna
     - markdown-it-js
     - maybe
@@ -24,12 +26,12 @@ package:
     - routing-duplex
     - simple-json
     - strings
-    - yaml-next
     - transformation-matrix
     - tuples
     - unsafe-coerce
     - web-dom
     - web-html
+    - yaml-next
   # Used by `pnpm bundle` (dev). Production uses purs-backend-es bundle-app + --minify in build.sh.
   bundle:
     platform: browser

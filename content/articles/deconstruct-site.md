@@ -1,8 +1,9 @@
 ---
 title: Deconstruct the site
-date: 2026-04-09
+date: "2026-04-10T06:30:00+07:00"
 slug: deconstruct-site
 section: articles
+banner: "/assets/banners/deconstruct-site.jpg"
 status: published
 tags: ["site", "development"]
 ---
@@ -68,7 +69,7 @@ Single manifest became the contract between two worlds. Prerender needs typed in
 
 `src/Types.purs` is where I lock that contract. `SiteManifest`, `Post`, and `Thought` are not passive definitions. They are the guardrails that keep content and templates aligned while the project evolves.
 
-```purescript
+```tool-display-card src/Types.purs
 type SiteManifest =
   { posts :: Array Post
   , thoughts :: Array Thought
@@ -82,13 +83,475 @@ This explicit schema is one of the most useful parts of the stack because it rem
 
 I kept the build strict and linear so each step has one job. Content generation runs first because everything else depends on the manifest. PureScript compile runs next so type errors fail early. Prerender writes static HTML after that. Browser bundle follows. CSS and assets are the final stage.
 
-```bash
-pnpm run content
-pnpm run spago:build
-pnpm run prerender
-pnpm run bundle:prod
-pnpm run css
-pnpm run copy:assets
+```terminal Build pipeline (local)
+pnpm run build
+----
+> site@0.1.0 build /home/blob/Documents/GitHub/site
+> pnpm run content && pnpm run spago:build && pnpm run prerender && pnpm run bundle:prod && pnpm run css && pnpm run copy:assets
+
+
+> site@0.1.0 content /home/machina/site
+> pnpm exec spago run -p site --main BuildContentMain
+
+Reading Spago workspace configuration...
+
+✓ Selecting package to build: site
+
+Downloading dependencies...
+Building...
+           Src   Lib   All
+Warnings     0     0     0
+Errors       0     0     0
+
+✓ Build succeeded.
+
+Wrote /home/machina/site/generated/posts.json
+
+> site@0.1.0 spago:build /home/machina/site
+> pnpm exec spago build
+
+Reading Spago workspace configuration...
+
+✓ Selecting package to build: site
+
+Downloading dependencies...
+Building...
+           Src   Lib   All
+Warnings     0     0     0
+Errors       0     0     0
+
+✓ Build succeeded.
+
+
+> site@0.1.0 prerender /home/machina/site
+> pnpm exec spago run -p site --main PrerenderMain
+
+Reading Spago workspace configuration...
+
+✓ Selecting package to build: site
+
+Downloading dependencies...
+Building...
+           Src   Lib   All
+Warnings     0     0     0
+Errors       0     0     0
+
+✓ Build succeeded.
+
+Prerendered site to dist/
+
+> site@0.1.0 bundle:prod /home/machina/site
+> mkdir -p dist && pnpm exec purs-backend-es build --int-tags && pnpm exec purs-backend-es bundle-app -m Main -p browser --minify --no-build -t dist/app.js
+
+[  1 of 676] Building Control.Semigroupoid
+[  2 of 676] Building Control.Category
+[  3 of 676] Building Data.Boolean
+[  4 of 676] Building Type.Proxy
+[  5 of 676] Building Data.Symbol
+[  6 of 676] Building Data.Unit
+[  7 of 676] Building Record.Unsafe
+[  8 of 676] Building Data.HeytingAlgebra
+[  9 of 676] Building Data.Void
+[ 10 of 676] Building Data.Eq
+[ 11 of 676] Building Data.Semigroup
+[ 12 of 676] Building Data.Show
+[ 13 of 676] Building Data.Ordering
+[ 14 of 676] Building Data.Semiring
+[ 15 of 676] Building Data.Ring
+[ 16 of 676] Building Data.Ord
+[ 17 of 676] Building Data.Function
+[ 18 of 676] Building Data.Functor
+[ 19 of 676] Building Control.Apply
+[ 20 of 676] Building Control.Applicative
+[ 21 of 676] Building Control.Bind
+[ 22 of 676] Building Control.Monad
+[ 23 of 676] Building Data.BooleanAlgebra
+[ 24 of 676] Building Data.CommutativeRing
+[ 25 of 676] Building Data.EuclideanRing
+[ 26 of 676] Building Data.Monoid
+[ 27 of 676] Building Data.Bounded
+[ 28 of 676] Building Data.DivisionRing
+[ 29 of 676] Building Data.Field
+[ 30 of 676] Building Data.NaturalTransformation
+[ 31 of 676] Building Prelude
+[ 32 of 676] Building Effect
+[ 33 of 676] Building Effect.Uncurried
+[ 34 of 676] Building AnchorNav
+[ 35 of 676] Building DOM.HTML.Indexed.AutocompleteType
+[ 36 of 676] Building DOM.HTML.Indexed.ButtonType
+[ 37 of 676] Building DOM.HTML.Indexed.CrossOriginValue
+[ 38 of 676] Building DOM.HTML.Indexed.DirValue
+[ 39 of 676] Building DOM.HTML.Indexed.FormMethod
+[ 40 of 676] Building DOM.HTML.Indexed.InputType
+[ 41 of 676] Building DOM.HTML.Indexed.KindValue
+[ 42 of 676] Building DOM.HTML.Indexed.MenuType
+[ 43 of 676] Building DOM.HTML.Indexed.MenuitemType
+[ 44 of 676] Building DOM.HTML.Indexed.OrderedListType
+[ 45 of 676] Building DOM.HTML.Indexed.PreloadValue
+[ 46 of 676] Building DOM.HTML.Indexed.ScopeValue
+[ 47 of 676] Building DOM.HTML.Indexed.StepValue
+[ 48 of 676] Building DOM.HTML.Indexed.WrapValue
+[ 49 of 676] Building Data.Monoid.Additive
+[ 50 of 676] Building Control.Alt
+[ 51 of 676] Building Control.Plus
+[ 52 of 676] Building Control.Alternative
+[ 53 of 676] Building Control.Extend
+[ 54 of 676] Building Control.Comonad
+[ 55 of 676] Building Data.Monoid.Conj
+[ 56 of 676] Building Data.Monoid.Disj
+[ 57 of 676] Building Data.Monoid.Dual
+[ 58 of 676] Building Data.Monoid.Endo
+[ 59 of 676] Building Data.Monoid.Multiplicative
+[ 60 of 676] Building Data.Semigroup.First
+[ 61 of 676] Building Data.Semigroup.Last
+[ 62 of 676] Building Unsafe.Coerce
+[ 63 of 676] Building Safe.Coerce
+[ 64 of 676] Building Data.Newtype
+[ 65 of 676] Building Data.Monoid.Alternate
+[ 66 of 676] Building Data.Functor.Invariant
+[ 67 of 676] Building Data.Const
+[ 68 of 676] Building Data.Generic.Rep
+[ 69 of 676] Building Data.Maybe
+[ 70 of 676] Building Data.Either
+[ 71 of 676] Building Control.Lazy
+[ 72 of 676] Building Data.Tuple
+[ 73 of 676] Building Data.Bifunctor
+[ 74 of 676] Building Data.Function.Uncurried
+[ 75 of 676] Building Data.MediaType
+[ 76 of 676] Building Data.Identity
+[ 77 of 676] Building Effect.Ref
+[ 78 of 676] Building Partial
+[ 79 of 676] Building Partial.Unsafe
+[ 80 of 676] Building Control.Monad.Rec.Class
+[ 81 of 676] Building Control.Monad.ST.Internal
+[ 82 of 676] Building Control.Monad.ST
+[ 83 of 676] Building Control.MonadPlus
+[ 84 of 676] Building Data.Functor.App
+[ 85 of 676] Building Data.Functor.Compose
+[ 86 of 676] Building Data.Functor.Coproduct
+[ 87 of 676] Building Data.Functor.Product
+[ 88 of 676] Building Data.Maybe.First
+[ 89 of 676] Building Data.Maybe.Last
+[ 90 of 676] Building Data.Foldable
+[ 91 of 676] Building Data.FunctorWithIndex
+[ 92 of 676] Building Data.FoldableWithIndex
+[ 93 of 676] Building Data.Ord.Max
+[ 94 of 676] Building Data.Ord.Min
+[ 95 of 676] Building Data.Semigroup.Foldable
+[ 96 of 676] Building Data.Traversable.Accum
+[ 97 of 676] Building Data.Traversable.Accum.Internal
+[ 98 of 676] Building Data.Traversable
+[ 99 of 676] Building Data.Semigroup.Traversable
+[100 of 676] Building Data.TraversableWithIndex
+[101 of 676] Building Data.Unfoldable1
+[102 of 676] Building Data.Array.NonEmpty.Internal
+[103 of 676] Building Control.Monad.ST.Uncurried
+[104 of 676] Building Data.Array.ST
+[105 of 676] Building Control.Monad.ST.Ref
+[106 of 676] Building Data.Array.ST.Iterator
+[107 of 676] Building Data.Unfoldable
+[108 of 676] Building Data.Array
+[109 of 676] Building Data.NonEmpty
+[110 of 676] Building Data.List.Types
+[111 of 676] Building Data.List.Internal
+[112 of 676] Building Data.List
+[113 of 676] Building Data.Nullable
+[114 of 676] Building Foreign.Object.ST
+[115 of 676] Building Type.Equality
+[116 of 676] Building Type.Data.Boolean
+[117 of 676] Building Type.Data.Ordering
+[118 of 676] Building Type.Data.Symbol
+[119 of 676] Building Type.RowList
+[120 of 676] Building Type.Row.Homogeneous
+[121 of 676] Building Foreign.Object
+[122 of 676] Building Data.Enum
+[123 of 676] Building Data.Int.Bits
+[124 of 676] Building Data.Number
+[125 of 676] Building Data.Int
+[126 of 676] Building Data.String.Pattern
+[127 of 676] Building Data.String.Unsafe
+[128 of 676] Building Data.String.CodeUnits
+[129 of 676] Building Data.String.Common
+[130 of 676] Building Data.String.CodePoints
+[131 of 676] Building Data.String
+[132 of 676] Building Effect.Exception
+[133 of 676] Building Halogen.VDom.Types
+[134 of 676] Building Web.DOM.ChildNode
+[135 of 676] Building Web.DOM.Internal.Types
+[136 of 676] Building Web.DOM.NonDocumentTypeChildNode
+[137 of 676] Building Data.Date.Component
+[138 of 676] Building Data.Time.Duration
+[139 of 676] Building Data.Date
+[140 of 676] Building Data.Time.Component
+[141 of 676] Building Data.Time
+[142 of 676] Building Data.DateTime
+[143 of 676] Building Data.DateTime.Instant
+[144 of 676] Building Web.Event.EventPhase
+[145 of 676] Building Web.Event.Internal.Types
+[146 of 676] Building Web.Event.Event
+[147 of 676] Building Web.Event.EventTarget
+[148 of 676] Building Web.Internal.FFI
+[149 of 676] Building Web.DOM.CharacterData
+[150 of 676] Building Web.DOM.Comment
+[151 of 676] Building Web.DOM.DOMTokenList
+[152 of 676] Building Web.DOM.HTMLCollection
+[153 of 676] Building Web.DOM.NodeList
+[154 of 676] Building Web.DOM.ParentNode
+[155 of 676] Building Web.DOM.ShadowRoot
+[156 of 676] Building Web.DOM.Element
+[157 of 676] Building Web.DOM.NonElementParentNode
+[158 of 676] Building Web.DOM.DocumentFragment
+[159 of 676] Building Web.DOM.DocumentType
+[160 of 676] Building Web.DOM.ProcessingInstruction
+[161 of 676] Building Web.DOM.Text
+[162 of 676] Building Web.DOM.Document
+[163 of 676] Building Web.DOM.NodeType
+[164 of 676] Building Web.DOM.Node
+[165 of 676] Building Halogen.VDom.Hydrate
+[166 of 676] Building Halogen.VDom.Machine
+[167 of 676] Building Halogen.VDom.Util
+[168 of 676] Building Halogen.VDom.DOM
+[169 of 676] Building Halogen.VDom
+[170 of 676] Building Control.Monad.Error.Class
+[171 of 676] Building Control.Monad.Cont.Class
+[172 of 676] Building Control.Monad.Reader.Class
+[173 of 676] Building Control.Monad.ST.Global
+[174 of 676] Building Control.Monad.ST.Class
+[175 of 676] Building Control.Monad.State.Class
+[176 of 676] Building Control.Monad.Trans.Class
+[177 of 676] Building Control.Monad.Writer.Class
+[178 of 676] Building Effect.Class
+[179 of 676] Building Control.Monad.Except.Trans
+[180 of 676] Building Control.Monad.Except
+[181 of 676] Building Data.List.NonEmpty
+[182 of 676] Building Foreign
+[183 of 676] Building Halogen.VDom.DOM.Prop
+[184 of 676] Building Halogen.VDom.Thunk
+[185 of 676] Building Luna.Html.Core
+[186 of 676] Building Luna.Html.RenderString
+[187 of 676] Building Luna.Html.Document
+[188 of 676] Building DOM.HTML.Indexed.InputAcceptType
+[189 of 676] Building Web.File.Blob
+[190 of 676] Building Web.File.File
+[191 of 676] Building Web.File.FileList
+[192 of 676] Building Web.HTML.Event.DataTransfer.DataTransferItem
+[193 of 676] Building Web.HTML.Event.DataTransfer
+[194 of 676] Building Web.Clipboard.ClipboardEvent
+[195 of 676] Building Web.HTML.Event.DragEvent
+[196 of 676] Building Web.HTML.Common
+[197 of 676] Building Web.DOM
+[198 of 676] Building Web.HTML.HTMLElement
+[199 of 676] Building Web.HTML.HTMLHyperlinkElementUtils
+[200 of 676] Building Web.HTML.HTMLAnchorElement
+[201 of 676] Building Web.HTML.HTMLAreaElement
+[202 of 676] Building Data.JSDate
+[203 of 676] Building Web.HTML.HTMLMediaElement.CanPlayType
+[204 of 676] Building Web.HTML.HTMLMediaElement.NetworkState
+[205 of 676] Building Web.HTML.HTMLMediaElement.ReadyState
+[206 of 676] Building Web.HTML.HTMLMediaElement
+[207 of 676] Building Web.HTML.HTMLAudioElement
+[208 of 676] Building Web.HTML.HTMLBRElement
+[209 of 676] Building Web.HTML.HTMLBaseElement
+[210 of 676] Building Web.HTML.HTMLBodyElement
+[211 of 676] Building Web.HTML.HTMLFormElement
+[212 of 676] Building Web.HTML.ValidityState
+[213 of 676] Building Web.HTML.HTMLButtonElement
+[214 of 676] Building Web.HTML.HTMLCanvasElement
+[215 of 676] Building Web.HTML.HTMLDListElement
+[216 of 676] Building Web.HTML.HTMLDataElement
+[217 of 676] Building Web.HTML.HTMLDataListElement
+[218 of 676] Building Web.HTML.HTMLDivElement
+[219 of 676] Building Web.HTML.HTMLDocument.ReadyState
+[220 of 676] Building Web.HTML.HTMLDocument.VisibilityState
+[221 of 676] Building Web.HTML.HTMLHtmlElement
+[222 of 676] Building Web.HTML.HTMLScriptElement
+[223 of 676] Building Web.HTML.HTMLDocument
+[224 of 676] Building Web.HTML.HTMLEmbedElement
+[225 of 676] Building Web.HTML.HTMLFieldSetElement
+[226 of 676] Building Web.HTML.HTMLHRElement
+[227 of 676] Building Web.HTML.HTMLHeadElement
+[228 of 676] Building Web.HTML.HTMLHeadingElement
+[229 of 676] Building Web.HTML.History
+[230 of 676] Building Web.HTML.Location
+[231 of 676] Building Web.HTML.Navigator
+[232 of 676] Building Web.Storage.Storage
+[233 of 676] Building Web.HTML.Window
+[234 of 676] Building Web.HTML.HTMLIFrameElement
+[235 of 676] Building Web.HTML.HTMLImageElement.CORSMode
+[236 of 676] Building Web.HTML.HTMLImageElement.DecodingHint
+[237 of 676] Building Web.HTML.HTMLImageElement.Laziness
+[238 of 676] Building Web.HTML.HTMLImageElement
+[239 of 676] Building Web.HTML.SelectionMode
+[240 of 676] Building Web.HTML.HTMLInputElement
+[241 of 676] Building Web.HTML.HTMLKeygenElement
+[242 of 676] Building Web.HTML.HTMLLIElement
+[243 of 676] Building Web.HTML.HTMLLabelElement
+[244 of 676] Building Web.HTML.HTMLLegendElement
+[245 of 676] Building Web.HTML.HTMLLinkElement
+[246 of 676] Building Web.HTML.HTMLMapElement
+[247 of 676] Building Web.HTML.HTMLMetaElement
+[248 of 676] Building Web.HTML.HTMLMeterElement
+[249 of 676] Building Web.HTML.HTMLModElement
+[250 of 676] Building Web.HTML.HTMLOListElement
+[251 of 676] Building Web.HTML.HTMLObjectElement
+[252 of 676] Building Web.HTML.HTMLOptGroupElement
+[253 of 676] Building Web.HTML.HTMLOptionElement
+[254 of 676] Building Web.HTML.HTMLOutputElement
+[255 of 676] Building Web.HTML.HTMLParagraphElement
+[256 of 676] Building Web.HTML.HTMLParamElement
+[257 of 676] Building Web.HTML.HTMLPreElement
+[258 of 676] Building Web.HTML.HTMLProgressElement
+[259 of 676] Building Web.HTML.HTMLQuoteElement
+[260 of 676] Building Web.HTML.HTMLSelectElement
+[261 of 676] Building Web.HTML.HTMLSourceElement
+[262 of 676] Building Web.HTML.HTMLSpanElement
+[263 of 676] Building Web.HTML.HTMLStyleElement
+[264 of 676] Building Web.HTML.HTMLTableCaptionElement
+[265 of 676] Building Web.HTML.HTMLTableCellElement
+[266 of 676] Building Web.HTML.HTMLTableColElement
+[267 of 676] Building Web.HTML.HTMLTableDataCellElement
+[268 of 676] Building Web.HTML.HTMLTableSectionElement
+[269 of 676] Building Web.HTML.HTMLTableElement
+[270 of 676] Building Web.HTML.HTMLTableHeaderCellElement
+[271 of 676] Building Web.HTML.HTMLTableRowElement
+[272 of 676] Building Web.HTML.HTMLTemplateElement
+[273 of 676] Building Web.HTML.HTMLTextAreaElement
+[274 of 676] Building Web.HTML.HTMLTimeElement
+[275 of 676] Building Web.HTML.HTMLTitleElement
+[276 of 676] Building Web.HTML.HTMLTrackElement.ReadyState
+[277 of 676] Building Web.HTML.HTMLTrackElement
+[278 of 676] Building Web.HTML.HTMLUListElement
+[279 of 676] Building Web.HTML.HTMLVideoElement
+[280 of 676] Building Web.HTML
+[281 of 676] Building Web.UIEvent.UIEvent
+[282 of 676] Building Web.UIEvent.MouseEvent
+[283 of 676] Building Web.PointerEvent.PointerEvent
+[284 of 676] Building Web.PointerEvent
+[285 of 676] Building Web.TouchEvent.Touch
+[286 of 676] Building Web.TouchEvent.TouchList
+[287 of 676] Building Web.TouchEvent.TouchEvent
+[288 of 676] Building Web.TouchEvent
+[289 of 676] Building Web.UIEvent.FocusEvent
+[290 of 676] Building Web.UIEvent.KeyboardEvent
+[291 of 676] Building Web.UIEvent.WheelEvent
+[292 of 676] Building DOM.HTML.Indexed
+[293 of 676] Building Luna.Html.Elements
+[294 of 676] Building Foreign.Index
+[295 of 676] Building Luna.Html.Events
+[296 of 676] Building Data.Argonaut.Core
+[297 of 676] Building Data.Argonaut.Decode.Error
+[298 of 676] Building Data.Array.NonEmpty
+[299 of 676] Building Data.Map.Internal
+[300 of 676] Building Data.Set
+[301 of 676] Building Data.Map
+[302 of 676] Building Data.String.NonEmpty.Internal
+[303 of 676] Building Data.String.NonEmpty.CodePoints
+[304 of 676] Building Data.String.NonEmpty
+[305 of 676] Building Data.Argonaut.Decode.Decoders
+[306 of 676] Building Record.Unsafe.Union
+[307 of 676] Building Record
+[308 of 676] Building Data.Argonaut.Decode.Class
+[309 of 676] Building Data.Argonaut.Decode.Combinators
+[310 of 676] Building Data.Argonaut.Parser
+[311 of 676] Building Data.Argonaut.Decode.Parser
+[312 of 676] Building Data.Argonaut.Decode
+[313 of 676] Building Luna.Html.ModelState
+[314 of 676] Building Luna.Html.Properties
+[315 of 676] Building Luna.Html.UnsafeHtml
+[316 of 676] Building Luna.Html
+[317 of 676] Building Components.Footer
+[318 of 676] Building Components.Logo.FFI
+[319 of 676] Building Components.Logo.Geometry
+--- [SKIPPING] 320 of 676 modules ---
+[604 of 676] Building JS.Intl.PluralRules
+[605 of 676] Building JS.Intl.Segmenter
+[606 of 676] Building JS.Intl
+[607 of 676] Building JS.LocaleSensitive.Date
+[608 of 676] Building JS.LocaleSensitive.Number
+[609 of 676] Building JS.LocaleSensitive.String
+[610 of 676] Building LinkInterceptor
+[611 of 676] Building Luna.Html.Elements.Keyed
+[612 of 676] Building RouteInput
+[613 of 676] Building TocActive
+[614 of 676] Building Main
+[615 of 676] Building Node.Buffer.Constants
+[616 of 676] Building Node.Buffer.ST
+[617 of 676] Building Node.FS.Async
+[618 of 676] Building Node.FS.Aff
+[619 of 676] Building Node.FS.Stream
+[620 of 676] Building Node.Stream.Aff
+[621 of 676] Building Pages.Collection
+[622 of 676] Building Pages.Project
+[623 of 676] Building Prerender.Pages
+[624 of 676] Building PrerenderMain
+[625 of 676] Building Promise.Rejection
+[626 of 676] Building Promise.Internal
+[627 of 676] Building Promise
+[628 of 676] Building Promise.Lazy
+[629 of 676] Building Routing.Match.Error
+[630 of 676] Building Routing.Types
+[631 of 676] Building Routing.Match
+[632 of 676] Building Routing.Parser
+[633 of 676] Building Routing
+[634 of 676] Building Web.HTML.Event.HashChangeEvent.EventTypes
+[635 of 676] Building Routing.Hash
+[636 of 676] Building Web.HTML.Event.PopStateEvent.EventTypes
+[637 of 676] Building Routing.PushState
+[638 of 676] Building Simple.JSON
+[639 of 676] Building Spago.Generated.BuildInfo
+[640 of 676] Building TocScrollSpy
+  Foreign implementation missing.
+[641 of 676] Building Type.Function
+[642 of 676] Building Type.Row
+[643 of 676] Building Type.Prelude
+[644 of 676] Building Web.Clipboard.ClipboardEvent.EventTypes
+[645 of 676] Building Web.Clipboard
+[646 of 676] Building Web.Event.CustomEvent
+[647 of 676] Building Web.File.FileReader.ReadyState
+[648 of 676] Building Web.File.FileReader
+[649 of 676] Building Web.File.Url
+[650 of 676] Building Web.HTML.Event.BeforeUnloadEvent.EventTypes
+[651 of 676] Building Web.HTML.Event.BeforeUnloadEvent
+[652 of 676] Building Web.HTML.Event.DragEvent.EventTypes
+[653 of 676] Building Web.HTML.Event.ErrorEvent
+[654 of 676] Building Web.HTML.Event.EventTypes
+[655 of 676] Building Web.HTML.Event.HashChangeEvent
+[656 of 676] Building Web.HTML.Event.PageTransitionEvent.EventTypes
+[657 of 676] Building Web.HTML.Event.PageTransitionEvent
+[658 of 676] Building Web.HTML.Event.PopStateEvent
+[659 of 676] Building Web.HTML.Event.TrackEvent.EventTypes
+[660 of 676] Building Web.HTML.Event.TrackEvent
+[661 of 676] Building Web.HTML.HTMLDialogElement
+[662 of 676] Building Web.PointerEvent.Element
+[663 of 676] Building Web.PointerEvent.EventTypes
+[664 of 676] Building Web.PointerEvent.Navigator
+[665 of 676] Building Web.Storage.Event.StorageEvent
+[666 of 676] Building Web.TouchEvent.EventTypes
+[667 of 676] Building Web.UIEvent.CompositionEvent.EventTypes
+[668 of 676] Building Web.UIEvent.CompositionEvent
+[669 of 676] Building Web.UIEvent.EventTypes
+[670 of 676] Building Web.UIEvent.FocusEvent.EventTypes
+[671 of 676] Building Web.UIEvent.InputEvent.EventTypes
+[672 of 676] Building Web.UIEvent.InputEvent.InputType
+[673 of 676] Building Web.UIEvent.InputEvent
+[674 of 676] Building Web.UIEvent.KeyboardEvent.EventTypes
+[675 of 676] Building Web.UIEvent.MouseEvent.EventTypes
+[676 of 676] Building Web.UIEvent.WheelEvent.EventTypes
+
+  dist/app.js  78.0kb
+
+⚡ Done in 106ms
+
+> site@0.1.0 css /home/machina/site
+> mkdir -p dist/css && BROWSERSLIST_IGNORE_OLD_DATA=1 pnpm exec tailwindcss -c tailwind.config.cjs -i ./css/style.css -o ./dist/css/style.css --minify
+
+
+Rebuilding...
+
+Done in 1542ms.
+
+> site@0.1.0 copy:assets /home/machina/site
+> mkdir -p dist/assets dist/fonts && (cp -r public/assets/* dist/assets/ 2>/dev/null || true) && (cp -r public/fonts/* dist/fonts/ 2>/dev/null || true)
 ```
 
 Keeping prerender and browser bundle separate was one of the best decisions in this repo. Static pages give fast first paint and simple hosting. Client bundle adds route updates, interactivity, and animation. That separation made debugging routing migration much less chaotic.
@@ -97,7 +560,7 @@ Keeping prerender and browser bundle separate was one of the best decisions in t
 
 I started routing from one algebraic type and forced everything through it. Every path maps to `Route`, then `routing-duplex` handles encode and decode. That keeps URL printing and parsing in sync and avoids drift between server output and browser behavior.
 
-```purescript
+```tool-display-card src/Types.purs
 data Route
   = Home
   | About
@@ -113,7 +576,7 @@ Path printing appends trailing slashes to stay consistent with generated folder 
 
 I use Luna document builders to keep this typed end to end. Each page gets title, charset, stylesheet, root app HTML, deferred client script, and inline serialized model. That part changed recently in an important way: the inline model carries only what the browser needs to boot and navigate — post metadata, TOC structures, tags, and routing state. It does not carry `bodyHtml` for any post, because post body is already in the page as rendered HTML nodes. There is no reason to serialize it again into JSON.
 
-```purescript
+```tool-display-card src/PrerenderMain.purs
 renderPage title outputFile manifest route =
   renderDocument $
     emptyDocument
@@ -138,7 +601,7 @@ This is where Luna pays off for me in day to day work. I use the same rendering 
 
 I moved to this shape because I did not want route logic spread across random DOM handlers. Route transitions now pass through typed actions in `update`, which makes behavior easier to reason about and easier to debug.
 
-```purescript
+```tool-display-card src/App.purs
 type Model =
   { route :: Route
   , manifest :: SiteManifest
@@ -155,7 +618,7 @@ data Action
 
 Hydration call is:
 
-```purescript
+```tool-display-card src/Main.purs
 inst <- LunaApp.makeHydrate (never `merge` never) (SiteApp.app initialModel) appRootNode
 ```
 
@@ -187,7 +650,7 @@ My target here was simple: keep static delivery, but make navigation feel like a
 
 This input flow is centralized in:
 
-```purescript
+```tool-display-card src/RouteInput.purs
 setupRouteInputs
   :: forall route
    . Node
@@ -210,7 +673,7 @@ I decided to generate TOC at build time, not at runtime. Reason is simple. Build
 
 Snippet from the generator:
 
-```purescript
+```tool-display-card src/BuildContent/MdHtml.purs
 shouldSkipTocHeading :: String -> String -> Boolean
 shouldSkipTocHeading title idBase =
   let
@@ -221,7 +684,7 @@ shouldSkipTocHeading title idBase =
 
 Core shape in the manifest is intentionally small so it is stable and easy to reason about:
 
-```purescript
+```tool-display-card src/Types.purs
 type TocItem =
   { id :: String
   , title :: String
@@ -241,7 +704,7 @@ At render time, `App.purs` picks TOC from the current route and passes it to `le
 
 This is the core render path where route state and active id become UI:
 
-```purescript
+```tool-display-card src/App.purs
 render :: Model -> Html Action
 render model =
   siteLayout
@@ -256,7 +719,7 @@ Hydration is where I paid the tax for getting this wrong once. Earlier version i
 
 This was the practical hydration guardrail:
 
-```purescript
+```tool-display-card src/Main.purs
 let
   initialModel =
     { route: initialRoute
@@ -270,7 +733,7 @@ Scroll sync looked easy and still tripped me up. Reading geometry on raw input e
 
 `TocActive.js` now does the timing work in one place:
 
-```javascript
+```tool-display-card src/TocActive.js
 export function setupScrollSpyImpl(containerId, callback) {
   var el = document.getElementById(containerId);
   if (!el) return;
@@ -288,7 +751,7 @@ export function setupScrollSpyImpl(containerId, callback) {
 
 Full flow in one diagram:
 
-```text
+```tool-display-card content-pipeline.txt
 content/*.md
    |
    | BuildContentMain

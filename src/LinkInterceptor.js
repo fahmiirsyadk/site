@@ -3,18 +3,21 @@
 export function interceptLinksImpl(appNode, onNavigate, onHashNavigate) {
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  const runNavigation = function (pathname) {
-    window.history.pushState(null, "", pathname);
-    onNavigate(pathname)();
+  const runNavigation = function (fullPath) {
+    window.history.pushState(null, "", fullPath);
+    onNavigate(fullPath)();
   };
 
   const runHashNavigation = function (id) {
     if (!id) return;
     window.history.replaceState(null, "", `${window.location.pathname}#${id}`);
-    const target = document.getElementById(id);
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    // Defer scroll to allow VDOM to patch if needed
+    requestAnimationFrame(function () {
+      const target = document.getElementById(id);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
     onHashNavigate(id)();
   };
 
@@ -44,14 +47,16 @@ export function interceptLinksImpl(appNode, onNavigate, onHashNavigate) {
 
     e.preventDefault();
 
+    const fullPath = url.pathname + url.search + url.hash;
+
     if (document.startViewTransition && !prefersReducedMotion.matches) {
       document.startViewTransition(function () {
-        runNavigation(url.pathname);
+        runNavigation(fullPath);
       });
       return;
     }
 
-    runNavigation(url.pathname);
+    runNavigation(fullPath);
   };
 
   appNode.addEventListener("click", handler);

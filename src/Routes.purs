@@ -21,15 +21,14 @@ routeCodec =
     }
 
 printRoutePath :: Route -> String
-printRoutePath route =
-  let path = print routeCodec route
-  in if path == "/" then "/" else path <> "/"
+printRoutePath = print routeCodec
 
 normalizePath :: String -> String
 normalizePath raw =
   let
     withLeadingSlash =
       if String.take 1 raw == "/" then raw else "/" <> raw
+    -- Strip trailing slash for consistency, but keep root "/" intact
     withoutTrailingSlash =
       if withLeadingSlash /= "/" && String.drop (String.length withLeadingSlash - 1) withLeadingSlash == "/"
         then String.take (String.length withLeadingSlash - 1) withLeadingSlash

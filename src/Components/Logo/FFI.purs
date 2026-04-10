@@ -4,9 +4,11 @@
 module Components.Logo.FFI
   ( LogoHandle
   , logoBufferAspect
+  , logoDraw2D
   , logoDraw
   , logoInit
   , logoSetupScene
+  , logoSetupTexture
   , performanceNowMillis
   , raf
   ) where
@@ -15,7 +17,7 @@ import Prelude
 
 import Data.Nullable (Nullable)
 import Effect (Effect)
-import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn5, EffectFn6, runEffectFn1, runEffectFn2, runEffectFn5, runEffectFn6)
+import Effect.Uncurried (EffectFn1, EffectFn2, EffectFn4, EffectFn5, EffectFn6, runEffectFn1, runEffectFn2, runEffectFn4, runEffectFn5, runEffectFn6)
 import Web.DOM.Element (Element)
 
 foreign import data LogoHandle :: Type
@@ -73,6 +75,23 @@ foreign import logoDrawImpl :: EffectFn2 LogoHandle (Array Number) Unit
 
 logoDraw :: LogoHandle -> Array Number -> Effect Unit
 logoDraw handle mvCol = runEffectFn2 logoDrawImpl handle mvCol
+
+foreign import logoSetupTextureImpl ::
+  EffectFn4
+    LogoHandle
+    String
+    Number
+    Number
+    Unit
+
+logoSetupTexture :: LogoHandle -> String -> Number -> Number -> Effect Unit
+logoSetupTexture handle imageSrc light dark =
+  runEffectFn4 logoSetupTextureImpl handle imageSrc light dark
+
+foreign import logoDraw2DImpl :: EffectFn1 LogoHandle Unit
+
+logoDraw2D :: LogoHandle -> Effect Unit
+logoDraw2D = runEffectFn1 logoDraw2DImpl
 
 foreign import performanceNowMillis :: Effect Number
 
