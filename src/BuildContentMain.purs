@@ -6,7 +6,7 @@ import BuildContent.Discover (discoverMarkdownFiles)
 import BuildContent.MarkdownDoc (ParsedDocument, parseMarkdownDocument)
 import Data.Argonaut.Encode (encodeJson, toJsonString)
 import Data.Array as Array
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String as String
 import Effect (Effect)
 import Effect.Console (log)
@@ -34,7 +34,8 @@ mkPost section baseName parsed =
     , title: if String.length title > 0 then title else slug
     , date: parsed.dateIso
     , description: fromMaybe "" parsed.fields.description
-    , bodyHtml: parsed.rendered.bodyHtml
+    , bodyHtml: Just parsed.rendered.bodyHtml
+    , bodyBlocks: parsed.rendered.bodyBlocks
     , toc: parsed.rendered.toc
     , section
     , tags

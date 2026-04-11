@@ -6,7 +6,8 @@ import Components.Footer (footer)
 import Components.LeftRail (leftRail)
 import Data.Array as Array
 import Data.Const (Const)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Map as Map
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Luna.App as LunaApp
 import Luna.Html (Html, attr)
 import Luna.Html as H
@@ -15,7 +16,7 @@ import Pages.About as AboutPage
 import Pages.Article as ArticlePage
 import Pages.Home as HomePage
 import Routes (parseRoutePath)
-import Types (Post, Route(..), SiteManifest, TocItem)
+import Types (BodyBlock, Post, Route(..), SiteManifest, TocItem, ToolCardState, defaultToolCardState)
 
 type Model =
   { route :: Route
@@ -23,6 +24,9 @@ type Model =
   , activeTocId :: Maybe String
   , useRelativeDates :: Boolean
   , relativeTimeTick :: Int
+  , themeMode :: String
+  , terminalExpanded :: Map.Map String Boolean
+  , toolCards :: Map.Map String ToolCardState
   }
 
 data Action
@@ -33,11 +37,16 @@ data Action
       { section :: String
       , slug :: String
       , bodyHtml :: String
+      , bodyBlocks :: Array BodyBlock
       , toc :: Array TocItem
       }
+  | TerminalToggle String
+  | ToolToggle String
+  | ToolCardMeasured String Int
   | SetActiveToc String
   | EnableRelativeDates
   | TickRelativeDates
+  | SetThemeMode String
 
 app :: Model -> LunaApp.App (Const Void) (Const Void) Model Action
 app initialModel =
@@ -52,11 +61,23 @@ update model = case _ of
   RouteChanged maybeRoute ->
     purely case maybeRoute of
       Nothing -> model
-      Just route -> model { route = route, activeTocId = Nothing }
+      Just route ->
+        model
+          { route = route
+          , activeTocId = Nothing
+          , terminalExpanded = Map.empty
+          , toolCards = Map.empty
+          }
   NavigatePath path ->
     purely case parseRoutePath path of
       Nothing -> model
-      Just route -> model { route = route, activeTocId = Nothing }
+      Just route ->
+        model
+          { route = route
+          , activeTocId = Nothing
+          , terminalExpanded = Map.empty
+          , toolCards = Map.empty
+          }
   ReplaceManifest manifest ->
     purely model { manifest = manifest }
   MergePostContent payload ->
@@ -64,9 +85,35 @@ update model = case _ of
       { manifest = model.manifest
           { posts = map (mergeContent payload) model.manifest.posts
           }
+      , toolCards = Map.empty
       }
+  TerminalToggle id ->
+    purely
+      let
+        cur = fromMaybe true $ Map.lookup id model.terminalExpanded
+      in
+        model { terminalExpanded = Map.insert id (not cur) model.terminalExpanded }
+  ToolToggle id ->
+    purely
+      let
+        st = fromMaybe defaultToolCardState $ Map.lookup id model.toolCards
+      in
+        if not st.needsExpand then
+          model
+        else
+          model { toolCards = Map.insert id (st { expanded = not st.expanded }) model.toolCards }
+  ToolCardMeasured id h ->
+    purely
+      let
+        needs = h > 200
+        prevMb = Map.lookup id model.toolCards
+        expanded = case prevMb of
+          Nothing -> true
+          Just p -> if needs then p.expanded else false
+      in
+        model { toolCards = Map.insert id { expanded, needsExpand: needs } model.toolCards }
   SetActiveToc id ->
-    purely model { activeTocId = Just id }
+    purely model { activeTocId = if id == "" then Nothing else Just id }
   EnableRelativeDates ->
     purely model { useRelativeDates = true }
   TickRelativeDates ->
@@ -75,29 +122,40 @@ update model = case _ of
         model { relativeTimeTick = model.relativeTimeTick + 1 }
       else
         model
+  SetThemeMode raw ->
+    purely model { themeMode = normalizeThemeMode raw }
   where
   mergeContent payload post =
     if post.section == payload.section && post.slug == payload.slug then
-      post { bodyHtml = payload.bodyHtml, toc = payload.toc }
+      post { bodyHtml = Just payload.bodyHtml, bodyBlocks = payload.bodyBlocks, toc = payload.toc }
     else
       post
 
+normalizeThemeMode :: String -> String
+normalizeThemeMode s =
+  if s == "light" || s == "dark" || s == "system" then
+    s
+  else
+    "system"
+
 render :: Model -> Html Action
 render model =
-  siteLayout model.route (currentToc model.manifest model.route) model.activeTocId (Just SetActiveToc)
-    (renderPage model.useRelativeDates model.manifest model.route)
+  siteLayout model.route (currentToc model.manifest model.route) model.activeTocId model.themeMode SetThemeMode
+    ( renderPage model.useRelativeDates model.manifest model.route model.terminalExpanded model.toolCards
+    )
 
-renderStatic :: forall i. SiteManifest -> Route -> Html i
+renderStatic :: SiteManifest -> Route -> Html Action
 renderStatic manifest route =
-  siteLayoutStatic route (currentToc manifest route) (renderPage false manifest route)
+  siteLayoutStatic route (currentToc manifest route) (renderPage false manifest route Map.empty Map.empty)
 
-renderPage :: forall i. Boolean -> SiteManifest -> Route -> Html i
-renderPage useRelativeDates manifest route =
+renderPage :: Boolean -> SiteManifest -> Route -> Map.Map String Boolean -> Map.Map String ToolCardState -> Html Action
+renderPage useRelativeDates manifest route termExp toolSt =
   case route of
     Home -> HomePage.view useRelativeDates manifest.posts
     About -> AboutPage.view
     SectionIndex section -> HomePage.view useRelativeDates (Array.filter (\p -> p.section == section) manifest.posts)
-    SectionPost section slug -> ArticlePage.view slug section manifest.posts useRelativeDates
+    SectionPost section slug ->
+      ArticlePage.view termExp toolSt TerminalToggle ToolToggle slug section manifest.posts useRelativeDates
 
 currentToc :: SiteManifest -> Route -> Array TocItem
 currentToc manifest route = case route of
@@ -108,10 +166,10 @@ findPostBySectionSlug :: Array Post -> String -> String -> Maybe Post
 findPostBySectionSlug posts section slug =
   Array.find (\p -> p.slug == slug && p.section == section) posts
 
-siteLayout :: Route -> Array TocItem -> Maybe String -> Maybe (String -> Action) -> Html Action -> Html Action
-siteLayout current toc activeTocId onTocSelect pageContent =
+siteLayout :: Route -> Array TocItem -> Maybe String -> String -> (String -> Action) -> Html Action -> Html Action
+siteLayout current toc activeTocId themeMode onThemeMode pageContent =
   H.div
-    [ H.classes [ "min-h-screen", "bg-[#F5F5F5]", "text-[#171717]", "antialiased" ] ]
+    [ H.classes [ "min-h-screen", "bg-[#F5F5F5]", "text-[#171717]", "antialiased", "dark:bg-neutral-950", "dark:text-neutral-100" ] ]
     [ H.div
         [ H.classes
             [ "flex"
@@ -124,7 +182,7 @@ siteLayout current toc activeTocId onTocSelect pageContent =
             , "md:overflow-hidden"
             ]
         ]
-        [ leftRail current toc activeTocId onTocSelect
+        [ leftRail current toc activeTocId themeMode onThemeMode
         , H.main
             [ H.classes
                 [ "flex"
@@ -136,7 +194,10 @@ siteLayout current toc activeTocId onTocSelect pageContent =
                 , "border-t"
                 , "border-[#E5E5E5]"
                 , "bg-white"
+                , "dark:border-neutral-800"
+                , "dark:bg-neutral-900"
                 , "md:border-t-0"
+                , "max-md:pt-[calc(5.5rem+env(safe-area-inset-top,0px))]"
                 ]
             ]
             [ H.div
@@ -151,23 +212,29 @@ siteLayout current toc activeTocId onTocSelect pageContent =
                     , "flex-col"
                     , "items-center"
                     , "justify-start"
+                    , "bg-white"
+                    , "dark:bg-neutral-900"
                     , "px-8"
-                    , "py-14"
+                    , "pt-6"
+                    , "max-md:pt-4"
+                    , "md:pt-14"
+                    , "pb-0"
                     ]
                 , attr "id" "content-scroll"
                 ]
                 [ H.div
                     [ H.classes [ "w-full", "max-w-3xl", "text-left" ] ]
-                    [ pageContent, footer ]
+                    [ pageContent ]
+                , footer
                 ]
             ]
         ]
     ]
 
-siteLayoutStatic :: forall i. Route -> Array TocItem -> Html i -> Html i
+siteLayoutStatic :: Route -> Array TocItem -> Html Action -> Html Action
 siteLayoutStatic current toc pageContent =
   H.div
-    [ H.classes [ "min-h-screen", "bg-[#F5F5F5]", "text-[#171717]", "antialiased" ] ]
+    [ H.classes [ "min-h-screen", "bg-[#F5F5F5]", "text-[#171717]", "antialiased", "dark:bg-neutral-950", "dark:text-neutral-100" ] ]
     [ H.div
         [ H.classes
             [ "flex"
@@ -180,7 +247,7 @@ siteLayoutStatic current toc pageContent =
             , "md:overflow-hidden"
             ]
         ]
-        [ leftRail current toc Nothing Nothing
+        [ leftRail current toc Nothing "system" SetThemeMode
         , H.main
             [ H.classes
                 [ "flex"
@@ -192,7 +259,10 @@ siteLayoutStatic current toc pageContent =
                 , "border-t"
                 , "border-[#E5E5E5]"
                 , "bg-white"
+                , "dark:border-neutral-800"
+                , "dark:bg-neutral-900"
                 , "md:border-t-0"
+                , "max-md:pt-[calc(5.5rem+env(safe-area-inset-top,0px))]"
                 ]
             ]
             [ H.div
@@ -207,14 +277,20 @@ siteLayoutStatic current toc pageContent =
                     , "flex-col"
                     , "items-center"
                     , "justify-start"
+                    , "bg-white"
+                    , "dark:bg-neutral-900"
                     , "px-8"
-                    , "py-14"
+                    , "pt-6"
+                    , "max-md:pt-4"
+                    , "md:pt-14"
+                    , "pb-0"
                     ]
                 , attr "id" "content-scroll"
                 ]
                 [ H.div
                     [ H.classes [ "w-full", "max-w-3xl", "text-left" ] ]
-                    [ pageContent, footer ]
+                    [ pageContent ]
+                , footer
                 ]
             ]
         ]

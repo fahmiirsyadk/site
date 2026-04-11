@@ -3,11 +3,8 @@ module Content where
 import Prelude
 
 import ManifestCodec (decodeSiteManifestString)
-import Types (Post, SiteManifest)
-import Data.Argonaut.Decode (decodeJson) as AD
-import Data.Argonaut.Parser (jsonParser) as Parser
-import Data.Bifunctor (lmap)
 import Data.Either (Either)
+import Types (Post, SiteManifest)
 import Effect (Effect)
 import Node.Encoding as Enc
 import Node.FS.Sync as FS
@@ -23,9 +20,7 @@ readPosts :: Effect (Either String (Array Post))
 readPosts = do
   jsonPath <- postsJsonPath
   content <- FS.readTextFile Enc.UTF8 jsonPath
-  pure do
-    json <- Parser.jsonParser content
-    lmap (const "Failed to decode posts JSON") (AD.decodeJson json)
+  pure $ decodeSiteManifestString content <#> (\m -> m.posts)
 
 readSiteManifest :: Effect (Either String SiteManifest)
 readSiteManifest = do

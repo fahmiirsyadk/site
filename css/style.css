@@ -8,6 +8,11 @@
 @layer base {
   html {
     @apply h-full scroll-smooth;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   body {
@@ -16,6 +21,29 @@
     font-size: 12px;
     line-height: 1.7;
   }
+
+  html.dark body {
+    @apply bg-neutral-950 text-neutral-100;
+  }
+}
+
+/* Sea only: short canvas, horizon at top; page bg shows through transparent sky in light mode. */
+#sea-canvas {
+  display: block;
+  width: 100%;
+  height: clamp(200px, 26vh, 340px);
+  margin-top: auto;
+}
+
+@media (max-width: 768px) {
+  #sea-canvas {
+    height: clamp(176px, 22vh, 300px);
+  }
+}
+
+/* Same hex as Tailwind neutral-900 / #content-scroll; backs the GL surface so edges match sRGB. */
+html.dark #sea-canvas {
+  background-color: rgb(21,21,21);
 }
 
 /* On desktop we want `#content-scroll` to be the only vertical scroller. */
@@ -30,18 +58,7 @@
   }
 }
 
-/* Fenced tool/diff cards (BuildContent.MdHtml): :has scopes expand to this card only — required
-   inside .luna-raw-html where many siblings share one parent; Tailwind peer-checked ~ can hit the
-   wrong elements and blow up layout height. */
-.tool-display-toggle {
-  position: fixed;
-  inset: 0;
-  width: 0;
-  height: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-
+/* Fenced tool/diff/terminal cards — contract: docs/content-blocks.md */
 [data-component="tool-display-card"] .tool-display-body {
   max-height: 200px;
   overflow: hidden;
@@ -51,12 +68,11 @@
 }
 
 [data-component="tool-display-card"] {
-  /* Prevent scroll anchoring “jumps” when expanding/collapsing inside #content-scroll. */
   overflow-anchor: none;
   contain: layout paint;
 }
 
-[data-component="tool-display-card"]:has(.tool-display-toggle:checked) .tool-display-body {
+[data-component="tool-display-card"].is-expanded .tool-display-body {
   max-height: min(70vh, 42rem);
   overflow: auto;
   mask-image: none;
@@ -70,6 +86,15 @@
 
 .terminal-card button svg {
   transition: transform 0.2s ease;
+}
+
+/* Luna header uses `button` + `aria-expanded`; string terminals use `data-terminal-toggle` on the same button. */
+.terminal-card button[aria-expanded="true"] .terminal-chevron {
+  transform: rotate(90deg);
+}
+
+.terminal-card button[aria-expanded="false"] .terminal-chevron {
+  transform: rotate(0deg);
 }
 
 .terminal-copy[data-copied="1"]::after {
@@ -91,8 +116,27 @@
   transition: transform 0.2s ease;
 }
 
-[data-component="tool-display-card"]:has(.tool-display-toggle:checked) .tool-display-chevron {
+/* Tool/diff islands + string cards: footer button + aria-expanded (terminals use .terminal-card, excluded). */
+[data-component="tool-display-card"]:not(.terminal-card) button.tool-display-expand-btn[aria-expanded="true"]
+  .tool-display-chevron {
   transform: rotate(180deg);
+}
+
+[data-component="tool-display-card"]:not(.terminal-card) button.tool-display-expand-btn[aria-expanded="false"]
+  .tool-display-chevron {
+  transform: rotate(0deg);
+}
+
+/* Short snippets: full height, no expand row (see measureToolCards in Main.js). */
+[data-component="tool-display-card"].tool-display-card--no-expand .tool-display-body {
+  max-height: none;
+  overflow: visible;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+[data-component="tool-display-card"].tool-display-card--no-expand .tool-display-expand-btn {
+  display: none;
 }
 
 @layer utilities {

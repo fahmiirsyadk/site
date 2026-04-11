@@ -5,23 +5,29 @@ module Components.Logo
 
 import Prelude
 
+import Components.Logo.FFI (LogoHandle)
 import Components.Logo.FFI as FFI
 import Components.Logo.Geometry as Geo
 import Components.Logo.Math as LM
+import Data.Array as Array
+import Data.Array (mapMaybe, null)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
 import Data.TransformationMatrix.Matrix4 as M
 import Data.TransformationMatrix.Rotation (Radians(..))
 import Data.TransformationMatrix.Vector3 (Vector3(..))
+import Defer (runWhenIdle)
 import Effect (Effect)
 import Effect.Ref as Ref
+import Data.Foldable (for_)
 import Luna.Html (Html, attr)
 import Luna.Html as H
 import Web.DOM.Document as Document
 import Web.DOM.Element as DOMElement
 import Web.DOM.Node as Node
-import Web.DOM.ParentNode (QuerySelector(..), querySelector) as DOM
+import Web.DOM.NodeList as NodeList
+import Web.DOM.ParentNode (QuerySelector(..), querySelector, querySelectorAll) as PN
 import Web.HTML (window)
 import Web.HTML.HTMLDocument as HTMLDocument
 import Web.HTML.Window (document)
@@ -111,24 +117,37 @@ lightInViewSpace view =
     Right v -> v
     Left _ -> Vector3 50.0 50.0 45.0
 
--- | Home link wrapping `#cube-logo`.
-cubeLogoLink :: forall i. String -> Html i
-cubeLogoLink href =
+-- | Home link; WebGL mounts into every `[data-cube-logo-host]` (sidebar + mobile).
+-- | `compact` uses a smaller cube for the top bar.
+cubeLogoLink :: forall i. String -> Boolean -> Html i
+cubeLogoLink href compact =
   H.a
     [ H.href href
     , H.classes [ "no-underline", "block", "outline-none" ]
     , attr "aria-label" "Home"
     ]
     [ H.div
-        [ H.id_ "cube-logo"
-        , H.classes
-            [ "flex"
-            , "h-[60px]"
-            , "w-[60px]"
-            , "items-center"
-            , "justify-center"
-            ]
-        ]
+        ( [ attr "data-cube-logo-host" "true"
+          , attr "data-logo-px" (if compact then "36" else "60")
+          ]
+            <>
+              [ H.classes
+                  ( [ "flex"
+                    , "items-center"
+                    , "justify-center"
+                    ]
+                      <>
+                        if compact then
+                          [ "h-9"
+                          , "w-9"
+                          ]
+                        else
+                          [ "h-[60px]"
+                          , "w-[60px]"
+                          ]
+                  )
+              ]
+        )
         []
     ]
 type Anim =
@@ -139,38 +158,76 @@ type Anim =
 
 mountCubeLogo :: Effect Unit
 mountCubeLogo = do
-  doc <- window >>= document
-  mbContainer <- DOM.querySelector (DOM.QuerySelector "#cube-logo") (HTMLDocument.toParentNode doc)
-  case mbContainer of
-    Nothing -> pure unit
-    Just container -> do
-      canvas <- Document.createElement "canvas" (HTMLDocument.toDocument doc)
-      DOMElement.setAttribute "style" "display:block;width:60px;height:60px;touch-action:none;pointer-events:none;" canvas
+  htmlDoc <- window >>= document
+  let
+    doc = HTMLDocument.toDocument htmlDoc
+    parent = HTMLDocument.toParentNode htmlDoc
+  nl <- PN.querySelectorAll (PN.QuerySelector "[data-cube-logo-host]") parent
+  nodes <- NodeList.toArray nl
+  let
+    elems = mapMaybe DOMElement.fromNode nodes
+  case elems of
+    [] ->
+      pure unit
+    _ -> do
+      handlesAcc <- Ref.new ([] :: Array LogoHandle)
+      let
+        startAnim :: Array LogoHandle -> Effect Unit
+        startAnim handles =
+          if null handles then
+            pure unit
+          else do
+            ref <- Ref.new { rx: 0.5, ry: 0.5, last: 0.0 }
+            let
+              loop :: Effect Unit
+              loop = do
+                now <- FFI.performanceNowMillis
+                st <- Ref.read ref
+                let
+                  delta = min 0.05 $ (now - st.last) / 1000.0
+                  rx = st.rx + delta * 0.2
+                  ry = st.ry + delta * 0.2
+                Ref.write { rx, ry, last: now } ref
+                let
+                  model = modelFromAngles rx ry
+                  modelView = M.multiply viewMatrix model
+                  mvCol = LM.matrix4ToColumnMajor modelView
+                for_ handles \h -> FFI.logoDraw h mvCol
+                FFI.raf loop
+            FFI.raf loop
+
+        mountRest :: Array DOMElement.Element -> Effect Unit
+        mountRest els =
+          case Array.uncons els of
+            Nothing -> do
+              handles <- Ref.read handlesAcc
+              startAnim handles
+            Just { head: el, tail: rest } -> do
+              mh <- mountLogoIntoHost doc el
+              case mh of
+                Just h -> Ref.modify_ (\xs -> Array.snoc xs h) handlesAcc
+                Nothing -> pure unit
+              runWhenIdle (mountRest rest)
+      runWhenIdle (mountRest elems)
+
+mountLogoIntoHost :: Document.Document -> DOMElement.Element -> Effect (Maybe LogoHandle)
+mountLogoIntoHost doc container = do
+  mbExisting <- PN.querySelector (PN.QuerySelector "canvas") (DOMElement.toParentNode container)
+  case mbExisting of
+    Just _ ->
+      pure Nothing
+    Nothing -> do
+      canvas <- Document.createElement "canvas" doc
+      DOMElement.setAttribute "style" "display:block;width:100%;height:100%;touch-action:none;pointer-events:none;" canvas
       _ <- Node.appendChild (DOMElement.toNode canvas) (DOMElement.toNode container)
       mh <- FFI.logoInit canvas vertexShader fragmentShader Geo.positions Geo.normals Geo.indices
       case toMaybe mh of
-        Nothing -> pure unit
+        Nothing ->
+          pure Nothing
         Just h -> do
           aspect <- FFI.logoBufferAspect h
           let
             proj = LM.perspectiveColumnMajor fovRad50 aspect 0.1 100.0
             Vector3 lx ly lz = lightInViewSpace viewMatrix
           FFI.logoSetupScene h proj lx ly lz
-          ref <- Ref.new { rx: 0.5, ry: 0.5, last: 0.0 }
-          let
-            loop :: Effect Unit
-            loop = do
-              now <- FFI.performanceNowMillis
-              st <- Ref.read ref
-              let
-                delta = min 0.05 $ (now - st.last) / 1000.0
-                rx = st.rx + delta * 0.2
-                ry = st.ry + delta * 0.2
-              Ref.write { rx, ry, last: now } ref
-              let
-                model = modelFromAngles rx ry
-                modelView = M.multiply viewMatrix model
-                mvCol = LM.matrix4ToColumnMajor modelView
-              FFI.logoDraw h mvCol
-              FFI.raf loop
-          FFI.raf loop
+          pure (Just h)

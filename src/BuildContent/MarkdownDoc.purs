@@ -8,7 +8,8 @@ module BuildContent.MarkdownDoc
 
 import Prelude
 
-import BuildContent.MdHtml (buildToc, renderMarkdownHtml)
+import BodyBlockHtml (renderBodyBlock)
+import BuildContent.MdHtml (renderDocument)
 import Control.Alt ((<|>))
 import Data.Argonaut.Core (Json, jsonEmptyObject, toArray, toObject)
 import Data.Array as Array
@@ -20,11 +21,13 @@ import Data.String as String
 import Data.String.Pattern (Pattern(..))
 import Data.String.CodeUnits as CodeUnits
 import Data.YAML.Foreign.Decode (parseYAMLToJson)
+import Data.Foldable (foldMap)
 import Effect (Effect)
+import Effect.Exception (error, throwException)
 import Control.Monad.Except (runExcept)
 import Data.JSDate as JSD
 import Foreign.Object as FO
-import Types (TocItem)
+import Types (BodyBlock, TocItem)
 
 type FrontFields =
   { title :: Maybe String
@@ -40,6 +43,7 @@ type FrontFields =
 
 type RenderedBody =
   { bodyHtml :: String
+  , bodyBlocks :: Array BodyBlock
   , toc :: Array TocItem
   }
 
@@ -180,11 +184,16 @@ parseMarkdownDocument src = do
   let
     { yaml, body } = splitFrontMatter src
     fields = yamlToFrontFields yaml
-    bodyHtml = renderMarkdownHtml body
-    toc = buildToc body
+    doc = renderDocument body
+    bodyHtml = doc.html
+    bodyBlocks = doc.blocks
+    toc = doc.toc
+  unless (bodyHtml == foldMap renderBodyBlock bodyBlocks) do
+    let slugHint = fromMaybe "unknown" fields.slug
+    throwException $ error ("MdHtml parity: bodyHtml /= foldMap renderBodyBlock bodyBlocks (slug: " <> slugHint <> ")")
   dateIso <- normalizeDateToIso fields.date
   pure
     { fields
     , dateIso
-    , rendered: { bodyHtml, toc }
+    , rendered: { bodyHtml, bodyBlocks, toc }
     }

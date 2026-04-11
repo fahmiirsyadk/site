@@ -11,6 +11,7 @@ package:
     - either
     - foldable-traversable
     - foreign-object
+    - integers
     - js-date
     - js-intl
     - luna

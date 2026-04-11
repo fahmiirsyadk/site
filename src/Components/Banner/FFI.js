@@ -90,7 +90,7 @@ function draw(handle) {
 export function initBannerImpl(canvas, vertexShader, fragmentShader) {
   if (!canvas) return null;
   const gl = canvas.getContext("webgl", {
-    alpha: false,
+    alpha: true,
     antialias: true,
     premultipliedAlpha: false,
   });
@@ -126,7 +126,9 @@ export function initBannerImpl(canvas, vertexShader, fragmentShader) {
   gl.useProgram(program);
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.CULL_FACE);
-  gl.clearColor(handle.colorLight[0], handle.colorLight[1], handle.colorLight[2], 1.0);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, handle.positionBuffer);
   gl.enableVertexAttribArray(handle.aPosition);
@@ -182,7 +184,7 @@ export function setBannerImageImpl(handle, src, colorLight, colorDark) {
   if (!handle) return;
   handle.colorLight = parseHexColor(colorLight);
   handle.colorDark = parseHexColor(colorDark);
-  handle.gl.clearColor(handle.colorLight[0], handle.colorLight[1], handle.colorLight[2], 1.0);
+  handle.gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
   const image = new Image();
   image.crossOrigin = "anonymous";

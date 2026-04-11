@@ -33,8 +33,15 @@ export function logoInitImpl(canvas, vertexShader, fragmentShader, pos, norm, id
     return null;
   }
 
-  const styleW = 60;
-  const styleH = 60;
+  const host = canvas.parentElement;
+  const dataPx =
+    host && host.dataset && host.dataset.logoPx
+      ? Math.max(8, parseInt(host.dataset.logoPx, 10) || 60)
+      : 60;
+  const r = host ? host.getBoundingClientRect() : { width: 0, height: 0 };
+  // Hidden hosts (e.g. md:hidden mobile bar) report 0×0 — fall back to data-logo-px.
+  const styleW = r.width > 8 ? Math.max(1, Math.round(r.width)) : dataPx;
+  const styleH = r.height > 8 ? Math.max(1, Math.round(r.height)) : dataPx;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   canvas.width = Math.round(styleW * dpr);
   canvas.height = Math.round(styleH * dpr);
@@ -45,6 +52,8 @@ export function logoInitImpl(canvas, vertexShader, fragmentShader, pos, norm, id
     return null;
   }
   gl.viewport(0, 0, canvas.width, canvas.height);
+  canvas.style.width = `${styleW}px`;
+  canvas.style.height = `${styleH}px`;
 
   const prog = createProgram(gl, vertexShader, fragmentShader);
   if (!prog) return null;

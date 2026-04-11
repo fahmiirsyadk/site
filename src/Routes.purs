@@ -1,24 +1,41 @@
 module Routes where
 
-import Prelude hiding ((/))
+import Prelude
 
+import Control.Alt ((<|>))
 import Data.Either (hush)
+import Data.Generic.Rep (Argument(..), Product(..))
 import Data.Maybe (Maybe)
 import Data.String as String
 import Luna.Routing (RouteCodec)
-import Routing.Duplex (RouteDuplex', parse, print, root, segment)
-import Types (Route)
-import Routing.Duplex.Generic (noArgs, sum)
-import Routing.Duplex.Generic.Syntax ((/))
-routeCodec ::
-  RouteDuplex' Route
+import Routing.Duplex (RouteDuplex(..), RouteDuplex', end, parse, print, root, segment, prefix)
+import Routing.Duplex.Generic (gRouteDuplexCtr, product)
+import Types (Route(..))
+
+-- | Hand-rolled duplex (no `Generic Route`): matches the former `sum` layout
+-- | — declaration order Home, About, SectionIndex, SectionPost (Generic sum order).
+routeCodec :: RouteDuplex' Route
 routeCodec =
-  root $ sum
-    { "Home": noArgs
-    , "About": "about" / noArgs
-    , "SectionPost": segment / segment
-    , "SectionIndex": segment
-    }
+  RouteDuplex enc dec
+  where
+  RouteDuplex homeEnc homeDec = root $ end $ pure Home
+  RouteDuplex aboutEnc aboutDec = root $ end $ prefix "about" $ pure About
+  RouteDuplex idxEnc idxDec = root $ end $ segment
+  RouteDuplex rawPostEnc rawPostDec = root $ end $ product segment (gRouteDuplexCtr segment)
+
+  enc = case _ of
+    Home -> homeEnc Home
+    About -> aboutEnc About
+    SectionIndex s -> idxEnc s
+    SectionPost s1 s2 -> rawPostEnc (Product (Argument s1) (Argument s2))
+
+  dec =
+    homeDec
+      <|> aboutDec
+      <|> (SectionIndex <$> idxDec)
+      <|> (fromProduct <$> rawPostDec)
+    where
+    fromProduct (Product (Argument a) (Argument b)) = SectionPost a b
 
 printRoutePath :: Route -> String
 printRoutePath = print routeCodec
