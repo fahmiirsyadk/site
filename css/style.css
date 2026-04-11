@@ -2,8 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://rsms.me/inter/inter.css");
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap");
+/* Inter + Instrument Serif: linked from prerendered HTML for parallel fetch (see PrerenderMain). */
 
 @layer base {
   html {

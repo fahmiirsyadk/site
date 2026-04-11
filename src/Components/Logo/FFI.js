@@ -1,30 +1,49 @@
-function compileShader(gl, type, source) {
-  const sh = gl.createShader(type);
-  gl.shaderSource(sh, source);
-  gl.compileShader(sh);
-  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-    console.warn("Logo shader compile:", gl.getShaderInfoLog(sh));
-    gl.deleteShader(sh);
-    return null;
-  }
-  return sh;
-}
+/**
+ * With KHR_parallel_shader_compile, do not query COMPILE_STATUS / LINK_STATUS until
+ * COMPLETION_STATUS_KHR is true — an early COMPILE_STATUS/LINK_STATUS read forces a
+ * long synchronous driver wait (same class of jank fixed in Main.js sea footer).
+ */
+function createLinkedProgram(gl, vsSource, fsSource) {
+  const ext = gl.getExtension("KHR_parallel_shader_compile");
 
-function createProgram(gl, vsSource, fsSource) {
-  const vs = compileShader(gl, gl.VERTEX_SHADER, vsSource);
-  const fs = compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
+  const compile = (type, source) => {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, source);
+    gl.compileShader(sh);
+    if (ext) {
+      while (!gl.getShaderParameter(sh, ext.COMPLETION_STATUS_KHR)) {}
+    }
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      console.warn("Logo shader compile:", gl.getShaderInfoLog(sh));
+      gl.deleteShader(sh);
+      return null;
+    }
+    return sh;
+  };
+
+  const vs = compile(gl.VERTEX_SHADER, vsSource);
+  const fs = compile(gl.FRAGMENT_SHADER, fsSource);
   if (!vs || !fs) return null;
+
   const prog = gl.createProgram();
   gl.attachShader(prog, vs);
   gl.attachShader(prog, fs);
   gl.linkProgram(prog);
-  gl.deleteShader(vs);
-  gl.deleteShader(fs);
+
+  if (ext) {
+    while (!gl.getProgramParameter(prog, ext.COMPLETION_STATUS_KHR)) {}
+  }
+
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
     console.warn("Logo program link:", gl.getProgramInfoLog(prog));
     gl.deleteProgram(prog);
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
     return null;
   }
+
+  gl.deleteShader(vs);
+  gl.deleteShader(fs);
   return prog;
 }
 
@@ -55,7 +74,7 @@ export function logoInitImpl(canvas, vertexShader, fragmentShader, pos, norm, id
   canvas.style.width = `${styleW}px`;
   canvas.style.height = `${styleH}px`;
 
-  const prog = createProgram(gl, vertexShader, fragmentShader);
+  const prog = createLinkedProgram(gl, vertexShader, fragmentShader);
   if (!prog) return null;
 
   const posBuf = gl.createBuffer();

@@ -22,11 +22,13 @@ import Node.Process (cwd, exit', lookupEnv)
 import Node.Encoding as Enc
 import Data.Argonaut.Encode (encodeJson, toJsonString)
 import Luna.Html as H
+import Luna.Html.Core as HC
 import Luna.Html.Document
   ( emptyDocument
   , renderDocument
   , withBodyHtml
   , withCharset
+  , withHeadExtra
   , withInlineScript
   , withMeta
   , withScriptDefer
@@ -133,7 +135,21 @@ renderPage buildHash manifest route slicedModelJson =
       # withCharset "UTF-8"
       # withMeta "viewport" "width=device-width, initial-scale=1"
       # withMeta "color-scheme" "light dark"
-      # withStylesheet (stylesheetHref <> "?v=" <> buildHash)
+      -- Only 2 preconnects (Lighthouse: ≤4). Drop duplicate `Link: preconnect` from CDN if Lighthouse still doubles rsms.
+      # withHeadExtra preconnectFontsGstatic
+      # withHeadExtra preconnectInter
+      -- Start woff2 fetches before font CSS applies (after async CSS below).
+      # withHeadExtra (preloadFontWoff2 interRegularWoff2)
+      # withHeadExtra (preloadFontWoff2 interMediumWoff2)
+      # withHeadExtra (preloadFontWoff2 instrumentSerifLatinNormalWoff2)
+      -- Third-party font CSS: preload → stylesheet on load (not render-blocking; web.dev/defer-non-critical-css).
+      # withHeadExtra (nonBlockingStylesheet interStylesheetHref)
+      # withHeadExtra (noscriptStylesheet interStylesheetHref)
+      # withHeadExtra (nonBlockingStylesheet instrumentSerifStylesheetHref)
+      # withHeadExtra (noscriptStylesheet instrumentSerifStylesheetHref)
+      -- Main Tailwind bundle: preload + stylesheet share one URL (browser dedupes).
+      # withHeadExtra (preloadStylesheet styleHref)
+      # withStylesheet styleHref
       # withBodyHtml bodyHtml
       # withInlineScript themeBootScript
       # withInlineScript (serializeModelScript slicedModelJson)
@@ -145,6 +161,47 @@ renderPage buildHash manifest route slicedModelJson =
   bodyHtml = void $ H.div [ H.id_ "app" ] [ renderStatic sm route ]
   scriptSrc = "/app.js"
   stylesheetHref = "/css/style.css"
+  styleHref = stylesheetHref <> "?v=" <> buildHash
+  -- Must match `inter.css` from rsms.me (see `curl https://rsms.me/inter/inter.css`).
+  interRegularWoff2 = "https://rsms.me/inter/font-files/Inter-Regular.woff2?v=4.1"
+  interMediumWoff2 = "https://rsms.me/inter/font-files/Inter-Medium.woff2?v=4.1"
+  -- Latin normal 400; from Google CSS `family=Instrument+Serif:ital@0;1&display=swap`. Update if Google changes paths.
+  instrumentSerifLatinNormalWoff2 =
+    "https://fonts.gstatic.com/s/instrumentserif/v5/jizBRFtNs2ka5fXjeivQ4LroWlx-6zUTjg.woff2"
+  preconnectFontsGstatic =
+    HC.elem "link"
+      [ HC.attr "rel" "preconnect"
+      , HC.attr "href" "https://fonts.gstatic.com"
+      , HC.attr "crossorigin" "anonymous"
+      ]
+      []
+  preconnectInter =
+    HC.elem "link" [ HC.attr "rel" "preconnect", HC.attr "href" "https://rsms.me" ] []
+  interStylesheetHref = "https://rsms.me/inter/inter.css"
+  instrumentSerifStylesheetHref =
+    "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap"
+  nonBlockingStylesheet href =
+    HC.elem "link"
+      [ HC.attr "rel" "preload"
+      , HC.attr "href" href
+      , HC.attr "as" "style"
+      , HC.attr "onload" "this.onload=null;this.rel='stylesheet'"
+      ]
+      []
+  noscriptStylesheet href =
+    HC.elem "noscript" []
+      [ HC.elem "link" [ HC.attr "rel" "stylesheet", HC.attr "href" href ] [] ]
+  preloadStylesheet href =
+    HC.elem "link" [ HC.attr "rel" "preload", HC.attr "as" "style", HC.attr "href" href ] []
+  preloadFontWoff2 href =
+    HC.elem "link"
+      [ HC.attr "rel" "preload"
+      , HC.attr "href" href
+      , HC.attr "as" "font"
+      , HC.attr "type" "font/woff2"
+      , HC.attr "crossorigin" "anonymous"
+      ]
+      []
 
 main :: Effect Unit
 main = do
