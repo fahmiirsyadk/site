@@ -13,15 +13,17 @@ import Data.Argonaut.Decode.Error (printJsonDecodeError)
 import Data.Argonaut.Parser (jsonParser) as Parser
 import Data.Array as Array
 import Data.Bifunctor (lmap)
-import Data.Either (Either(..), either)
-import Data.Maybe (Maybe(..))
+import Data.Either (Either(..))
+import Data.Foldable (any)
+import Data.Maybe (Maybe(..), isJust)
 import Data.Set as Set
 import Data.String as String
+import Data.String.CodeUnits as SCU
+import Data.String.Pattern (Pattern(..))
 import Effect (Effect)
 import Effect.Console (warn)
-import Effect.Exception (message, try)
 import Effect.Ref as Ref
-import Luna.App as LunaApp
+import Luna.App (HydrationBootstrapOptions, makeHydrateOrBuild)
 import Luna.Html.ModelState (deserializeModelWithDefault)
 import Luna.Interpreter (merge, never)
 import Luna.Routing as Routing
@@ -43,7 +45,6 @@ foreign import fetchText :: String -> (String -> Effect Unit) -> (String -> Effe
 foreign import mountSeaFooter :: Effect Unit
 foreign import getStoredThemeMode :: Effect String
 foreign import patchSsrThemeButtons :: String -> Effect Unit
-foreign import stripHydrationPoisonAttrs :: DOMNode.Node -> Effect Unit
 foreign import applyThemeMode :: String -> Effect Unit
 foreign import subscribeSystemThemeChanges :: (Effect Unit) -> Effect Unit
 foreign import measureToolCards :: (String -> Int -> Effect Unit) -> Effect Unit
@@ -56,6 +57,13 @@ foreign import everyMsInterval :: Int -> Effect Unit -> Effect Unit
 foreign import afterPaint :: Effect Unit -> Effect Unit
 
 foreign import setupTocHashSync :: (String -> Effect Unit) -> Effect Unit
+
+-- | Tooling-injected `data-*` names Halogen hydration would otherwise reject (see Luna `hydrateAttributesIgnore`).
+toolingHydrateAttributesIgnore :: String -> Boolean
+toolingHydrateAttributesIgnore name =
+  name == "data-cursor-ref"
+    || any (\p -> isJust (SCU.stripPrefix (Pattern p) name))
+      [ "data-cursor-", "data-cf-", "data-grammarly-", "data-gr-ext", "data-new-gr-" ]
 
 data ManifestState
   = NotRequested
@@ -124,8 +132,12 @@ startClient appRootNode = do
       Nothing -> Home
       Just route -> route
   storedTheme <- getStoredThemeMode
-  patchSsrThemeButtons storedTheme
   let
+    hydrationOpts :: HydrationBootstrapOptions
+    hydrationOpts =
+      { hydrateAttributesIgnore: toolingHydrateAttributesIgnore
+      , beforeHydrate: Just (\_ -> patchSsrThemeButtons storedTheme)
+      }
     initialModel =
       { route: initialRoute
       , manifest: manifest
@@ -138,15 +150,7 @@ startClient appRootNode = do
       }
     app = SiteApp.app initialModel
     interpreter = never `merge` never
-  stripHydrationPoisonAttrs appRootNode
-  hydrateResult <- try (LunaApp.makeHydrate interpreter app appRootNode)
-  inst <-
-    either
-      (\e -> do
-        warn $ "Hydration failed, falling back to full render: " <> message e
-        LunaApp.make interpreter app appRootNode)
-      pure
-      hydrateResult
+  inst <- makeHydrateOrBuild interpreter app appRootNode hydrationOpts
   void $
     inst.subscribe \ch ->
       when (ch.old.themeMode /= ch.new.themeMode) do

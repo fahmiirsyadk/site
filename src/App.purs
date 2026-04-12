@@ -146,7 +146,8 @@ render model =
 
 renderStatic :: SiteManifest -> Route -> Html Action
 renderStatic manifest route =
-  siteLayoutStatic route (currentToc manifest route) (renderPage false manifest route Map.empty Map.empty)
+  siteLayout route (currentToc manifest route) Nothing "system" SetThemeMode
+    (renderPage false manifest route Map.empty Map.empty)
 
 renderPage :: Boolean -> SiteManifest -> Route -> Map.Map String Boolean -> Map.Map String ToolCardState -> Html Action
 renderPage useRelativeDates manifest route termExp toolSt =
@@ -166,6 +167,8 @@ findPostBySectionSlug :: Array Post -> String -> String -> Maybe Post
 findPostBySectionSlug posts section slug =
   Array.find (\p -> p.slug == slug && p.section == section) posts
 
+-- | Shared shell for client (`render`) and prerender (`renderStatic`). Static HTML passes no TOC
+-- | highlight and `"system"` theme; `Main.js` aligns theme controls with stored preference on boot.
 siteLayout :: Route -> Array TocItem -> Maybe String -> String -> (String -> Action) -> Html Action -> Html Action
 siteLayout current toc activeTocId themeMode onThemeMode pageContent =
   H.div
@@ -183,71 +186,6 @@ siteLayout current toc activeTocId themeMode onThemeMode pageContent =
             ]
         ]
         [ leftRail current toc activeTocId themeMode onThemeMode
-        , H.main
-            [ H.classes
-                [ "flex"
-                , "h-full"
-                , "min-h-0"
-                , "min-w-0"
-                , "flex-1"
-                , "flex-col"
-                , "border-t"
-                , "border-[#E5E5E5]"
-                , "bg-white"
-                , "dark:border-neutral-800"
-                , "dark:bg-neutral-900"
-                , "md:border-t-0"
-                , "max-md:pt-[calc(5.5rem+env(safe-area-inset-top,0px))]"
-                ]
-            ]
-            [ H.div
-                [ H.classes
-                    [ "flex"
-                    , "h-full"
-                    , "min-h-0"
-                    , "overflow-y-auto"
-                    , "min-h-full"
-                    , "w-full"
-                    , "flex-1"
-                    , "flex-col"
-                    , "items-center"
-                    , "justify-start"
-                    , "bg-white"
-                    , "dark:bg-neutral-900"
-                    , "px-8"
-                    , "pt-6"
-                    , "max-md:pt-4"
-                    , "md:pt-14"
-                    , "pb-0"
-                    ]
-                , attr "id" "content-scroll"
-                ]
-                [ H.div
-                    [ H.classes [ "w-full", "max-w-3xl", "text-left" ] ]
-                    [ pageContent ]
-                , footer
-                ]
-            ]
-        ]
-    ]
-
-siteLayoutStatic :: Route -> Array TocItem -> Html Action -> Html Action
-siteLayoutStatic current toc pageContent =
-  H.div
-    [ H.classes [ "min-h-screen", "bg-[#F5F5F5]", "text-[#171717]", "antialiased", "dark:bg-neutral-950", "dark:text-neutral-100" ] ]
-    [ H.div
-        [ H.classes
-            [ "flex"
-            , "min-h-screen"
-            , "w-full"
-            , "flex-col"
-            , "md:h-screen"
-            , "md:max-h-screen"
-            , "md:flex-row"
-            , "md:overflow-hidden"
-            ]
-        ]
-        [ leftRail current toc Nothing "system" SetThemeMode
         , H.main
             [ H.classes
                 [ "flex"

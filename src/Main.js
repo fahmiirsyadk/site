@@ -154,33 +154,6 @@ export const patchSsrThemeButtons = (mode) => () => {
   });
 };
 
-/** Strip tooling-only `data-*` attrs so Halogen hydrate does not fail on unmatched DOM attributes. */
-const HYDRATION_POISON_ATTR_PREFIXES = [
-  "data-cursor-",
-  "data-cf-",
-  "data-grammarly-",
-  "data-gr-ext",
-  "data-new-gr-",
-];
-const HYDRATION_POISON_ATTR_EXACT = new Set(["data-cursor-ref"]);
-
-const stripPoisonAttrsOnElement = (el) => {
-  const toRemove = [];
-  for (const attr of Array.from(el.attributes)) {
-    const n = attr.name;
-    if (HYDRATION_POISON_ATTR_EXACT.has(n) || HYDRATION_POISON_ATTR_PREFIXES.some((p) => n.startsWith(p))) {
-      toRemove.push(n);
-    }
-  }
-  for (const n of toRemove) el.removeAttribute(n);
-};
-
-export const stripHydrationPoisonAttrs = (root) => () => {
-  if (!root || root.nodeType !== 1) return;
-  stripPoisonAttrsOnElement(root);
-  for (const el of root.querySelectorAll("*")) stripPoisonAttrsOnElement(el);
-};
-
 const scheduleHeavyGpuWork = (fn) => {
   if (typeof requestIdleCallback === "function") {
     requestIdleCallback(() => fn(), { timeout: 2800 });

@@ -4,9 +4,10 @@ import Prelude
 
 import App (renderStatic)
 import Content (readSiteManifest)
+import ManifestSlice (manifestForSiteIndexJson, sliceManifest)
 import Prerender.Pages as Pages
 import Routes (printRoutePath)
-import Types (BodyBlock, Post, Route(..), SiteManifest, Thought, TocItem)
+import Types (BodyBlock, Post, Route, SiteManifest, TocItem)
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Int as Int
@@ -35,7 +36,7 @@ import Luna.Html.Document
   , withStylesheet
   , withTitle
   )
-import Luna.Html.ModelState (serializeModelScript)
+import Luna.Html.ModelState (serializeModelScriptFrom)
 
 foreign import buildTimestamp :: Effect String
 
@@ -46,40 +47,6 @@ type PostContentPayload =
   , bodyBlocks :: Array BodyBlock
   , toc :: Array TocItem
   }
-
-stripThoughtBody :: Thought -> Thought
-stripThoughtBody t = t { bodyHtml = "" }
-
--- | Drop heavy fields from the hydration payload. On `SectionPost`, keep `bodyBlocks` for the
--- | active article so SSR and client hydrate match (same Luna tree as `renderStatic`).
-stripPost :: Post -> Post
-stripPost p = p { bodyHtml = Nothing, bodyBlocks = [] }
-
-slicePostForRoute :: String -> String -> Post -> Post
-slicePostForRoute sec slug p =
-  if p.section == sec && p.slug == slug then
-    p { bodyHtml = Nothing }
-  else
-    stripPost p
-
-sliceManifest :: Route -> SiteManifest -> SiteManifest
-sliceManifest route manifest =
-  case route of
-    SectionPost sec slug ->
-      manifest
-        { posts = map (slicePostForRoute sec slug) manifest.posts
-        , thoughts = map stripThoughtBody manifest.thoughts
-        }
-    _ ->
-      manifest
-        { posts = map stripPost manifest.posts
-        , thoughts = map stripThoughtBody manifest.thoughts
-        }
-
--- | Full index JSON: drop heavy fields; clients load bodies from per-post `/data/posts/.../*.json`.
-manifestForSiteIndexJson :: SiteManifest -> SiteManifest
-manifestForSiteIndexJson m =
-  m { posts = map (\p -> p { bodyHtml = Nothing, bodyBlocks = [] }) m.posts }
 
 -- | When set, `LUNA_INLINE_MODEL_MAX_BYTES` caps UTF-16 code units per inlined model (ASCII-heavy JSON ≈ bytes). Unset or `0` = no check (CI can set e.g. `50000`).
 readInlineModelLimit :: Effect (Maybe Int)
@@ -127,8 +94,8 @@ writePostPayload outDir post = do
         }
   FS.writeTextFile Enc.UTF8 (concat [ outDir, outputFile ]) (toJsonString (encodeJson payload))
 
-renderPage :: String -> SiteManifest -> Route -> String -> String
-renderPage buildHash manifest route slicedModelJson =
+renderPage :: String -> SiteManifest -> Route -> String
+renderPage buildHash manifest route =
   renderDocument $
     emptyDocument
       # withTitle title
@@ -152,7 +119,7 @@ renderPage buildHash manifest route slicedModelJson =
       # withStylesheet styleHref
       # withBodyHtml bodyHtml
       # withInlineScript themeBootScript
-      # withInlineScript (serializeModelScript slicedModelJson)
+      # withInlineScript (serializeModelScriptFrom (sliceManifest route) manifest)
       # withScriptDefer (scriptSrc <> "?v=" <> buildHash)
   where
   title = Pages.titleFor manifest.posts route
@@ -232,7 +199,7 @@ main = do
         let outputDir = dirname outputFile
         when (outputDir /= ".") do
           ensureDir (concat [ outDir, outputDir ])
-        let doc = renderPage buildHash manifest route slicedJson
+        let doc = renderPage buildHash manifest route
         FS.writeTextFile Enc.UTF8 fullOutputFile doc
 
       log "Prerendered site to dist/"

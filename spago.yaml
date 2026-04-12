@@ -47,4 +47,4 @@ workspace:
   extraPackages:
     luna:
       git: https://github.com/fahmiirsyadk/luna.git
-      ref: 37ae92731e68b701ac04de4418e56a0bdbf6f572
+      ref: a24c61e434ac0f5ce4e5e67412cfc86509b5a985
