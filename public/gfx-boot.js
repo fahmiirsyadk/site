@@ -68,6 +68,9 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
     let spawned = 0, ptr = 0, rafId = 0, chromeRemoved = false, maskHolesAppended = 0;
     let bootFrame = 0;
     let hasPausedForSea = false;
+    let lastCounter = -1;
+    let lastProgress = -1;
+    const MASK_APPEND_BATCH = 140;
 
     // visibility-aware timing
     let isHidden = document.hidden;
@@ -100,12 +103,9 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
       console.log("[boot] resuming after sea ready");
       window.__gfxBoot.pausedForSea = false;
       window.__gfxBoot.animationDone = false;
-      activeElapsed = 0;
       lastActive = performance.now();
-      bootFrame = 0;
       chromeRemoved = false;
       overlay.style.pointerEvents = "";
-      rebuildFillGrid();
       if (!rafId &&!isHidden) rafId = requestAnimationFrame(tick);
     };
     window.addEventListener("sea-ready", window.__gfxBoot.resumeAfterSea, { once: true });
@@ -155,7 +155,8 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
       const g = document.getElementById("gfx-boot-mask-holes");
       if (!g) return;
       const hole = CELL + 1;
-      while (maskHolesAppended < filled.length) {
+      let appended = 0;
+      while (maskHolesAppended < filled.length && appended < MASK_APPEND_BATCH) {
         const cell = filled[maskHolesAppended++];
         const r = document.createElementNS(svgNS, "rect");
         r.setAttribute("x", String(Math.floor(cell.x)));
@@ -164,6 +165,7 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
         r.setAttribute("height", String(hole));
         r.setAttribute("fill", "black");
         g.appendChild(r);
+        appended++;
       }
     }
 
@@ -199,8 +201,18 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
     function syncProgressToTimeline(now) {
       const activeNow = getActiveTime(now);
       const tp = Math.min(1, activeNow / minMs);
-      counterEl.textContent = String(Math.min(50, Math.floor(tp * 50))).padStart(2, "0");
-      if (progressEl) progressEl.textContent = `${Math.round(tp * 100)}%`;
+      const counter = Math.min(50, Math.floor(tp * 50));
+      if (counter !== lastCounter) {
+        lastCounter = counter;
+        counterEl.textContent = String(counter).padStart(2, "0");
+      }
+      if (progressEl) {
+        const progress = Math.round(tp * 100);
+        if (progress !== lastProgress) {
+          lastProgress = progress;
+          progressEl.textContent = `${progress}%`;
+        }
+      }
       const targetSpawned = tp >= 1? total : Math.floor(tp * total);
       spawnCellsToTarget(targetSpawned);
     }

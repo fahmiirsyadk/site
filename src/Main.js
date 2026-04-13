@@ -222,8 +222,12 @@ function initSeaFooterWithFragment(canvas, src) {
   const coarse = (mqCoarse?.matches) || narrow || navigator.maxTouchPoints > 0;
   const saveData = navigator.connection?.saveData;
 
+  let canvasCssW = 1;
+  let canvasCssH = 1;
   const applySize = () => {
     const r = canvas.getBoundingClientRect();
+    canvasCssW = Math.max(1, r.width);
+    canvasCssH = Math.max(1, r.height);
     const dpr = Math.min(devicePixelRatio || 1, saveData ? 1 : narrow ? 2 : coarse ? 1.28 : 2);
     canvas.width = Math.max(1, Math.ceil(r.width * dpr));
     canvas.height = Math.max(1, Math.ceil(r.height * dpr));
@@ -292,6 +296,7 @@ function initSeaFooterWithFragment(canvas, src) {
     const uQ = gl.getUniformLocation(prog, "cloudQ");
     const uDark = gl.getUniformLocation(prog, "uiDark");
     const uIntro = gl.getUniformLocation(prog, "seaIntro");
+    if (uQ) gl.uniform1f(uQ, 1);
     console.log("[sea] shaderReady = true");
     signalSeaReadyOnce(canvas, true, "", { programLog: "" });
 
@@ -299,9 +304,8 @@ function initSeaFooterWithFragment(canvas, src) {
     const down = (x, y) => { drag = true; dsx = x; dsy = y; dbx = targX; dby = targY; };
     const move = (x, y) => {
       if (!drag) return;
-      const r = canvas.getBoundingClientRect();
-      targX = Math.max(-7, Math.min(7, dbx + ((x - dsx) / r.width) * 10));
-      targY = Math.max(0, Math.min(11, dby - ((y - dsy) / r.height) * 8));
+      targX = Math.max(-7, Math.min(7, dbx + ((x - dsx) / canvasCssW) * 10));
+      targY = Math.max(0, Math.min(11, dby - ((y - dsy) / canvasCssH) * 8));
     };
     const up = () => { drag = false; };
     canvas.addEventListener("mousedown", (e) => { down(e.clientX, e.clientY); e.preventDefault(); });
@@ -316,6 +320,14 @@ function initSeaFooterWithFragment(canvas, src) {
     let introSimT0 = null;
     let lastSeaFrame = performance.now();
     let seaInViewport = true;
+    let dark = document.documentElement.classList.contains("dark") ? 1 : 0;
+    let darkObserver = null;
+    if (uDark && typeof MutationObserver !== "undefined") {
+      darkObserver = new MutationObserver(() => {
+        dark = document.documentElement.classList.contains("dark") ? 1 : 0;
+      });
+      darkObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    }
 
     function cancelSeaLoop() {
       if (seaRafId) cancelAnimationFrame(seaRafId);
@@ -353,14 +365,12 @@ function initSeaFooterWithFragment(canvas, src) {
       svy += (vy - svy) * 0.06;
       if (!drag) { svx *= 0.95; svy *= 0.95; }
 
-      const dark = document.documentElement.classList.contains("dark") ? 1 : 0;
       gl.clearColor(dark ? 23 / 255 : 0, dark ? 23 / 255 : 0, dark ? 23 / 255 : 0, dark ? 1 : 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.uniform1f(uT, t);
       gl.uniform2f(uR, canvas.width, canvas.height * 1.92);
       gl.uniform2f(uOff, offX, offY);
       gl.uniform2f(uVel, svx * 60, svy * 60);
-      if (uQ) gl.uniform1f(uQ, 1);
       if (uDark) gl.uniform1f(uDark, dark);
       if (uIntro) gl.uniform1f(uIntro, intro);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
