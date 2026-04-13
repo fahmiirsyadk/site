@@ -39,7 +39,7 @@ homeCrumbIcon =
 routeCrumbElt :: forall i. Route -> Html i
 routeCrumbElt = case _ of
   Home ->
-    H.span [ H.classes [ "flex", "items-center" ] ] [ homeCrumbIcon ]
+    H.span [] []
   r ->
     H.span
       [ H.classes [ "truncate", "text-[11px]", "font-medium", "tracking-wide", "text-neutral-500", "dark:text-neutral-400" ] ]
@@ -142,9 +142,9 @@ mobileTopNav current toc activeTocId themeMode onThemeMode =
             ]
         ]
         [ H.div [ H.classes [ "flex", "min-w-0", "flex-1", "items-center", "gap-3" ] ]
-            [ H.div [ H.classes [ "shrink-0" ] ] [ cubeLogoLink (printRoutePath Home) true ]
-            , routeCrumbElt current
-            ]
+            ( [ H.div [ H.classes [ "shrink-0" ] ] [ cubeLogoLink (printRoutePath Home) true ] ]
+                <> if current == Home then [] else [ routeCrumbElt current ]
+            )
         , H.details
             [ H.classes [ "shrink-0" ] ]
             [ H.summary
@@ -182,7 +182,6 @@ mobileTopNav current toc activeTocId themeMode onThemeMode =
                     , "pt-4"
                     , "dark:border-neutral-800"
                     , "dark:bg-neutral-950"
-                    , "shadow-[0_12px_24px_-8px_rgba(0,0,0,0.25)]"
                     ]
                 ]
                 [ railScrollable current toc activeTocId
