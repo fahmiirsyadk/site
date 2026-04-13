@@ -225,3 +225,10 @@ export function rafImpl(eff) {
     eff();
   });
 }
+
+/** Signals cube logo first GPU frame (or no-op path); pairs with `window.__gfxBoot` in Main.js */
+export const gfxBootNotifyLogoReady = () => {
+  try {
+    window.__gfxBoot?.markLogo();
+  } catch (_) {}
+};

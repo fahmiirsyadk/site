@@ -1,388 +1,406 @@
-/** Sea fragment: `pnpm run shaders` writes public/assets/shaders/sea-footer.min.frag */
+/* global window, document, performance, requestAnimationFrame, cancelAnimationFrame, setTimeout, matchMedia, Math */
 const SEA_FRAG_URL = "/assets/shaders/sea-footer.min.frag";
 
-export const everyMsInterval = (ms) => (eff) => () => {
-  setInterval(() => eff(), ms);
+export const gfxBootCheckNoCubeHosts = () => {
+  try {
+    if (document.querySelectorAll("[data-cube-logo-host]").length === 0) {
+      window.__gfxBoot?.markLogo();
+    }
+  } catch (_) {}
 };
 
-export const afterPaint = (eff) => () => {
-  requestAnimationFrame(() => eff());
-};
-
+export const everyMsInterval = (ms) => (eff) => () => setInterval(() => eff(), ms);
+export const afterPaint = (eff) => () => requestAnimationFrame(() => eff());
 export const fetchText = (url) => (onOk) => (onErr) => () => {
-  fetch(url)
-  .then((resp) => {
-      if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${url}`);
-      return resp.text();
-    })
-  .then((text) => onOk(text)())
-  .catch((err) => onErr(String(err))());
+  fetch(url).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+   .then(t => onOk(t)()).catch(e => onErr(String(e))());
 };
 
 const THEME_STORAGE_KEY = "theme";
+const getStoredMode = () => { try { const s = localStorage.getItem(THEME_STORAGE_KEY); return s === "dark" ? "dark" : "light"; } catch { return "light"; } };
+const effectiveDark = (m) => m === "dark";
 
-const prefersDark = () => {
-  try {
-    return typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches;
-  } catch (_) {
-    return false;
-  }
-};
-
-const getStoredMode = () => {
-  try {
-    const s = localStorage.getItem(THEME_STORAGE_KEY);
-    if (s === "light" || s === "dark" || s === "system") return s;
-  } catch (_) {}
-  return "system";
-};
-
-const effectiveDark = (mode) => mode === "dark" || (mode === "system" && prefersDark());
-
-/** Must match collapsed `.tool-display-body` max-height in css/style.css */
 const TOOL_DISPLAY_COLLAPSED_MAX_PX = 200;
-
-/** One-shot measure for tool/diff cards; Luna islands get `ToolCardMeasured` via `cb`. String HTML cards sync classes in DOM only. */
 export const measureToolCards = (cb) => () => {
-  document
-    .querySelectorAll('[data-component="tool-display-card"][data-block-id]:not(.terminal-card)')
-    .forEach((card) => {
-      const id = card.dataset.blockId;
-      const body = card.querySelector(".tool-display-body");
-      if (!id || !body) return;
-      const prev = body.style.maxHeight;
-      body.style.maxHeight = "none";
-      const h = body.scrollHeight;
-      body.style.maxHeight = prev;
-      cb(id)(h)();
-      const lunaIsland = card.getAttribute("data-measured-island") === "true";
-      if (!lunaIsland) {
-        const btn = card.querySelector(".tool-display-expand-btn");
-        if (h <= TOOL_DISPLAY_COLLAPSED_MAX_PX + 1) {
-          card.classList.add("tool-display-card--no-expand");
-          card.classList.remove("is-expanded");
-          if (btn) btn.setAttribute("aria-expanded", "false");
-        } else {
-          card.classList.remove("tool-display-card--no-expand");
-          card.classList.add("is-expanded");
-          if (btn) btn.setAttribute("aria-expanded", "true");
-        }
-      }
-    });
+  document.querySelectorAll('[data-component="tool-display-card"][data-block-id]:not(.terminal-card)').forEach(card => {
+    const id = card.dataset.blockId, body = card.querySelector(".tool-display-body"); if (!id||!body) return;
+    const prev = body.style.maxHeight; body.style.maxHeight="none"; const h=body.scrollHeight; body.style.maxHeight=prev; cb(id)(h)();
+    const luna = card.getAttribute("data-measured-island")==="true";
+    if (!luna) {
+      const btn = card.querySelector(".tool-display-expand-btn");
+      if (h <= TOOL_DISPLAY_COLLAPSED_MAX_PX+1) { card.classList.add("tool-display-card--no-expand"); card.classList.remove("is-expanded"); btn?.setAttribute("aria-expanded","false"); }
+      else { card.classList.remove("tool-display-card--no-expand"); card.classList.add("is-expanded"); btn?.setAttribute("aria-expanded","true"); }
+    }
+  });
 };
 
-let markdownProseDelegationBound = false;
-
-/** Delegated handlers for markdown HTML inside `unsafeRawHtml` (no inline `onclick`). */
+let markdownBound = false;
 export const initMarkdownProseDelegation = (appNode) => () => {
-  if (!appNode || markdownProseDelegationBound) return;
-  markdownProseDelegationBound = true;
-
-  appNode.addEventListener("click", (e) => {
+  if (!appNode || markdownBound) return; markdownBound = true;
+  appNode.addEventListener("click", e => {
     const toolBtn = e.target.closest("[data-tool-display-toggle]");
-    if (toolBtn && appNode.contains(toolBtn)) {
-      const card = toolBtn.closest('[data-component="tool-display-card"]');
-      if (card && !card.classList.contains("terminal-card")) {
-        const was = toolBtn.getAttribute("aria-expanded") === "true";
-        const next = !was;
-        toolBtn.setAttribute("aria-expanded", String(next));
-        card.classList.toggle("is-expanded", next);
-        e.preventDefault();
-        return;
-      }
-    }
-    /* String-built terminals only (see `BodyBlockHtml.renderTerminalShell`). Luna `TerminalCard` has no `data-terminal-toggle`. */
+    if (toolBtn) { const card = toolBtn.closest('[data-component="tool-display-card"]'); if (card &&!card.classList.contains("terminal-card")) { const was = toolBtn.getAttribute("aria-expanded")==="true"; toolBtn.setAttribute("aria-expanded", String(!was)); card.classList.toggle("is-expanded",!was); e.preventDefault(); return; } }
     const tToggle = e.target.closest("[data-terminal-toggle]");
-    if (tToggle && appNode.contains(tToggle)) {
-      const id = tToggle.dataset.target;
-      if (!id) return;
-      const body = document.getElementById(id);
-      const wasExpanded = tToggle.getAttribute("aria-expanded") === "true";
-      tToggle.setAttribute("aria-expanded", String(!wasExpanded));
-      if (body) body.hidden = wasExpanded;
-      e.preventDefault();
-      return;
-    }
+    if (tToggle) { const id=tToggle.dataset.target; const body=document.getElementById(id); const was=tToggle.getAttribute("aria-expanded")==="true"; tToggle.setAttribute("aria-expanded",String(!was)); if(body) body.hidden=was; e.preventDefault(); return; }
     const tCopy = e.target.closest("[data-terminal-copy]");
-    if (tCopy && appNode.contains(tCopy)) {
-      const cmd = tCopy.dataset.command || "";
-      if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(cmd).catch(() => {});
-      }
-      tCopy.setAttribute("title", "Copied");
-      tCopy.dataset.copied = "1";
-      setTimeout(() => {
-        delete tCopy.dataset.copied;
-        tCopy.setAttribute("title", "Copy");
-      }, 900);
-      e.preventDefault();
-    }
+    if (tCopy) { navigator.clipboard?.writeText(tCopy.dataset.command||"").catch(()=>{}); tCopy.setAttribute("title","Copied"); setTimeout(()=>tCopy.setAttribute("title","Copy"),900); e.preventDefault(); }
   });
 };
 
 export const getStoredThemeMode = () => getStoredMode();
-
-export const applyThemeMode = (mode) => () => {
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, mode);
-  } catch (_) {}
-  const dark = effectiveDark(mode);
-  const root = document.documentElement;
-  root.classList.toggle("dark", dark);
-  try {
-    root.style.colorScheme = dark ? "dark" : "light";
-  } catch (_) {}
-};
-
-export const subscribeSystemThemeChanges = (cb) => () => {
-  const mq = typeof matchMedia !== "undefined" ? matchMedia("(prefers-color-scheme: dark)") : null;
-  const run = () => cb()();
-  if (mq && mq.addEventListener) mq.addEventListener("change", run);
-  else if (mq && mq.addListener) mq.addListener(run);
-};
-
-/** Align theme `aria-pressed` with storage before Luna hydrate (SSR uses no selection). */
+export const applyThemeMode = (mode) => () => { try{localStorage.setItem(THEME_STORAGE_KEY,mode);}catch{} document.documentElement.classList.toggle("dark",effectiveDark(mode)); try{document.documentElement.style.colorScheme=effectiveDark(mode)?"dark":"light";}catch{} };
 export const patchSsrThemeButtons = (mode) => () => {
-  const labelToMode = new Map([
-    ["Use light theme", "light"],
-    ["Use dark theme", "dark"],
-    ["Use device theme", "system"],
-  ]);
-  document.querySelectorAll("[data-theme-controls] button[aria-label]").forEach((btn) => {
-    const m = labelToMode.get(btn.getAttribute("aria-label"));
-    if (m) btn.setAttribute("aria-pressed", m === mode ? "true" : "false");
-  });
+  const map = new Map([["Use light theme","light"],["Use dark theme","dark"]]);
+  document.querySelectorAll("[data-theme-controls] button[aria-label]").forEach(btn=>{ const m=map.get(btn.getAttribute("aria-label")); if(m) btn.setAttribute("aria-pressed",m===mode?"true":"false"); });
 };
 
-const scheduleHeavyGpuWork = (fn) => {
+/** iOS Safari: `requestIdleCallback` is often missing or may not run before navigation; always bound `fn` to one invocation. */
+function scheduleHeavyGpuWork(fn) {
+  let ran = false;
+  const run = () => { if (ran) return; ran = true; fn(); };
   if (typeof requestIdleCallback === "function") {
-    requestIdleCallback(() => fn(), { timeout: 2800 });
+    requestIdleCallback(() => run(), { timeout: 2800 });
+    setTimeout(run, 4500);
   } else {
-    requestAnimationFrame(() => setTimeout(fn, 0));
+    requestAnimationFrame(() => setTimeout(run, 0));
   }
+}
+
+function seaDebugOn() {
+  try {
+    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("sea-debug") === "1") return true;
+    return typeof location !== "undefined" && /(?:^|[?&])sea-debug=1(?:&|$)/.test(location.search);
+  } catch (_) { return false; }
+}
+
+/** Readable on the phone when `?sea-debug=1` — no Mac / Safari remote inspect needed. */
+function renderSeaDebugHud() {
+  if (!seaDebugOn()) return;
+  let el = document.getElementById("sea-debug-hud");
+  if (!el) {
+    el = document.createElement("pre");
+    el.id = "sea-debug-hud";
+    el.setAttribute("aria-live", "polite");
+    el.setAttribute("aria-label", "Sea WebGL debug");
+    el.style.cssText = "position:fixed;left:0;right:0;bottom:0;max-height:42vh;overflow:auto;margin:0;padding:10px 12px;padding-bottom:max(12px,env(safe-area-inset-bottom,0px));font:11px/1.4 ui-monospace,monospace;background:#111827;color:#f3f4f6;border-top:3px solid #f59e0b;z-index:2147483646;white-space:pre-wrap;word-break:break-word;";
+    document.body.appendChild(el);
+  }
+  const r = window.__seaMountResult;
+  if (!r) {
+    el.textContent = "(no sea mount data yet)";
+    return;
+  }
+  const lines = [
+    "ok: " + String(r.ok),
+    "fail: " + (r.fail != null ? r.fail : ""),
+    "ua: " + (r.ua || ""),
+    "webgl2Probe: " + String(r.webgl2Probe),
+    "fragmentChars: " + String(r.fragmentChars ?? ""),
+    "contextAttrsIndex: " + String(r.contextAttrsIndex ?? ""),
+    "",
+  ];
+  if (r.vertexLog) lines.push("--- vertex shader log ---", r.vertexLog, "");
+  if (r.fragmentLog) lines.push("--- fragment shader log ---", r.fragmentLog, "");
+  if (r.programLog) lines.push("--- program link log ---", r.programLog, "");
+  if (r.fetchError) lines.push("--- fetch ---", r.fetchError, "");
+  el.textContent = lines.join("\n");
+}
+
+function webgl2ProbeCached() {
+  if (typeof window === "undefined") return false;
+  if (window.__seaWebgl2ProbeDone) return window.__seaWebgl2ProbeVal;
+  let p = false;
+  try {
+    const c = document.createElement("canvas");
+    p = !!c.getContext("webgl2");
+  } catch (_) {}
+  window.__seaWebgl2ProbeDone = true;
+  window.__seaWebgl2ProbeVal = p;
+  return p;
+}
+
+function setSeaMountResult(patch) {
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+  window.__seaMountResult = Object.assign(
+    { t: Date.now(), ua, webgl2Probe: webgl2ProbeCached() },
+    window.__seaMountResult || {},
+    patch
+  );
+  renderSeaDebugHud();
+}
+
+/** Prefer default GPU on mobile; iOS can return null or flaky contexts with only `high-performance`. */
+function getWebGL2ContextForSea(canvas) {
+  const bases = [
+    { alpha: true, premultipliedAlpha: false, antialias: false, powerPreference: "default" },
+    { alpha: true, premultipliedAlpha: false, antialias: false, powerPreference: "high-performance" },
+    { alpha: true, premultipliedAlpha: true, antialias: false, powerPreference: "default" },
+    { alpha: true, premultipliedAlpha: true, antialias: true, powerPreference: "default" },
+  ];
+  for (let i = 0; i < bases.length; i++) {
+    const gl = canvas.getContext("webgl2", bases[i]);
+    if (gl) {
+      setSeaMountResult({ contextAttrsIndex: i });
+      if (seaDebugOn()) console.log("[sea] WebGL2 context ok, attrs index", i, bases[i]);
+      return gl;
+    }
+  }
+  return null;
+}
+
+let seaReadySignaled = false;
+function signalSeaReadyOnce(canvas, ok, detail, diagExtra) {
+  if (seaReadySignaled) return;
+  seaReadySignaled = true;
+  if (ok) {
+    delete canvas.dataset.seaFooterError;
+    delete canvas.dataset.seaFooterFail;
+    setSeaMountResult(Object.assign({ ok: true, fail: null }, diagExtra || {}));
+  } else {
+    const msg = detail || "unknown";
+    canvas.dataset.seaFooterError = "1";
+    canvas.dataset.seaFooterFail = msg;
+    console.error("[sea] mount failed:", msg);
+    setSeaMountResult(Object.assign({ ok: false, fail: msg }, diagExtra || {}));
+  }
+  window.dispatchEvent(new Event("sea-ready"));
+  window.__gfxBoot?.markSea();
+}
+
+/** --- SEA: start during boot pause --- */
+let seaStarted = false;
+function startSeaDuringBootPause() {
+  if (seaStarted) return; seaStarted = true;
+  console.log("[sea] starting compile during boot pause");
+  scheduleHeavyGpuWork(runMountSeaFooter);
+}
+if (typeof window!== "undefined") {
+  window.addEventListener("gfx-boot-pause-for-sea", startSeaDuringBootPause, { once: true });
+}
+export const mountSeaFooter = () => {
+  console.log("[sea] mountSeaFooter called");
+  if (window.__gfxBoot?.pausedForSea || !document.getElementById("gfx-boot-overlay")) startSeaDuringBootPause();
 };
 
-export const mountSeaFooter = () => {
+function runMountSeaFooter() {
+  console.log("[sea] runMountSeaFooter START");
   const canvas = document.getElementById("sea-canvas");
   if (!canvas) return;
+  if (canvas.dataset.seaFooterInit === "1") return;
+  canvas.dataset.seaFooterInit = "1";
   fetch(SEA_FRAG_URL)
-    .then((r) => {
-      if (!r.ok) throw new Error(`HTTP ${r.status} for ${SEA_FRAG_URL}`);
-      return r.text();
-    })
-    .then((rawFrag) => {
-      const seaFooterFragmentSource = rawFrag.trim();
-      if (!seaFooterFragmentSource.startsWith("#version")) {
-        throw new Error("sea fragment missing #version");
-      }
-      scheduleHeavyGpuWork(() => initSeaFooterWithFragment(canvas, seaFooterFragmentSource));
-    })
-    .catch((err) => {
-      console.warn("[sea-footer]", err);
+    .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+    .then((t) => initSeaFooterWithFragment(canvas, t.trim()))
+    .catch((e) => {
+      console.warn("[sea] fragment fetch failed", e);
+      const em = e && e.message ? e.message : String(e);
+      signalSeaReadyOnce(canvas, false, "fetch:" + em, { fetchError: em });
     });
-};
+}
 
-function initSeaFooterWithFragment(canvas, seaFooterFragmentSource) {
-  const mqCoarse = typeof matchMedia !== "undefined" && matchMedia("(pointer: coarse)");
-  const mqNarrow = typeof matchMedia !== "undefined" && matchMedia("(max-width: 768px)");
-  const narrowUi = mqNarrow && mqNarrow.matches;
-  const coarseUi =
-    (mqCoarse && mqCoarse.matches) ||
-    narrowUi ||
-    (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0);
-  const saveData = typeof navigator !== "undefined" && navigator.connection && navigator.connection.saveData;
-  const cloudRampSec = 1.15 + Math.random() * 1.85;
-  const cloudStartFrac = 0.2 + Math.random() * 0.22;
-  const mountWallStart = performance.now();
-  const useTextureNoise = coarseUi || saveData;
-  const dprNative = typeof devicePixelRatio === "number" && devicePixelRatio > 0 ? devicePixelRatio : 1;
-  const dprMax = saveData ? 1 : narrowUi ? Math.min(2, dprNative) : coarseUi ? 1.28 : 2;
-  const dprNow = () => Math.min(dprNative, dprMax);
-  const gpuEveryNthFrame = narrowUi ? 1 : coarseUi && !saveData ? 2 : 1;
-  let gpuFrame = 0;
-  const ctxBase = {
-    alpha: true,
-    premultipliedAlpha: false,
-    antialias: false,
-    powerPreference: "high-performance",
-  };
-  let gl = canvas.getContext("webgl2", { ...ctxBase, colorSpace: "srgb", desynchronized: true });
-  if (!gl) gl = canvas.getContext("webgl2", { ...ctxBase, desynchronized: true });
-  if (!gl) gl = canvas.getContext("webgl2", ctxBase);
-  if (!gl) return;
+function initSeaFooterWithFragment(canvas, src) {
+  if (!src) {
+    signalSeaReadyOnce(canvas, false, "empty-fragment", { fragmentChars: 0 });
+    return;
+  }
+  setSeaMountResult({ fragmentChars: src.length });
+  if (seaDebugOn()) console.log("[sea] init fragment chars=" + src.length);
+
+  const gl = getWebGL2ContextForSea(canvas);
+  if (!gl) {
+    console.warn("[sea] no WebGL2 context (iOS needs 15+; check Settings → Safari → Advanced → Experimental features)");
+    signalSeaReadyOnce(canvas, false, "no-webgl2");
+    return;
+  }
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.enable(gl.SCISSOR_TEST);
-  gl.clearColor(0, 0, 0, 0);
 
-  /** Set `true` to magenta-clear the full buffer and verify GL covers the bitmap (see applySize `ceil` note). */
-  const SEA_DEBUG_FULL_CLEAR_COLOR = false;
-
-  /**
-   * Drawing only the bottom X% of the buffer (smaller viewport) remaps the fullscreen tri → `uv`/`rd`
-   * don’t match the shader’s assumptions → bad hits, transparent sky alpha, pale “gaps” at the bottom.
-   * One full pass per frame; keep cost down with short CSS height + cloudQ ramp instead.
-   */
-  /** Higher → narrower rays / “closer” camera on short canvases (try 1.6–2.2). */
-  const SEA_UV_RY_MULT = 1.92;
-  const seaDrawH = () => canvas.height;
-  const seaUvR = () => canvas.height * SEA_UV_RY_MULT;
-
-  const syncClearColor = () => {
-    if (document.documentElement.classList.contains("dark")) gl.clearColor(23 / 255, 23 / 255, 23 / 255, 1);
-    else gl.clearColor(0, 0, 0, 0);
-  };
-  /** Scissored clear only touches the bottom band — the top of the bitmap stays uncleared (white). Clear the full buffer, then scissor for draws only. */
-  const clearFullFramebuffer = () => {
-    if (SEA_DEBUG_FULL_CLEAR_COLOR) gl.clearColor(1, 0, 0.85, 1);
-    else syncClearColor();
-    gl.disable(gl.SCISSOR_TEST);
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.enable(gl.SCISSOR_TEST);
-  };
-  const seaViewportScissor = () => {
-    const h = seaDrawH();
-    gl.viewport(0, 0, canvas.width, h);
-    gl.scissor(0, 0, canvas.width, h);
-  };
+  const mqCoarse = matchMedia?.("(pointer: coarse)");
+  const mqNarrow = matchMedia?.("(max-width: 768px)");
+  const narrow = mqNarrow?.matches;
+  const coarse = (mqCoarse?.matches) || narrow || navigator.maxTouchPoints > 0;
+  const saveData = navigator.connection?.saveData;
 
   const applySize = () => {
-    const rect = canvas.getBoundingClientRect();
-    const dpr = dprNow();
-    /* Ceil avoids a 1px tall “white hairline” at the top: round() can undersize the bitmap vs CSS box × DPR. */
-    const w = Math.max(1, Math.ceil(rect.width * dpr));
-    const hFull = Math.max(1, Math.ceil(rect.height * dpr));
-    if (canvas.width !== w || canvas.height !== hFull) {
-      canvas.width = w;
-      canvas.height = hFull;
-    }
-    clearFullFramebuffer();
-    seaViewportScissor();
-  };
-  let resizeScheduled = false;
-  const resize = () => {
-    if (resizeScheduled) return;
-    resizeScheduled = true;
-    requestAnimationFrame(() => {
-      resizeScheduled = false;
-      applySize();
-    });
+    const r = canvas.getBoundingClientRect();
+    const dpr = Math.min(devicePixelRatio || 1, saveData ? 1 : narrow ? 2 : coarse ? 1.28 : 2);
+    canvas.width = Math.max(1, Math.ceil(r.width * dpr));
+    canvas.height = Math.max(1, Math.ceil(r.height * dpr));
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.scissor(0, 0, canvas.width, canvas.height);
   };
   applySize();
-  new ResizeObserver(resize).observe(canvas);
+  new ResizeObserver(applySize).observe(canvas);
 
-  const vs = `#version 300 es
-void main(){vec2 v=vec2((gl_VertexID<<1)&2,gl_VertexID&2);gl_Position=vec4(v*2.-1.,0,1);}`;
+  const vs = "#version 300 es\nvoid main(){vec2 v=vec2((gl_VertexID<<1)&2,gl_VertexID&2);gl_Position=vec4(v*2.-1.,0,1);}";
+  const seaDiag = { vertexLog: "", fragmentLog: "", programLog: "" };
+  function compileStage(type, source, label) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, source);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      const log = gl.getShaderInfoLog(sh) || "(no log)";
+      console.error("[sea] " + label + " compile failed:\n" + log);
+      if (type === gl.VERTEX_SHADER) seaDiag.vertexLog = log;
+      else seaDiag.fragmentLog = log;
+      gl.deleteShader(sh);
+      return null;
+    }
+    return sh;
+  }
 
-  const mkSh=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh;};
-  const fsSource=useTextureNoise
-    ?seaFooterFragmentSource.replace(/^#version\s+[^\n]+\n/,"$&#define USE_TEXTURE_NOISE\n")
-    :seaFooterFragmentSource;
-  const vsh=mkSh(gl.VERTEX_SHADER,vs),fsh=mkSh(gl.FRAGMENT_SHADER,fsSource);
-  const prog=gl.createProgram();
-  gl.attachShader(prog,vsh);gl.attachShader(prog,fsh);gl.linkProgram(prog);
-  // Do not call getProgramParameter(LINK_STATUS) here. With KHR_parallel_shader_compile,
-  // linkProgram may still be in flight; reading LINK_STATUS forces a sync wait (~hundreds of ms
-  // in DevTools at this line). finalizeProg + pollShader below handle completion.
-  let shaderReady=false,uT,uR,uCubeOff,uCubeVel,uCloudQ,uUiDark,uNoiseLoc=null;
-  const parallelExt=gl.getExtension('KHR_parallel_shader_compile');
-  const finalizeProg=()=>{
-    if(!gl.getShaderParameter(vsh,gl.COMPILE_STATUS)){console.error("[sea-canvas] vertex compile:",gl.getShaderInfoLog(vsh));return;}
-    if(!gl.getShaderParameter(fsh,gl.COMPILE_STATUS)){console.error("[sea-canvas] fragment compile:",gl.getShaderInfoLog(fsh));return;}
-    if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){console.error("[sea-canvas] program link:",gl.getProgramInfoLog(prog));return;}
+  const vsh = compileStage(gl.VERTEX_SHADER, vs, "vertex");
+  const fsh = compileStage(gl.FRAGMENT_SHADER, src, "fragment");
+  if (!vsh || !fsh) {
+    signalSeaReadyOnce(canvas, false, "shader-compile", {
+      vertexLog: seaDiag.vertexLog,
+      fragmentLog: seaDiag.fragmentLog,
+    });
+    return;
+  }
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vsh);
+  gl.attachShader(prog, fsh);
+  gl.linkProgram(prog);
+  gl.deleteShader(vsh);
+  gl.deleteShader(fsh);
+
+  let finished = false;
+  const ext = gl.getExtension("KHR_parallel_shader_compile");
+  const pollDeadline = performance.now() + 14000;
+  let pollRaf = 0;
+
+  function finalize() {
+    if (finished) return;
+    finished = true;
+    if (pollRaf) cancelAnimationFrame(pollRaf);
+
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      const log = gl.getProgramInfoLog(prog) || "(no log)";
+      console.error("[sea] program link failed:\n" + log);
+      signalSeaReadyOnce(canvas, false, "link-failed", { programLog: log });
+      return;
+    }
+
     gl.useProgram(prog);
-    uT=gl.getUniformLocation(prog,"t");uR=gl.getUniformLocation(prog,"r");uCubeOff=gl.getUniformLocation(prog,"cubeOff");uCubeVel=gl.getUniformLocation(prog,"cubeVel");uCloudQ=gl.getUniformLocation(prog,"cloudQ");uUiDark=gl.getUniformLocation(prog,"uiDark");
-    uNoiseLoc=null;
-    if(useTextureNoise){
-      uNoiseLoc=gl.getUniformLocation(prog,"uNoise");
-      const noiseTex=gl.createTexture();
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D,noiseTex);
-      const size=256,data=new Uint8Array(size*size);
-      for(let i=0;i<data.length;i++)data[i]=Math.random()*255|0;
-      gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,size,size,0,gl.RED,gl.UNSIGNED_BYTE,data);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT);
+    const uT = gl.getUniformLocation(prog, "t");
+    const uR = gl.getUniformLocation(prog, "r");
+    const uOff = gl.getUniformLocation(prog, "cubeOff");
+    const uVel = gl.getUniformLocation(prog, "cubeVel");
+    const uQ = gl.getUniformLocation(prog, "cloudQ");
+    const uDark = gl.getUniformLocation(prog, "uiDark");
+    const uIntro = gl.getUniformLocation(prog, "seaIntro");
+    console.log("[sea] shaderReady = true");
+    signalSeaReadyOnce(canvas, true, "", { programLog: "" });
+
+    let offX = 0, offY = 0, targX = 0, targY = 0, vx = 0, vy = 0, svx = 0, svy = 0, px = 0, py = 0, drag = false, dsx = 0, dsy = 0, dbx = 0, dby = 0;
+    const down = (x, y) => { drag = true; dsx = x; dsy = y; dbx = targX; dby = targY; };
+    const move = (x, y) => {
+      if (!drag) return;
+      const r = canvas.getBoundingClientRect();
+      targX = Math.max(-7, Math.min(7, dbx + ((x - dsx) / r.width) * 10));
+      targY = Math.max(0, Math.min(11, dby - ((y - dsy) / r.height) * 8));
+    };
+    const up = () => { drag = false; };
+    canvas.addEventListener("mousedown", (e) => { down(e.clientX, e.clientY); e.preventDefault(); });
+    window.addEventListener("mousemove", (e) => move(e.clientX, e.clientY));
+    window.addEventListener("mouseup", up);
+    canvas.addEventListener("touchstart", (e) => { const t = e.touches[0]; down(t.clientX, t.clientY); e.preventDefault(); }, { passive: false });
+    window.addEventListener("touchmove", (e) => { if (drag) move(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+    window.addEventListener("touchend", up);
+
+    let seaRafId = 0;
+    let simT = 0;
+    let introSimT0 = null;
+    let lastSeaFrame = performance.now();
+    let seaInViewport = true;
+
+    function cancelSeaLoop() {
+      if (seaRafId) cancelAnimationFrame(seaRafId);
+      seaRafId = 0;
+      lastSeaFrame = performance.now();
     }
-    shaderReady=true;
-  };
-  const pollShader=()=>{
-    if(!parallelExt||gl.getProgramParameter(prog,parallelExt.COMPLETION_STATUS_KHR))finalizeProg();
-    else requestAnimationFrame(pollShader);
-  };
-  requestAnimationFrame(pollShader);
-  let cubeOffX=0,cubeOffY=0,cubeTargX=0,cubeTargY=0,velX=0,velY=0,smoothVelX=0,smoothVelY=0,prevOffX=0,prevOffY=0,dragging=false,dragStartX=0,dragStartY=0,dragBaseX=0,dragBaseY=0;
-  const DRAG_SCALE_X=10,DRAG_SCALE_Y=8,CLAMP_X=7,CLAMP_Y_MIN=0,CLAMP_Y_MAX=11,EASE=0.05,VEL_SMOOTH=0.06,VEL_DECAY=0.95;
-  const pointerDown=(px,py)=>{dragging=true;dragStartX=px;dragStartY=py;dragBaseX=cubeTargX;dragBaseY=cubeTargY;};
-  const pointerMove=(px,py)=>{if(!dragging)return;const rect=canvas.getBoundingClientRect();const dx=(px-dragStartX)/rect.width;const dy=(py-dragStartY)/rect.height;cubeTargX=Math.max(-CLAMP_X,Math.min(CLAMP_X,dragBaseX+dx*DRAG_SCALE_X));cubeTargY=Math.max(CLAMP_Y_MIN,Math.min(CLAMP_Y_MAX,dragBaseY-dy*DRAG_SCALE_Y));};
-  const pointerUp=()=>{dragging=false;};
-  canvas.addEventListener("mousedown",e=>{pointerDown(e.clientX,e.clientY);e.preventDefault();}); window.addEventListener("mousemove",e=>pointerMove(e.clientX,e.clientY)); window.addEventListener("mouseup",pointerUp);
-  canvas.addEventListener("touchstart",e=>{const t=e.touches[0];pointerDown(t.clientX,t.clientY);e.preventDefault();},{passive:false}); window.addEventListener("touchmove",e=>{if(!dragging)return;const t=e.touches[0];pointerMove(t.clientX,t.clientY);},{passive:true});   window.addEventListener("touchend",pointerUp); window.addEventListener("touchcancel",pointerUp);
-  let rafStart=null,animT=0,savedAnimT=0,rafId=null,footerVisible=false;
-  let reduceMotion=typeof matchMedia!=="undefined"&&matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const mqRm=typeof matchMedia!=="undefined"?matchMedia("(prefers-reduced-motion: reduce)"):null;
-  const onReduceMotion=()=>{
-    const was=reduceMotion;reduceMotion=mqRm.matches;
-    if(!was&&reduceMotion)savedAnimT=animT;
-    if(was&&!reduceMotion&&rafStart!==null)rafStart=performance.now()-savedAnimT*1000;
-  };
-  if(mqRm&&mqRm.addEventListener)mqRm.addEventListener("change",onReduceMotion);else if(mqRm&&mqRm.addListener)mqRm.addListener(onReduceMotion);
-  const drawFrame=(ts,drawGpu)=>{
-    if(rafStart===null)rafStart=ts;
-    if(!reduceMotion){animT=(ts-rafStart)/1000;savedAnimT=animT;}else{animT=savedAnimT;}
-    cubeOffX+=(cubeTargX-cubeOffX)*EASE;cubeOffY+=(cubeTargY-cubeOffY)*EASE;velX=cubeOffX-prevOffX;velY=cubeOffY-prevOffY;prevOffX=cubeOffX;prevOffY=cubeOffY;smoothVelX+=(velX-smoothVelX)*VEL_SMOOTH;smoothVelY+=(velY-smoothVelY)*VEL_SMOOTH;if(!dragging){smoothVelX*=VEL_DECAY;smoothVelY*=VEL_DECAY;}
-    if(drawGpu!==false&&shaderReady){
-      const cloudQMax=reduceMotion?0.22:saveData?0.26:narrowUi?0.34:coarseUi?0.34:1.0;
-      let cloudQ=cloudQMax;
-      if(!reduceMotion){
-        const elapsed=(performance.now()-mountWallStart)/1000;
-        const u=Math.min(1,elapsed/cloudRampSec);
-        const ease=u*u*(3-2*u);
-        cloudQ=cloudQMax*(cloudStartFrac+(1-cloudStartFrac)*ease);
+
+    function startSeaLoopIfNeeded() {
+      if (seaRafId) return;
+      if (document.hidden || !seaInViewport) return;
+      lastSeaFrame = performance.now();
+      seaRafId = requestAnimationFrame(seaFrame);
+    }
+
+    function seaFrame(now) {
+      seaRafId = 0;
+      if (document.hidden || !seaInViewport) {
+        lastSeaFrame = now;
+        return;
       }
-      const uiDark=document.documentElement.classList.contains("dark")?1.0:0.0;
-      clearFullFramebuffer();
-      seaViewportScissor();
-      gl.uniform1f(uT,animT);gl.uniform2f(uR,canvas.width,seaUvR());gl.uniform2f(uCubeOff,cubeOffX,cubeOffY);gl.uniform2f(uCubeVel,smoothVelX*60,smoothVelY*60);if(uCloudQ)gl.uniform1f(uCloudQ,cloudQ);if(uUiDark)gl.uniform1f(uUiDark,uiDark);if(useTextureNoise&&uNoiseLoc){gl.activeTexture(gl.TEXTURE0);gl.uniform1i(uNoiseLoc,0);}gl.drawArrays(gl.TRIANGLES,0,3);
+      const dt = Math.min(0.05, (now - lastSeaFrame) / 1000);
+      lastSeaFrame = now;
+      simT += dt;
+      if (introSimT0 === null) introSimT0 = simT;
+      const t = simT;
+      const intro = Math.min(1, (simT - introSimT0) / 2);
+
+      offX += (targX - offX) * 0.05;
+      offY += (targY - offY) * 0.05;
+      vx = offX - px;
+      vy = offY - py;
+      px = offX;
+      py = offY;
+      svx += (vx - svx) * 0.06;
+      svy += (vy - svy) * 0.06;
+      if (!drag) { svx *= 0.95; svy *= 0.95; }
+
+      const dark = document.documentElement.classList.contains("dark") ? 1 : 0;
+      gl.clearColor(dark ? 23 / 255 : 0, dark ? 23 / 255 : 0, dark ? 23 / 255 : 0, dark ? 1 : 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniform1f(uT, t);
+      gl.uniform2f(uR, canvas.width, canvas.height * 1.92);
+      gl.uniform2f(uOff, offX, offY);
+      gl.uniform2f(uVel, svx * 60, svy * 60);
+      if (uQ) gl.uniform1f(uQ, 1);
+      if (uDark) gl.uniform1f(uDark, dark);
+      if (uIntro) gl.uniform1f(uIntro, intro);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+      seaRafId = requestAnimationFrame(seaFrame);
     }
-  };
-  const frame=(ts)=>{
-    gpuFrame+=1;
-    const drawGpu=gpuEveryNthFrame<=1||(gpuFrame%gpuEveryNthFrame===0)||dragging;
-    drawFrame(ts,drawGpu);
-    rafId=requestAnimationFrame(frame);
-  };
-  const stopAnim=()=>{if(rafId){cancelAnimationFrame(rafId);rafId=null;}savedAnimT=animT;};
-  const syncLoop=()=>{
-    const run=footerVisible&&document.visibilityState==="visible";
-    if(run&&!rafId)rafId=requestAnimationFrame(frame);
-    if(!run&&rafId)stopAnim();
-  };
-  const resumeAnim=()=>{rafStart=performance.now()-savedAnimT*1000;syncLoop();};
-  document.addEventListener("visibilitychange",()=>{
-    if(document.visibilityState==="hidden")stopAnim();
-    else if(footerVisible)resumeAnim();
-  });
-  const io=new IntersectionObserver(es=>{
-    footerVisible=es[0].isIntersecting;
-    if(footerVisible)resumeAnim();else stopAnim();
-  },{threshold:0.01});
-  io.observe(canvas);
-  clearFullFramebuffer();
-  seaViewportScissor();
+
+    const seaIo = typeof IntersectionObserver !== "undefined"
+      ? new IntersectionObserver(
+        (entries) => {
+          const e = entries[0];
+          seaInViewport = !!(e && e.isIntersecting && e.intersectionRatio > 0);
+          if (seaInViewport && !document.hidden) startSeaLoopIfNeeded();
+          else cancelSeaLoop();
+        },
+        { root: null, threshold: 0, rootMargin: "0px" }
+      )
+      : null;
+    if (seaIo) seaIo.observe(canvas);
+
+    function onSeaVisibility() {
+      if (document.hidden) cancelSeaLoop();
+      else if (seaInViewport) startSeaLoopIfNeeded();
+    }
+    document.addEventListener("visibilitychange", onSeaVisibility, { passive: true });
+
+    startSeaLoopIfNeeded();
+  }
+
+  function poll() {
+    const parallelDone = !ext || gl.getProgramParameter(prog, ext.COMPLETION_STATUS_KHR);
+    const timedOut = performance.now() > pollDeadline;
+    if (parallelDone || timedOut) {
+      if (timedOut && !parallelDone) console.warn("[sea] KHR_parallel_shader_compile still false; finalizing (possible iOS driver quirk)");
+      finalize();
+      return;
+    }
+    pollRaf = requestAnimationFrame(poll);
+  }
+  pollRaf = requestAnimationFrame(poll);
 }
 
-/** Sync TOC highlight from the URL hash (full load + in-page # changes). Used on mobile instead of scroll-spy. */
-export const setupTocHashSync = (pushId) => () => {
-  window.addEventListener(
-    "hashchange",
-    function () {
-      var h = location.hash || "";
-      pushId(h.length > 1 ? h.slice(1) : "")();
-    },
-    false,
-  );
-};
+export const setupTocHashSync = (pushId) => () => { window.addEventListener("hashchange",()=>pushId(location.hash.slice(1)||"")); };

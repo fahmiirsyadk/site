@@ -8,6 +8,8 @@ uniform vec2 cubeOff;
 uniform vec2 cubeVel;
 uniform float cloudQ;
 uniform float uiDark;
+/* 0 → far / zoomed out; 1 → default camera (first ~2s intro in JS). */
+uniform float seaIntro;
 
 #ifdef USE_TEXTURE_NOISE
 uniform sampler2D uNoise;
@@ -119,7 +121,9 @@ float ggxF0(float NdotH,float NdotV,float NdotL,float f0){float f=f0+(1.0-f0)*po
 
 void main(){
   vec2 uv=(gl_FragCoord.xy-0.5*r)/r.y;
-  vec3 ro=vec3(0.0,1.8,-7.5); vec3 rd=normalize(vec3(uv,1.6)); rd=rotX(0.05)*rd;
+  float camT=smoothstep(0.0,1.0,clamp(seaIntro,0.0,1.0));
+  vec3 ro=mix(vec3(0.0,2.5,-30.0),vec3(0.0,1.8,-7.5),camT);
+  vec3 rd=normalize(vec3(uv,1.6)); rd=rotX(0.05)*rd;
   float isSky=step(0.26,rd.y); float time=t*0.85; float D=uiDark;
   vec3 pageBg=vec3(0.090196); vec3 skyPaper=mix(vec3(1.0),pageBg,D);
   vec3 col=skyPaper; float isSea=0.0; vec3 seaOnly=vec3(0.95,0.22,0.30);
@@ -170,7 +174,7 @@ void main(){
       nrm=normalize(cubeRot*nrm);vec3 base=vec3(0.62,0.10,0.15);
       float top=max(0.0,nrm.y*0.5+0.5);float side=pow(max(0.0,abs(nrm.x)*0.6+abs(nrm.z)*0.4),1.2);float fres=pow(1.0-max(0.0,dot(nrm,-rd)),2.4);
       col=base*(0.58+top*0.42);col+=vec3(1.0,0.26,0.36)*side*0.20;col+=vec3(1.0,0.82,0.86)*fres*0.42;
-      float wetLine=ch.y-waterAtCube;float subm=smoothstep(0.04,-0.02,wetLine);col=mix(col,col*0.86+vec3(0.08,0.02,0.03),subm*0.45);col+=exp(-abs(wetLine)*80.0)*0.10*vec3(1.0,0.9,0.92);
+      float wetLine=ch.y-waterAtCube;float subm=1.0-smoothstep(-0.02,0.04,wetLine);col=mix(col,col*0.86+vec3(0.08,0.02,0.03),subm*0.45);col+=exp(-abs(wetLine)*80.0)*0.10*vec3(1.0,0.9,0.92);
       float spec=pow(max(0.,dot(reflect(-Lsun,nrm),-rd)),64.0);col+=spec*0.35*vec3(1.0,0.9,0.95); isSea=0.0;
     }else if(hid==2){
       vec3 ch=ro+rd*tTor;vec3 torCen=tor0Pos;mat3 torR=tor0Rot;float wTw=wT0;
@@ -179,7 +183,7 @@ void main(){
       nrm=mix(nrm,toriiWoodGrain(pl,nrm),0.35);
       vec3 base=vec3(0.62,0.12,0.09); float top=max(0.0,nrm.y*0.5+0.5);float side=pow(max(0.0,abs(nrm.x)*0.55+abs(nrm.z)*0.45),1.15);float fres=pow(1.0-max(0.0,dot(nrm,-rd)),2.1);
       col=base*(0.48+top*0.42);col+=vec3(0.78,0.22,0.14)*side*0.28;col+=vec3(0.88,0.42,0.32)*fres*0.36;
-      float wetLine=ch.y-wTw;float subm=smoothstep(0.04,-0.02,wetLine);col=mix(col,col*0.82+vec3(0.07,0.02,0.02),subm*0.42);col+=exp(-abs(wetLine)*80.0)*0.09*vec3(0.98,0.55,0.42);
+      float wetLine=ch.y-wTw;float subm=1.0-smoothstep(-0.02,0.04,wetLine);col=mix(col,col*0.82+vec3(0.07,0.02,0.02),subm*0.42);col+=exp(-abs(wetLine)*80.0)*0.09*vec3(0.98,0.55,0.42);
       float spec=pow(max(0.,dot(reflect(-Lsun,nrm),-rd)),56.0);col+=spec*0.28*vec3(1.0,0.72,0.55);
       float rim=pow(max(0.0,1.0-abs(dot(nrm,rd))),3.0)*0.45;col+=rim*vec3(1.0,0.48,0.28)*(0.5+0.5*smoothstep(0.3,0.7,pl.y)); isSea=0.0;
     }else if(hid==0){
@@ -193,31 +197,31 @@ void main(){
       float sdL=cloudDensity(seaL,time*0.88,cloudQ); float sdSea0=cloudDensity(seaC0,time,cloudQ); float sdSea1=cloudDensity(seaC1,time+4.5,cloudQ); float sdS=cloudQ>0.42?cloudDensity(seaS,time+2.8,cloudQ):0.0; float sdT=cloudQ>0.5?cloudDensity(seaT,time+6.5,cloudQ):0.0;
       float cMix=max(max(sdSea0,sdSea1),max(max(sdL*0.95,sdS),sdT*0.9)); float openW=smoothstep(0.08,1.4,dist*0.42)*isSea; float cMix2=cMix*cMix; float cSh=smoothstep(0.42,0.92,cMix)*(0.42+0.58*cMix2)*openW; float cRf=max(smoothstep(0.32,0.62,cMix)*(1.0-cSh*0.75),0.0)*openW;
       col*=mix(vec3(1.0),vec3(0.58,0.60,0.74),cSh*0.62); col+=cRf*vec3(0.06+0.04*cMix,0.065+0.035*cMix,0.085+0.04*cMix);
-      float d=dist;float absD=abs(d); float shoreBand=exp(-d*d*18.0);shoreBand*=smoothstep(-0.35,0.20,d+0.08); float foamFlow=0.55+0.45*sin((p.x*3.8-time*1.9)+fbm(p*2.4-time*0.35)*3.0); float foamNoise=smoothstep(0.25,0.85,fbm(p*4.2+vec2(time*0.55,-time*0.42))); shoreBand*=mix(0.8,1.5,foamNoise)*foamFlow; float washFoam=smoothstep(0.0,0.22,d)*smoothstep(0.55,0.12,d)*fbm(vec2(p.x*5.0-time*1.2,p.y*8.0+time*0.6))*1.4; shoreBand=max(shoreBand,washFoam*isSea);
+      float d=dist;float absD=abs(d); float shoreBand=exp(-d*d*18.0);shoreBand*=smoothstep(-0.35,0.20,d+0.08); float foamFlow=0.55+0.45*sin((p.x*3.8-time*1.9)+fbm(p*2.4-time*0.35)*3.0); float foamNoise=smoothstep(0.25,0.85,fbm(p*4.2+vec2(time*0.55,-time*0.42))); shoreBand*=mix(0.8,1.5,foamNoise)*foamFlow; float washFoam=smoothstep(0.0,0.22,d)*(1.0-smoothstep(0.12,0.55,d))*fbm(vec2(p.x*5.0-time*1.2,p.y*8.0+time*0.6))*1.4; shoreBand=max(shoreBand,washFoam*isSea);
       vec2 fp=p*vec2(2.3,2.8)+vec2(time*0.24,-time*0.31)+vec2(fbm(p*1.8+time*0.2)*0.6,0.);vec2 ip=floor(fp);vec2 f=fract(fp);float d1=10.,d2=10.; for(int y=-1;y<=1;y++){for(int x=-1;x<=1;x++){vec2 o2=vec2(float(x),float(y));vec2 h2=fract(sin((ip+o2)*mat2(127.1,311.7,269.5,183.3))*43758.5);h2=0.5+0.42*sin(time*0.22+h2*6.2831);float dd=length(o2+h2-f);if(dd<d1){d2=d1;d1=dd;}else if(dd<d2){d2=dd;}}}
-      float cells=smoothstep(0.16,0.0,d2-d1);float foam=cells*shoreBand*3.2*FOAM_PARAM;float trailing=smoothstep(0.25,-0.04,d)*smoothstep(-0.28,0.02,d);col=mix(col,vec3(1.0,0.96,0.97),foam*0.62);col=mix(col,vec3(1.0),foam*0.98);col=mix(col,vec3(1.0,0.95,0.97),trailing*cells*0.35*FOAM_PARAM);col=mix(col,vec3(1.0),smoothstep(0.05,0.0,absD)*0.85*isSea*FOAM_PARAM);
+      float cells=1.0-smoothstep(0.0,0.16,d2-d1);float foam=cells*shoreBand*3.2*FOAM_PARAM;float trailing=(1.0-smoothstep(-0.04,0.25,d))*smoothstep(-0.28,0.02,d);col=mix(col,vec3(1.0,0.96,0.97),foam*0.62);col=mix(col,vec3(1.0),foam*0.98);col=mix(col,vec3(1.0,0.95,0.97),trailing*cells*0.35*FOAM_PARAM);col=mix(col,vec3(1.0),(1.0-smoothstep(0.0,0.05,absD))*0.85*isSea*FOAM_PARAM);
       float toCube=length(p-cubeXZ);float wake=1.0-smoothstep(0.0,size*2.2,toCube);wake*=isSea;float ring=exp(-pow(toCube-size*1.15,2.0)*18.0); float moveAmt=clamp(length(cubeVel)*0.12,0.0,1.0); float rippleReach=mix(3.0,5.8,moveAmt)*mix(0.55,1.0,seaDepth); float rippleFreq=mix(10.5,14.0,moveAmt); float rippleSpeed=mix(2.8,4.8,moveAmt); float rippleEnvelope=(1.0-smoothstep(0.0,rippleReach,toCube))*exp(-toCube*0.42); float baseRing=0.5+0.5*sin(toCube*rippleFreq-time*rippleSpeed); float ringMask=smoothstep(0.50,0.80,baseRing); float broken=0.65+0.35*fbm(vec2(toCube*3.8,time*1.0)+p*2.0); float ripple=ringMask*broken*rippleEnvelope*isSea;
       float toTor0=length(p-tor0XZ); float toTor1=length(p-tor1XZ); float toTor2=length(p-tor2XZ); float reM=mix(3.4,5.8,moveAmt)*mix(0.55,1.0,seaDepth); float fqM=mix(9.5,13.0,moveAmt); float spM=mix(2.5,4.2,moveAmt); float envM0=(1.0-smoothstep(0.0,reM,toTor0))*exp(-toTor0*0.38); float envM1=(1.0-smoothstep(0.0,reM,toTor1))*exp(-toTor1*0.38); float envM2=(1.0-smoothstep(0.0,reM,toTor2))*exp(-toTor2*0.38); float brM0=0.5+0.5*sin(toTor0*fqM-time*spM); float brM1=0.5+0.5*sin(toTor1*fqM-time*spM); float brM2=0.5+0.5*sin(toTor2*fqM-time*spM); float rkM0=smoothstep(0.48,0.78,brM0)*(0.65+0.35*fbm(vec2(toTor0*3.6,time*0.95)+p*1.8)); float rkM1=smoothstep(0.48,0.78,brM1)*(0.65+0.35*fbm(vec2(toTor1*3.6,time*0.95)+p*1.8)); float rkM2=smoothstep(0.48,0.78,brM2)*(0.65+0.35*fbm(vec2(toTor2*3.6,time*0.95)+p*1.8)); float rippleM=max(max(rkM0*envM0,rkM1*envM1),rkM2*envM2)*isSea; ripple=max(ripple,rippleM); col=mix(col,col*0.90,wake*0.24); col=mix(col,vec3(1.0,0.97,0.98),wake*0.22+ring*0.12+ripple*0.30); col+=vec3(1.0,0.88,0.92)*ripple*0.12;
-      float reflC=smoothstep(size*1.8,0.0,toCube)*isSea*0.5; float reflT0=smoothstep(8.8,0.0,toTor0)*isSea; float reflT1=smoothstep(8.8,0.0,toTor1)*isSea; float reflT2=smoothstep(8.8,0.0,toTor2)*isSea; float reflTor=max(max(reflT0,reflT1),reflT2)*0.88; float refl=max(reflC,reflTor); float wShore=smoothstep(0.0,0.28,-dist); float wTor=max(max(reflT0,reflT1),reflT2); float reflW=max(wShore*isSea,wTor); col=mix(col,vec3(0.55,0.08,0.13),refl*reflW);
+      float reflC=(1.0-smoothstep(0.0,size*1.8,toCube))*isSea*0.5; float reflT0=(1.0-smoothstep(0.0,8.8,toTor0))*isSea; float reflT1=(1.0-smoothstep(0.0,8.8,toTor1))*isSea; float reflT2=(1.0-smoothstep(0.0,8.8,toTor2))*isSea; float reflTor=max(max(reflT0,reflT1),reflT2)*0.88; float refl=max(reflC,reflTor); float wShore=smoothstep(0.0,0.28,-dist); float wTor=max(max(reflT0,reflT1),reflT2); float reflW=max(wShore*isSea,wTor); col=mix(col,vec3(0.55,0.08,0.13),refl*reflW);
       vec3 seaN=seaNormalFbm(p,time); vec3 Hsun=Lsun+(-rd);float hLen=length(Hsun);vec3 halfVec=hLen>1e-4?Hsun/hLen:vec3(0.0,1.0,0.0); float NdotH=max(0.0,dot(seaN,halfVec));float NdotV=max(0.0,dot(seaN,-rd));float NdotL=max(0.0,dot(seaN,Lsun)); float rough=0.18+0.12*fbm(p*2.2+time*0.15);float f0=0.02; float Dggx=ggxD(NdotH,rough);float Gggx=ggxG(NdotV,NdotL,rough);float Fggx=ggxF0(NdotH,NdotV,NdotL,f0); float specGlint=Dggx*Gggx*Fggx*0.42*isSea*smoothstep(0.0,0.35,dist); col+=specGlint*vec3(1.0,0.92,0.88);
       if(cloudQ>0.385){
         vec3 seaNh2=seaNormalFbmFine(p*1.8,time);float NdotH2=max(0.0,dot(seaNh2,halfVec)); float D2=ggxD(NdotH2,rough*0.65);float G2=ggxG(NdotV,NdotL,rough*0.65); float F2=ggxF0(NdotH2,NdotV,NdotL,f0);float specGlint2=D2*G2*F2*0.28*isSea*smoothstep(0.0,0.5,dist); col+=specGlint2*vec3(1.0,0.85,0.78);
       }
     }
   }
-  float cloudH=-uv.y; float cloudBand=smoothstep(0.0,0.018,cloudH)*smoothstep(0.20,0.055,cloudH); float cq=clamp(cloudQ,0.2,1.0); vec2 scBase=vec2(uv.x*7.5,cloudH*22.0);
+  float cloudH=-uv.y; float cloudBand=smoothstep(0.0,0.018,cloudH)*(1.0-smoothstep(0.055,0.20,cloudH)); float cq=clamp(cloudQ,0.2,1.0); vec2 scBase=vec2(uv.x*7.5,cloudH*22.0);
   vec2 cd0UV=scBase+vec2(time*0.055,-time*0.02); vec2 cd1UV=scBase*0.92+vec2(-time*0.048,time*0.015);
   float sd0=cloudDensity(cd0UV,time,cq); float sd1=cloudDensity(cd1UV,time+4.5,cq);
   float sd2=0.0,sd3=0.0,sd4=0.0,sd5=0.0,sd6=0.0;
   if(cq>0.38){ vec2 cd2UV=scBase*0.84+vec2(time*0.034,time*0.011); vec2 cd3UV=scBase*1.18+vec2(-time*0.062,time*0.021); sd2=cloudDensity(cd2UV,time+9.0,cq); sd3=cloudDensity(cd3UV,time+6.2,cq); }
   if(cq>0.52){ vec2 cd4UV=scBase*0.48+vec2(time*0.038,-time*0.029); vec2 cd5UV=scBase*1.42+vec2(-time*0.071,time*0.018); vec2 cd6UV=scBase*0.72+vec2(time*0.062,-time*0.041); sd4=cloudDensity(cd4UV,time+1.7,cq); sd5=cloudDensity(cd5UV,time+8.3,cq); sd6=cloudDensity(cd6UV,time+3.4,cq); }
   float sa0=smoothstep(0.48,0.82,sd0); float sa1=smoothstep(0.50,0.84,sd1); float sa2=smoothstep(0.52,0.86,sd2); float sa3=smoothstep(0.44,0.78,sd3); float sa4=smoothstep(0.44,0.78,sd4); float sa5=smoothstep(0.38,0.74,sd5); float sa6=smoothstep(0.46,0.80,sd6);
-  float heightGrad=smoothstep(0.16,0.025,cloudH); vec3 seaTint=mix(col,seaOnly,0.0); float lowerW=(1.0-heightGrad); vec3 cloudBot=vec3(0.90,0.88,0.91); vec3 botCol=mix(cloudBot,seaTint,isSea*0.20*lowerW); vec3 cloudTop=mix(vec3(1.0),seaTint,isSea*0.06); vec3 cc0=mix(botCol,cloudTop,heightGrad); vec3 cc1=mix(botCol*0.97,cloudTop*0.98,heightGrad)*(1.0-sa0*0.20); vec3 cc2=mix(botCol*0.94,cloudTop*0.96,heightGrad)*(1.0-sa0*0.16)*(1.0-sa1*0.14); float cMask=cloudBand*mix(0.5,1.0,cq); float cw=mix(0.62,1.0,cq); col=mix(col,cc0,sa0*cMask*0.72*cw); col=mix(col,cc1,sa1*(1.0-sa0*0.55)*cMask*0.58*cw); col=mix(col,cc2,sa2*(1.0-sa0*0.45)*(1.0-sa1*0.35)*cMask*0.48*cw); vec3 cc3=mix(botCol*0.93,cloudTop*0.95,heightGrad)*(1.0-sa0*0.12)*(1.0-sa2*0.18); col=mix(col,cc3,sa3*(1.0-sa0*0.38)*(1.0-sa1*0.28)*cMask*0.52*cw); vec3 cc4=mix(botCol*0.96,cloudTop*0.99,heightGrad)*(1.0-sa4*0.18); vec3 cc5=mix(botCol*0.91,cloudTop*0.94,heightGrad)*(1.0-sa5*0.22); vec3 cc6=mix(botCol*0.94,cloudTop*0.97,heightGrad)*(1.0-sa6*0.16); col=mix(col,cc4,sa4*(1.0-sa0*0.42)*(1.0-sa3*0.35)*cMask*0.46*cw); col=mix(col,cc5,sa5*(1.0-sa4*0.50)*(1.0-sa1*0.30)*cMask*0.40*cw); col=mix(col,cc6,sa6*(1.0-sa5*0.45)*(1.0-sa2*0.28)*cMask*0.36*cw); float cCore=smoothstep(0.82,0.97,sd0)*cMask*mix(0.35,1.0,cq); vec3 coreCol=mix(vec3(1.0),seaTint,isSea*0.04); col=mix(col,coreCol,cCore*0.62); col+=seaTint*sa0*cMask*isSea*0.035*lowerW; col+=seaTint*sa3*cMask*isSea*0.028*lowerW; col+=seaTint*(sa4*0.028+sa5*0.024+sa6*0.022)*cMask*isSea*lowerW;
+  float heightGrad=1.0-smoothstep(0.025,0.16,cloudH); vec3 seaTint=mix(col,seaOnly,0.0); float lowerW=(1.0-heightGrad); vec3 cloudBot=vec3(0.90,0.88,0.91); vec3 botCol=mix(cloudBot,seaTint,isSea*0.20*lowerW); vec3 cloudTop=mix(vec3(1.0),seaTint,isSea*0.06); vec3 cc0=mix(botCol,cloudTop,heightGrad); vec3 cc1=mix(botCol*0.97,cloudTop*0.98,heightGrad)*(1.0-sa0*0.20); vec3 cc2=mix(botCol*0.94,cloudTop*0.96,heightGrad)*(1.0-sa0*0.16)*(1.0-sa1*0.14); float cMask=cloudBand*mix(0.5,1.0,cq); float cw=mix(0.62,1.0,cq); col=mix(col,cc0,sa0*cMask*0.72*cw); col=mix(col,cc1,sa1*(1.0-sa0*0.55)*cMask*0.58*cw); col=mix(col,cc2,sa2*(1.0-sa0*0.45)*(1.0-sa1*0.35)*cMask*0.48*cw); vec3 cc3=mix(botCol*0.93,cloudTop*0.95,heightGrad)*(1.0-sa0*0.12)*(1.0-sa2*0.18); col=mix(col,cc3,sa3*(1.0-sa0*0.38)*(1.0-sa1*0.28)*cMask*0.52*cw); vec3 cc4=mix(botCol*0.96,cloudTop*0.99,heightGrad)*(1.0-sa4*0.18); vec3 cc5=mix(botCol*0.91,cloudTop*0.94,heightGrad)*(1.0-sa5*0.22); vec3 cc6=mix(botCol*0.94,cloudTop*0.97,heightGrad)*(1.0-sa6*0.16); col=mix(col,cc4,sa4*(1.0-sa0*0.42)*(1.0-sa3*0.35)*cMask*0.46*cw); col=mix(col,cc5,sa5*(1.0-sa4*0.50)*(1.0-sa1*0.30)*cMask*0.40*cw); col=mix(col,cc6,sa6*(1.0-sa5*0.45)*(1.0-sa2*0.28)*cMask*0.36*cw); float cCore=smoothstep(0.82,0.97,sd0)*cMask*mix(0.35,1.0,cq); vec3 coreCol=mix(vec3(1.0),seaTint,isSea*0.04); col=mix(col,coreCol,cCore*0.62); col+=seaTint*sa0*cMask*isSea*0.035*lowerW; col+=seaTint*sa3*cMask*isSea*0.028*lowerW; col+=seaTint*(sa4*0.028+sa5*0.024+sa6*0.022)*cMask*isSea*lowerW;
   float ditherAmt=mix(0.32,1.0,isSea)*mix(1.0,0.38,D*(1.0-isSea)); ditherAmt*=1.0-D*isSky;
   if(ditherAmt>0.002 && cloudQ>0.36){
     col=clamp(mix(col,applyOrderedDither(col,gl_FragCoord.xy),ditherAmt),0.0,1.0);
   }else{
     col=clamp(col,0.0,1.0);
   }
-  float skyA=smoothstep(0.99,0.34,rd.y); float outASky=mix(1.0,skyA,isSky); float outA=mix(outASky,1.0,D); o=vec4(col,outA);
+  float skyA=1.0-smoothstep(0.34,0.99,rd.y); float outASky=mix(1.0,skyA,isSky); float outA=mix(outASky,1.0,D); o=vec4(col,outA);
 }

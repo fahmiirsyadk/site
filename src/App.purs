@@ -3,8 +3,9 @@ module App where
 import Prelude
 
 import Components.Footer (footer)
-import Components.LeftRail (leftRail)
+import Components.LeftRail (desktopMainChrome, floatingToc, leftRail)
 import Data.Array as Array
+import GfxBoot (bootOverlay)
 import Data.Const (Const)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
@@ -133,10 +134,7 @@ update model = case _ of
 
 normalizeThemeMode :: String -> String
 normalizeThemeMode s =
-  if s == "light" || s == "dark" || s == "system" then
-    s
-  else
-    "system"
+  if s == "dark" then "dark" else "light"
 
 render :: Model -> Html Action
 render model =
@@ -146,8 +144,22 @@ render model =
 
 renderStatic :: SiteManifest -> Route -> Html Action
 renderStatic manifest route =
-  siteLayout route (currentToc manifest route) Nothing "system" SetThemeMode
+  siteLayout route (currentToc manifest route) Nothing "light" SetThemeMode
     (renderPage false manifest route Map.empty Map.empty)
+
+-- | Prerender / SSG `<body>`: `GfxBoot.bootOverlay` + `#app` (hydrate target) + async `gfx-boot.js`.
+ssgBodyHtml :: forall i. String -> Html i -> Html i
+ssgBodyHtml gfxBootBuildHash appInner =
+  H.div
+    [ H.classes [ "relative", "min-h-full" ] ]
+    [ bootOverlay
+    , H.div [ H.id_ "app" ] [ appInner ]
+    , H.script
+        [ H.src ("/gfx-boot.js?v=" <> gfxBootBuildHash)
+        , attr "async" "async"
+        ]
+        []
+    ]
 
 renderPage :: Boolean -> SiteManifest -> Route -> Map.Map String Boolean -> Map.Map String ToolCardState -> Html Action
 renderPage useRelativeDates manifest route termExp toolSt =
@@ -168,7 +180,7 @@ findPostBySectionSlug posts section slug =
   Array.find (\p -> p.slug == slug && p.section == section) posts
 
 -- | Shared shell for client (`render`) and prerender (`renderStatic`). Static HTML passes no TOC
--- | highlight and `"system"` theme; `Main.js` aligns theme controls with stored preference on boot.
+-- | highlight and default `"light"` theme; `Main.js` aligns theme controls with stored preference on boot.
 siteLayout :: Route -> Array TocItem -> Maybe String -> String -> (String -> Action) -> Html Action -> Html Action
 siteLayout current toc activeTocId themeMode onThemeMode pageContent =
   H.div
@@ -225,9 +237,12 @@ siteLayout current toc activeTocId themeMode onThemeMode pageContent =
                     ]
                 , attr "id" "content-scroll"
                 ]
-                [ H.div
+                [ floatingToc current toc activeTocId
+                , H.div
                     [ H.classes [ "w-full", "max-w-3xl", "text-left" ] ]
-                    [ pageContent ]
+                    [ desktopMainChrome current themeMode onThemeMode
+                    , pageContent
+                    ]
                 , footer
                 ]
             ]

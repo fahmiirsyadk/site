@@ -15,6 +15,24 @@ const input = join(root, "src/shaders/sea-footer.frag.glsl");
 const outDir = join(root, "public/assets/shaders");
 const output = join(outDir, "sea-footer.min.frag");
 
+/** GLSL `smoothstep(edge0, edge1, x)` is only defined for edge0 < edge1; reversed literals are a common NaN source. */
+const SMOOTHSTEP_LITERAL =
+  /smoothstep\s*\(\s*(-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\s*,\s*(-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)/g;
+
+/** @param {string} src */
+function assertNoReversedSmoothstepLiterals(src) {
+  const hits = [...src.matchAll(SMOOTHSTEP_LITERAL)].filter((m) => {
+    const a = Number.parseFloat(m[1]);
+    const b = Number.parseFloat(m[2]);
+    return Number.isFinite(a) && Number.isFinite(b) && a >= b;
+  });
+  if (hits.length) {
+    throw new Error(
+      `[glsl-to-inline] reversed or degenerate smoothstep(edge0, edge1, …) with numeric edges (need edge0 < edge1): ${hits[0][0].trim()}`,
+    );
+  }
+}
+
 /** @param {string} source */
 function minifyGlsl(source) {
   let s = source.replace(/\r\n/g, "\n");
@@ -48,6 +66,7 @@ function minifyGlsl(source) {
 }
 
 const raw = readFileSync(input, "utf8");
+assertNoReversedSmoothstepLiterals(raw);
 const min = minifyGlsl(raw);
 mkdirSync(outDir, { recursive: true });
 writeFileSync(output, min, "utf8");

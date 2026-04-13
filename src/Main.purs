@@ -43,10 +43,10 @@ import Web.HTML.Window (location) as Window
 
 foreign import fetchText :: String -> (String -> Effect Unit) -> (String -> Effect Unit) -> Effect Unit
 foreign import mountSeaFooter :: Effect Unit
+foreign import gfxBootCheckNoCubeHosts :: Effect Unit
 foreign import getStoredThemeMode :: Effect String
 foreign import patchSsrThemeButtons :: String -> Effect Unit
 foreign import applyThemeMode :: String -> Effect Unit
-foreign import subscribeSystemThemeChanges :: (Effect Unit) -> Effect Unit
 foreign import measureToolCards :: (String -> Int -> Effect Unit) -> Effect Unit
 foreign import initMarkdownProseDelegation :: DOMNode.Node -> Effect Unit
 
@@ -155,9 +155,6 @@ startClient appRootNode = do
     inst.subscribe \ch ->
       when (ch.old.themeMode /= ch.new.themeMode) do
         applyThemeMode ch.new.themeMode
-  subscribeSystemThemeChanges do
-    snap <- inst.snapshot
-    applyThemeMode snap.themeMode
   bannerHandleRef <- Ref.new Nothing :: Effect (Ref.Ref (Maybe BannerHandle))
   postContentStateRef <- Ref.new { loaded: Set.empty, failed: Set.empty }
   manifestStateRef <- Ref.new NotRequested
@@ -241,8 +238,10 @@ startClient appRootNode = do
         Just (SectionPost section slug) -> ensurePostContent section slug continue
         _ -> continue
 
-  runWhenIdle mountSeaFooter
+  -- Sea: `mountSeaFooter` + `gfx-boot-pause-for-sea` start compile during boot pause; if overlay is absent, idle-mount runs immediately.
+  mountSeaFooter
   mountCubeLogo
+  gfxBootCheckNoCubeHosts
   inst.run
   applyThemeMode storedTheme
   -- VDOM: switch post dates from calendar (hydration-safe) to Intl relative time.

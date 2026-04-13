@@ -22,14 +22,16 @@ footer =
             [ "relative"
             , "flex"
             , "min-h-0"
-            , "w-full"
+            , "w-[calc(100%+4rem)]"
+            , "-mx-8"
+            , "max-w-none"
             , "flex-1"
             , "overflow-hidden"
             , "rounded-lg"
             , "bg-transparent"
             , "dark:bg-[#171717]"
             ]
-        , attr "style" "min-height:clamp(240px,34vh,420px);width:calc(100% + 4rem);margin-left:-2rem;margin-right:-2rem;"
+        , attr "style" "min-height:clamp(240px,34vh,420px);"
         ]
         [ H.canvas
             [ H.id_ "sea-canvas"

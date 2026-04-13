@@ -2,7 +2,7 @@ module PrerenderMain where
 
 import Prelude
 
-import App (renderStatic)
+import App (renderStatic, ssgBodyHtml)
 import Content (readSiteManifest)
 import ManifestSlice (manifestForSiteIndexJson, sliceManifest)
 import Prerender.Pages as Pages
@@ -22,7 +22,6 @@ import Node.Path (concat, dirname)
 import Node.Process (cwd, exit', lookupEnv)
 import Node.Encoding as Enc
 import Data.Argonaut.Encode (encodeJson, toJsonString)
-import Luna.Html as H
 import Luna.Html.Core as HC
 import Luna.Html.Document
   ( emptyDocument
@@ -58,10 +57,10 @@ readInlineModelLimit = do
     Just "" -> Nothing
     Just s -> Int.fromString s
 
--- | Early `<html class="dark">` / `color-scheme` from `localStorage` + `prefers-color-scheme`.
+-- | Early `<html class="dark">` / `color-scheme` from `localStorage` (light default; only `dark` forces dark).
 themeBootScript :: String
 themeBootScript =
-  "(function(){var h=document.documentElement;function p(){try{return window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches}catch(e){return false}}try{var s=localStorage.getItem('theme');if(s==='dark'){h.classList.add('dark');h.style.colorScheme='dark'}else if(s==='light'){h.classList.remove('dark');h.style.colorScheme='light'}else{var d=p();h.classList.toggle('dark',d);h.style.colorScheme=d?'dark':'light'}}catch(e){var d2=p();h.classList.toggle('dark',d2);try{h.style.colorScheme=d2?'dark':'light'}catch(_){}}})();"
+  "(function(){var h=document.documentElement;try{var s=localStorage.getItem('theme');if(s==='dark'){h.classList.add('dark');h.style.colorScheme='dark'}else{h.classList.remove('dark');h.style.colorScheme='light'}}catch(e){try{h.classList.remove('dark');h.style.colorScheme='light'}catch(_){}}})();"
 
 toOutputFile :: Route -> String
 toOutputFile route =
@@ -102,6 +101,8 @@ renderPage buildHash manifest route =
       # withCharset "UTF-8"
       # withMeta "viewport" "width=device-width, initial-scale=1"
       # withMeta "color-scheme" "light dark"
+      -- Small async boot script: starts loading before `app.js` (deferred) finishes downloading.
+      # withHeadExtra (gfxBootPreload buildHash)
       -- Only 2 preconnects (Lighthouse: ≤4). Drop duplicate `Link: preconnect` from CDN if Lighthouse still doubles rsms.
       # withHeadExtra preconnectFontsGstatic
       # withHeadExtra preconnectInter
@@ -125,7 +126,7 @@ renderPage buildHash manifest route =
   title = Pages.titleFor manifest.posts route
   sm = sliceManifest route manifest
   -- Same sliced manifest as `serializeModelScript` so SSR DOM and `__LUNA_INITIAL_MODEL__` match on hydrate.
-  bodyHtml = void $ H.div [ H.id_ "app" ] [ renderStatic sm route ]
+  bodyHtml = void $ ssgBodyHtml buildHash (renderStatic sm route)
   scriptSrc = "/app.js"
   stylesheetHref = "/css/style.css"
   styleHref = stylesheetHref <> "?v=" <> buildHash
@@ -147,6 +148,14 @@ renderPage buildHash manifest route =
   interStylesheetHref = "https://rsms.me/inter/inter.css"
   instrumentSerifStylesheetHref =
     "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap"
+  gfxBootPreload :: String -> HC.Html Unit
+  gfxBootPreload h =
+    HC.elem "link"
+      [ HC.attr "rel" "preload"
+      , HC.attr "href" ("/gfx-boot.js?v=" <> h)
+      , HC.attr "as" "script"
+      ]
+      []
   nonBlockingStylesheet href =
     HC.elem "link"
       [ HC.attr "rel" "preload"

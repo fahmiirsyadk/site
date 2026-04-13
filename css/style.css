@@ -45,6 +45,14 @@ html.dark #sea-canvas {
   background-color: rgb(21,21,21);
 }
 
+/* WebGL mount failed (`data-sea-footer-error` from Main.js): match page bg so the band is not empty white. */
+#sea-canvas[data-sea-footer-error="1"] {
+  background-color: rgb(245, 245, 245);
+}
+html.dark #sea-canvas[data-sea-footer-error="1"] {
+  background-color: rgb(21, 21, 21);
+}
+
 /* On desktop we want `#content-scroll` to be the only vertical scroller. */
 @media (min-width: 768px) {
   body {
@@ -157,3 +165,36 @@ html.dark #sea-canvas {
     transform-style: preserve-3d;
   }
 }
+
+/* `unsafeRawHtml` wrapper: child SVG is absolutely positioned; span full overlay so mask IDs resolve predictably. */
+.gfx-boot-overlay > .luna-raw-html {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Same grid as canvas holes: black rects in SVG mask punch out chrome (`public/gfx-boot.js`). */
+#gfx-boot-chrome {
+  mask-image: url(#gfx-boot-chrome-cut-mask);
+  mask-mode: luminance;
+  mask-repeat: no-repeat;
+  mask-position: 0 0;
+  mask-size: 100% 100%;
+  -webkit-mask-image: url(#gfx-boot-chrome-cut-mask);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: 0 0;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-source-type: luminance;
+}
+
+#gfx-boot-counter {
+  display: inline-block;
+  min-width: 2.1ch;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.2em;
+  letter-spacing: 0.02em;
+}
+

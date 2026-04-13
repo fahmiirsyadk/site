@@ -1,8 +1,13 @@
-module Components.LeftRail where
+module Components.LeftRail
+  ( leftRail
+  , desktopMainChrome
+  , floatingToc
+  ) where
 
 import Prelude
 
 import Components.Logo (cubeLogoLink)
+import Data.Array (null)
 import Data.Maybe (Maybe(..))
 import Luna.Html (Html, attr, unsafeRawHtml)
 import Luna.Html as H
@@ -14,9 +19,7 @@ leftRail :: forall i. Route -> Array TocItem -> Maybe String -> String -> (Strin
 leftRail current toc activeTocId themeMode onThemeMode =
   H.div
     [ H.classes [ "contents" ] ]
-    [ mobileTopNav current toc activeTocId themeMode onThemeMode
-    , railAside current toc activeTocId themeMode onThemeMode
-    ]
+    [ mobileTopNav current toc activeTocId themeMode onThemeMode ]
 
 routeCrumb :: Route -> String
 routeCrumb = case _ of
@@ -42,18 +45,66 @@ routeCrumbElt = case _ of
       [ H.classes [ "truncate", "text-[11px]", "font-medium", "tracking-wide", "text-neutral-500", "dark:text-neutral-400" ] ]
       [ H.text (routeCrumb r) ]
 
-showTocFor :: Route -> Boolean
-showTocFor = case _ of
-  SectionPost _ _ -> true
-  _ -> false
+-- | Desktop TOC sidebar (and TOC in the mobile drawer) only for long-form sections that ship headings.
+tocSidebarSection :: String -> Boolean
+tocSidebarSection s = s == "articles" || s == "collection"
 
-railScrollable :: forall i. Boolean -> Route -> Array TocItem -> Maybe String -> Html i
-railScrollable withLogo current toc activeTocId =
+-- | Show the aside / TOC rail when this post has outline headings to navigate.
+showTocSidebar :: Route -> Array TocItem -> Boolean
+showTocSidebar (SectionPost section _) toc = tocSidebarSection section && not (null toc)
+showTocSidebar _ _ = false
+
+railScrollable :: forall i. Route -> Array TocItem -> Maybe String -> Html i
+railScrollable current toc activeTocId =
   H.div
     [ H.classes [ "flex", "min-h-0", "flex-1", "flex-col", "gap-6" ] ]
-        ( (if withLogo then [ H.div [] [ cubeLogoLink (printRoutePath Home) false ] ] else [])
-        <> [ if showTocFor current then tocBlock toc activeTocId else defaultRail current ]
-    )
+    [ if showTocSidebar current toc then tocBlock toc activeTocId else defaultRail current ]
+
+-- | Desktop header: logo, primary links, theme (same on every page; mobile uses the drawer).
+desktopMainChrome :: forall i. Route -> String -> (String -> i) -> Html i
+desktopMainChrome current themeMode onThemeMode =
+  H.div
+    [ H.classes
+        [ "hidden"
+        , "md:flex"
+        , "w-full"
+        , "flex-wrap"
+        , "items-center"
+        , "justify-between"
+        , "gap-4"
+        , "pb-4"
+        , "mb-6"
+        ]
+    ]
+    [ H.div [ H.classes [ "flex", "min-w-0", "flex-1", "flex-wrap", "items-center", "gap-x-5", "gap-y-2" ] ]
+        [ H.div [ H.classes [ "shrink-0" ] ] [ cubeLogoLink (printRoutePath Home) true ]
+        , H.div [ H.classes [ "flex", "flex-wrap", "items-center", "gap-x-4", "gap-y-1" ] ]
+            [ navLink (SectionIndex "projects") "projects" current
+            , navLink (SectionIndex "articles") "articles" current
+            , navLink (SectionIndex "til") "TIL" current
+            , H.a
+                [ H.href "#"
+                , H.classes
+                    [ "text-[12px]"
+                    , "underline"
+                    , "underline-offset-[3px]"
+                    , "decoration-neutral-300"
+                    , "text-[#171717]"
+                    , "transition-colors"
+                    , "duration-200"
+                    , "ease-out"
+                    , "hover:text-[#FF4B26]"
+                    , "hover:decoration-[#FF4B26]"
+                    , "dark:text-neutral-200"
+                    , "dark:hover:text-[#FF6B4A]"
+                    ]
+                ]
+                [ H.text "fragmentof.me" ]
+            , navLink About "about me" current
+            ]
+        ]
+    , themeToggleInline themeMode onThemeMode
+    ]
 
 mobileTopNav :: forall i. Route -> Array TocItem -> Maybe String -> String -> (String -> i) -> Html i
 mobileTopNav current toc activeTocId themeMode onThemeMode =
@@ -134,7 +185,7 @@ mobileTopNav current toc activeTocId themeMode onThemeMode =
                     , "shadow-[0_12px_24px_-8px_rgba(0,0,0,0.25)]"
                     ]
                 ]
-                [ railScrollable false current toc activeTocId
+                [ railScrollable current toc activeTocId
                 , themeToggle themeMode onThemeMode
                 ]
             ]
@@ -152,36 +203,30 @@ menuButtonIcon =
     , H.span [ H.classes [ "block", "h-0.5", "w-4", "rounded-full", "bg-current" ] ] []
     ]
 
-railAside :: forall i. Route -> Array TocItem -> Maybe String -> String -> (String -> i) -> Html i
-railAside current toc activeTocId themeMode onThemeMode =
-  H.aside
-    [ H.classes
-        [ "hidden"
-        , "md:flex"
-        , "w-full"
-        , "shrink-0"
-        , "flex-col"
-        , "overflow-hidden"
-        , "border-t"
-        , "border-[#E5E5E5]"
-        , "bg-[#FAFAFA]"
-        , "p-6"
-        , "dark:border-neutral-800"
-        , "dark:bg-neutral-950"
-        , "md:w-[300px]"
-        , "md:min-h-0"
-        , "md:h-full"
-        , "md:border-t-0"
-        , "md:border-r"
-        ]
-    ]
-    [ H.div [ H.classes [ "flex", "min-h-0", "flex-1", "flex-col" ] ]
-        [ H.div [ H.classes [ "flex", "min-h-0", "flex-1", "flex-col", "gap-7", "overflow-y-auto" ] ]
-            [ railScrollable true current toc activeTocId
-            ]
-        , themeToggle themeMode onThemeMode
-        ]
-    ]
+-- | Fixed-position TOC overlay anchored to the right edge of the viewport (large screens only; hidden md–lg).
+-- | Rendered inside the scroll container so it doesn't participate in the flex row.
+floatingToc :: forall i. Route -> Array TocItem -> Maybe String -> Html i
+floatingToc current toc activeTocId =
+  if showTocSidebar current toc then
+    H.aside
+      [ H.classes
+          [ "hidden"
+          , "lg:flex"
+          , "fixed"
+          , "right-4"
+          , "top-14"
+          , "z-30"
+          , "w-[min(13rem,22vw)]"
+          , "max-h-[calc(100dvh-5rem)]"
+          , "flex-col"
+          , "overflow-y-auto"
+          , "overflow-x-hidden"
+          , "py-1"
+          ]
+      ]
+      [ tocBlock toc activeTocId ]
+  else
+    H.div [] []
 
 tocBlock :: forall i. Array TocItem -> Maybe String -> Html i
 tocBlock items activeId =
@@ -225,12 +270,6 @@ themeSvgMoon =
 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none" aria-hidden="true"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/></svg>
 """
 
-themeSvgDevice :: String
-themeSvgDevice =
-  """
-<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none" aria-hidden="true"><path d="M3 5a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1v-10"/><path d="M7 20h10"/><path d="M9 16v4"/><path d="M15 16v4"/></svg>
-"""
-
 themeModeBtn :: forall i. String -> String -> String -> String -> (String -> i) -> Html i
 themeModeBtn mode ariaLabel svg themeMode onThemeMode =
   H.button
@@ -256,21 +295,27 @@ themeModeBtn mode ariaLabel svg themeMode onThemeMode =
     [ unsafeRawHtml svg ]
 
 -- | Theme button `aria-label` values must stay aligned with `patchSsrThemeButtons` in `Main.js`.
+themeToggleGroup :: forall i. String -> (String -> i) -> Html i
+themeToggleGroup themeMode onThemeMode =
+  H.div
+    [ H.classes [ "flex", "items-center", "justify-center", "gap-0.5" ]
+    , attr "data-theme-controls" ""
+    , attr "role" "group"
+    , attr "aria-label" "Theme"
+    ]
+    [ themeModeBtn "light" "Use light theme" themeSvgSun themeMode onThemeMode
+    , themeModeBtn "dark" "Use dark theme" themeSvgMoon themeMode onThemeMode
+    ]
+
 themeToggle :: forall i. String -> (String -> i) -> Html i
 themeToggle themeMode onThemeMode =
   H.div
     [ H.classes [ "shrink-0", "pt-4" ] ]
-    [ H.div
-        [ H.classes [ "flex", "items-center", "justify-center", "gap-0.5" ]
-        , attr "data-theme-controls" ""
-        , attr "role" "group"
-        , attr "aria-label" "Theme"
-        ]
-        [ themeModeBtn "light" "Use light theme" themeSvgSun themeMode onThemeMode
-        , themeModeBtn "dark" "Use dark theme" themeSvgMoon themeMode onThemeMode
-        , themeModeBtn "system" "Use device theme" themeSvgDevice themeMode onThemeMode
-        ]
-    ]
+    [ themeToggleGroup themeMode onThemeMode ]
+
+themeToggleInline :: forall i. String -> (String -> i) -> Html i
+themeToggleInline themeMode onThemeMode =
+  H.div [ H.classes [ "shrink-0" ] ] [ themeToggleGroup themeMode onThemeMode ]
 
 defaultRail :: forall i. Route -> Html i
 defaultRail current =

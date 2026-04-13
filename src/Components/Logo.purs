@@ -167,16 +167,17 @@ mountCubeLogo = do
   let
     elems = mapMaybe DOMElement.fromNode nodes
   case elems of
-    [] ->
-      pure unit
+    [] -> do
+      FFI.gfxBootNotifyLogoReady
     _ -> do
       handlesAcc <- Ref.new ([] :: Array LogoHandle)
       let
         startAnim :: Array LogoHandle -> Effect Unit
         startAnim handles =
           if null handles then
-            pure unit
+            FFI.gfxBootNotifyLogoReady
           else do
+            bootNotified <- Ref.new false
             ref <- Ref.new { rx: 0.5, ry: 0.5, last: 0.0 }
             let
               loop :: Effect Unit
@@ -193,6 +194,10 @@ mountCubeLogo = do
                   modelView = M.multiply viewMatrix model
                   mvCol = LM.matrix4ToColumnMajor modelView
                 for_ handles \h -> FFI.logoDraw h mvCol
+                done <- Ref.read bootNotified
+                when (not done) do
+                  Ref.write true bootNotified
+                  FFI.gfxBootNotifyLogoReady
                 FFI.raf loop
             FFI.raf loop
 

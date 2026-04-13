@@ -3,6 +3,7 @@
 -- | boundary layer. Shader strings, mesh data, and matrices live in PureScript.
 module Components.Logo.FFI
   ( LogoHandle
+  , gfxBootNotifyLogoReady
   , logoBufferAspect
   , logoDraw2D
   , logoDraw
@@ -99,3 +100,5 @@ foreign import rafImpl :: EffectFn1 (Effect Unit) Unit
 
 raf :: Effect Unit -> Effect Unit
 raf = runEffectFn1 rafImpl
+
+foreign import gfxBootNotifyLogoReady :: Effect Unit
