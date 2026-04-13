@@ -68,6 +68,7 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
     let spawned = 0, ptr = 0, rafId = 0, chromeRemoved = false, maskHolesAppended = 0;
     let bootFrame = 0;
     let hasPausedForSea = false;
+    let pausePreviewWhite = false;
     let lastCounter = -1;
     let lastProgress = -1;
     const MASK_APPEND_BATCH = 140;
@@ -105,6 +106,7 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
       window.__gfxBoot.animationDone = false;
       lastActive = performance.now();
       chromeRemoved = false;
+      pausePreviewWhite = false;
       overlay.style.pointerEvents = "";
       if (!rafId &&!isHidden) rafId = requestAnimationFrame(tick);
     };
@@ -118,7 +120,28 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
 
     const svgNS = "http://www.w3.org/2000/svg";
 
-    function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [arr[i], arr[j]] = [arr[j], arr[i]]; } }
+    function buildCenterOutCircleOrder() {
+      indices.length = 0;
+      const cx = (cols - 1) / 2;
+      const cy = (rows - 1) / 2;
+      const ringPhase = 0.85;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const dx = c - cx;
+          const dy = r - cy;
+          const dist2 = dx * dx + dy * dy;
+          const radius = Math.sqrt(dist2);
+          const ang = Math.atan2(dy, dx);
+          // Add a gentle radius-driven phase term so growth reads as a swirl/spiral.
+          const swirl = ang + radius * ringPhase;
+          indices.push({ id: r * cols + c, dist2, swirl });
+        }
+      }
+      indices.sort((a, b) => {
+        if (a.dist2 !== b.dist2) return a.dist2 - b.dist2;
+        return a.swirl - b.swirl;
+      });
+    }
 
     function syncSize() {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -154,7 +177,7 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
     function syncChromeMask() {
       const g = document.getElementById("gfx-boot-mask-holes");
       if (!g) return;
-      const hole = CELL + 1;
+      const hole = CELL;
       let appended = 0;
       while (maskHolesAppended < filled.length && appended < MASK_APPEND_BATCH) {
         const cell = filled[maskHolesAppended++];
@@ -170,9 +193,7 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
     }
 
     function rebuildFillGrid() {
-      indices.length = 0;
-      for (let i = 0; i < total; i++) indices.push(i);
-      shuffle(indices);
+      buildCenterOutCircleOrder();
       ptr = 0; spawned = 0; filled.length = 0;
       clearChromeMaskHoles();
     }
@@ -188,7 +209,7 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
     function spawnCellsToTarget(targetCount) {
       const cap = Math.min(targetCount, total);
       while (spawned < cap && ptr < total) {
-        const id = indices[ptr++];
+        const id = indices[ptr++].id;
         const c = id % cols;
         const r = (id / cols) | 0;
         const x = c * CELL - CELL;
@@ -232,12 +253,21 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
       ctx.globalCompositeOperation = "source-over";
       ctx.fillStyle = "#FF0000";
       ctx.fillRect(0, 0, W, H);
-      const hole = CELL + 1;
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.fillStyle = "#000000";
-      for (let k = 0; k < filled.length; k++) {
-        const cell = filled[k];
-        ctx.fillRect(Math.floor(cell.x), Math.floor(cell.y), hole, hole);
+      const hole = CELL;
+      if (pausePreviewWhite) {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillStyle = "#ffffff";
+        for (let k = 0; k < filled.length; k++) {
+          const cell = filled[k];
+          ctx.fillRect(Math.floor(cell.x), Math.floor(cell.y), hole, hole);
+        }
+      } else {
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.fillStyle = "#000000";
+        for (let k = 0; k < filled.length; k++) {
+          const cell = filled[k];
+          ctx.fillRect(Math.floor(cell.x), Math.floor(cell.y), hole, hole);
+        }
       }
       ctx.globalCompositeOperation = "source-over";
     }
@@ -258,6 +288,12 @@ window.__GFX_BOOT_MIN_MS = GFX_BOOT_MIN_MS;
       bootFrame++;
       if (bootFrame === 2 &&!window.__gfxBoot.pausedForSea &&!hasPausedForSea) {
         hasPausedForSea = true;
+        // Ensure the paused frame visibly starts from a tiny center cluster.
+        if (spawned < 5) {
+          spawnCellsToTarget(5);
+          pausePreviewWhite = true;
+          drawMask();
+        }
         if (!isHidden) activeElapsed += now - lastActive;
         window.__gfxBoot.pausedForSea = true;
         console.log("[boot] pausing after 2 frames for sea");
