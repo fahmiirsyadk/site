@@ -11,8 +11,8 @@ import Luna.Html as H
 import Luna.Html.Events (always_, onClick)
 
 -- | Luna-rendered terminal card; copy still uses `data-terminal-copy` delegation in Main.js.
-terminalCard :: forall a. Boolean -> a -> { id :: String, title :: String, command :: String, output :: String } -> Html a
-terminalCard expanded toggleAct p =
+terminalCard :: forall i. Boolean -> (String -> i) -> { id :: String, title :: String, command :: String, output :: String } -> Html i
+terminalCard expanded onToggle p =
   let
     bodyElId = p.id <> "-body"
     titleTxt = if String.trim p.title == "" then "Command" else p.title
@@ -68,7 +68,7 @@ terminalCard expanded toggleAct p =
       ]
       [ H.button
           [ attr "type" "button"
-          , onClick (always_ toggleAct)
+          , onClick (always_ (onToggle p.id))
           , attr "aria-expanded" (if expanded then "true" else "false")
           , attr "aria-controls" bodyElId
           , H.classes

@@ -102,9 +102,10 @@ renderPage buildHash manifest route =
       # withMeta "viewport" "width=device-width, initial-scale=1"
       # withMeta "color-scheme" "light dark"
       -- Small async boot script: starts loading before `app.js` (deferred) finishes downloading.
-      # withHeadExtra (gfxBootPreload buildHash)
-      -- Only 2 preconnects (Lighthouse: ≤4). Drop duplicate `Link: preconnect` from CDN if Lighthouse still doubles rsms.
-      # withHeadExtra preconnectFontsGstatic
+       # withHeadExtra (gfxBootPreload buildHash)
+
+       -- Only 2 preconnects (Lighthouse: ≤4). Drop duplicate `Link: preconnect` from CDN if Lighthouse still doubles rsms.
+       # withHeadExtra preconnectFontsGstatic
       # withHeadExtra preconnectInter
       -- Start woff2 fetches before font CSS applies (after async CSS below).
       # withHeadExtra (preloadFontWoff2 interRegularWoff2)

@@ -16,7 +16,6 @@ import Luna.Transition (Transition, purely)
 import Pages.About as AboutPage
 import Pages.Article as ArticlePage
 import Pages.Home as HomePage
-import Routes (parseRoutePath)
 import Types (BodyBlock, Post, Route(..), SiteManifest, TocItem, ToolCardState, defaultToolCardState)
 
 type Model =
@@ -32,7 +31,6 @@ type Model =
 
 data Action
   = RouteChanged (Maybe Route)
-  | NavigatePath String
   | ReplaceManifest SiteManifest
   | MergePostContent
       { section :: String
@@ -61,16 +59,6 @@ update :: Model -> Action -> Transition (Const Void) Model Action
 update model = case _ of
   RouteChanged maybeRoute ->
     purely case maybeRoute of
-      Nothing -> model
-      Just route ->
-        model
-          { route = route
-          , activeTocId = Nothing
-          , terminalExpanded = Map.empty
-          , toolCards = Map.empty
-          }
-  NavigatePath path ->
-    purely case parseRoutePath path of
       Nothing -> model
       Just route ->
         model

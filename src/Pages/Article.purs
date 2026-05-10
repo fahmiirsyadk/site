@@ -46,7 +46,7 @@ view termExpanded toolCards onTerminalToggle onToolToggle slug section posts use
         renderBlock (BodyTerminal t) =
           terminalCard
             (fromMaybe true $ Map.lookup t.id termExpanded)
-            (onTerminalToggle t.id)
+            onTerminalToggle
             t
         renderBlock (BodyToolCard r) =
           toolCard

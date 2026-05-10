@@ -275,11 +275,11 @@ startClient appRootNode = do
         in
           if needsFullManifest route then
             ensurePathContent path' do
-              inst.pushAndRun (SiteApp.NavigatePath path')
+              inst.pushAndRun (SiteApp.RouteChanged route)
               syncArticleChrome route
           else
             do
-              inst.pushAndRun (SiteApp.NavigatePath path')
+              inst.pushAndRun (SiteApp.RouteChanged route)
               syncArticleChrome route
       )
       (\id -> inst.pushAndRun (SiteApp.SetActiveToc id))
