@@ -300,11 +300,12 @@
       }
 
       // Effective target = milestone progress.
-      // After 3s with no milestone updates, add a very slow drift (0.5%/s).
+      // After 3s with no milestone updates, add drift (3%/s) so the progress bar
+      // never appears completely frozen.
       var effectiveTarget = progressFromMilestones;
       var stuckDuration = activeNow - lastMilestoneChange;
       if (stuckDuration > 3000) {
-        var drift = (stuckDuration - 3000) * 0.0005; // 0.5% per second
+        var drift = (stuckDuration - 3000) * 0.003; // 3% per second
         effectiveTarget = Math.min(1, progressFromMilestones + drift);
       }
 

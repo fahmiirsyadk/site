@@ -22,8 +22,6 @@ type Model =
   { route :: Route
   , manifest :: SiteManifest
   , activeTocId :: Maybe String
-  , useRelativeDates :: Boolean
-  , relativeTimeTick :: Int
   , themeMode :: String
   , terminalExpanded :: Map.Map String Boolean
   , toolCards :: Map.Map String ToolCardState
@@ -43,8 +41,6 @@ data Action
   | ToolToggle String
   | ToolCardMeasured String Int
   | SetActiveToc String
-  | EnableRelativeDates
-  | TickRelativeDates
   | SetThemeMode String
 
 app :: Model -> LunaApp.App (Const Void) (Const Void) Model Action
@@ -103,14 +99,6 @@ update model = case _ of
         model { toolCards = Map.insert id { expanded, needsExpand: needs } model.toolCards }
   SetActiveToc id ->
     purely model { activeTocId = if id == "" then Nothing else Just id }
-  EnableRelativeDates ->
-    purely model { useRelativeDates = true }
-  TickRelativeDates ->
-    purely
-      if model.useRelativeDates then
-        model { relativeTimeTick = model.relativeTimeTick + 1 }
-      else
-        model
   SetThemeMode raw ->
     purely model { themeMode = normalizeThemeMode raw }
   where
@@ -127,13 +115,13 @@ normalizeThemeMode s =
 render :: Model -> Html Action
 render model =
   siteLayout model.route (currentToc model.manifest model.route) model.activeTocId model.themeMode SetThemeMode
-    ( renderPage model.useRelativeDates model.manifest model.route model.terminalExpanded model.toolCards
+    ( renderPage model.manifest model.route model.terminalExpanded model.toolCards
     )
 
 renderStatic :: SiteManifest -> Route -> Html Action
 renderStatic manifest route =
   siteLayout route (currentToc manifest route) Nothing "light" SetThemeMode
-    (renderPage false manifest route Map.empty Map.empty)
+    (renderPage manifest route Map.empty Map.empty)
 
 -- | Prerender / SSG `<body>`: `GfxBoot.bootOverlay` + `#app` (hydrate target) + async `gfx-boot.js`.
 ssgBodyHtml :: forall i. String -> Html i -> Html i
@@ -149,14 +137,14 @@ ssgBodyHtml gfxBootBuildHash appInner =
         []
     ]
 
-renderPage :: Boolean -> SiteManifest -> Route -> Map.Map String Boolean -> Map.Map String ToolCardState -> Html Action
-renderPage useRelativeDates manifest route termExp toolSt =
+renderPage :: SiteManifest -> Route -> Map.Map String Boolean -> Map.Map String ToolCardState -> Html Action
+renderPage manifest route termExp toolSt =
   case route of
-    Home -> HomePage.view useRelativeDates manifest.posts
+    Home -> HomePage.view manifest.posts
     About -> AboutPage.view
-    SectionIndex section -> HomePage.view useRelativeDates (Array.filter (\p -> p.section == section) manifest.posts)
+    SectionIndex section -> HomePage.view (Array.filter (\p -> p.section == section) manifest.posts)
     SectionPost section slug ->
-      ArticlePage.view termExp toolSt TerminalToggle ToolToggle slug section manifest.posts useRelativeDates
+      ArticlePage.view termExp toolSt TerminalToggle ToolToggle slug section manifest.posts
 
 currentToc :: SiteManifest -> Route -> Array TocItem
 currentToc manifest route = case route of

@@ -130,15 +130,6 @@ type SiteManifest =
   , tags :: Array String
   }
 
-articlesFromManifest :: SiteManifest -> Array Post
-articlesFromManifest = Array.filter (_.section >>> (==) "articles") <<< _.posts
-
-projectsFromManifest :: SiteManifest -> Array Post
-projectsFromManifest = Array.filter (_.section >>> (==) "projects") <<< _.posts
-
-tilFromManifest :: SiteManifest -> Array Post
-tilFromManifest = Array.filter (_.section >>> (==) "til") <<< _.posts
-
 emptySiteManifest :: SiteManifest
 emptySiteManifest =
   { posts: []
@@ -153,16 +144,3 @@ data Route
   | SectionPost String String
 
 derive instance eqRoute :: Eq Route
-
-type LikeModel = { likes :: Int }
-
-initialLikes :: LikeModel
-initialLikes = { likes: 0 }
-
-type SearchModel = 
-  { query :: String
-  , posts :: Array Post
-  }
-
-initialSearchModel :: SearchModel
-initialSearchModel = { query: "", posts: [] }

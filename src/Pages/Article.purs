@@ -24,9 +24,8 @@ view
   -> String
   -> String
   -> Array Post
-  -> Boolean
   -> Html i
-view termExpanded toolCards onTerminalToggle onToolToggle slug section posts useRelativeDates =
+view termExpanded toolCards onTerminalToggle onToolToggle slug section posts =
   case Array.find (\p -> p.slug == slug && p.section == section) posts of
     Nothing ->
       H.div [ H.classes [ "space-y-3" ] ]
@@ -89,7 +88,11 @@ view termExpanded toolCards onTerminalToggle onToolToggle slug section posts use
               , H.span
                   [ H.classes [ "min-h-px", "min-w-[1.5rem]", "flex-1", "border-b", "border-solid", "border-neutral-300", "dark:border-neutral-600" ] ]
                   []
-              , H.span [ H.classes [ "shrink-0", "text-right", "text-neutral-500" ] ] [ H.text (postDateLabel useRelativeDates p.date) ]
+              , H.span
+                  [ H.classes [ "shrink-0", "text-right", "text-neutral-500" ]
+                  , attr "data-relative-date" p.date
+                  ]
+                  [ H.text (postDateLabel p.date) ]
               ]
           , H.div
               [ H.classes [ "flex", "h-48", "w-full", "items-center", "justify-center", "overflow-hidden" ] ]

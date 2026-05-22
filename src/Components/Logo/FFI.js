@@ -4,10 +4,13 @@
  * long synchronous driver wait (same class of jank fixed in Main.js sea footer).
  */
 function createLinkedProgram(gl, vsSource, fsSource) {
+  const ext = gl.getExtension("KHR_parallel_shader_compile");
+
   const compile = (type, source) => {
     const sh = gl.createShader(type);
     gl.shaderSource(sh, source);
     gl.compileShader(sh);
+    if (ext) gl.getShaderParameter(sh, ext.COMPLETION_STATUS_KHR);
     if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
       console.warn("Logo shader compile:", gl.getShaderInfoLog(sh));
       gl.deleteShader(sh);
@@ -24,6 +27,8 @@ function createLinkedProgram(gl, vsSource, fsSource) {
   gl.attachShader(prog, vs);
   gl.attachShader(prog, fs);
   gl.linkProgram(prog);
+
+  if (ext) gl.getProgramParameter(prog, ext.COMPLETION_STATUS_KHR);
 
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
     console.warn("Logo program link:", gl.getProgramInfoLog(prog));

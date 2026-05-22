@@ -7,7 +7,6 @@ import AnchorNav (scrollToHashId)
 import Components.Banner (disposeBannerIfAny, mountBannerFilter)
 import Components.Banner.FFI (BannerHandle)
 import Components.Logo (mountCubeLogo)
-import Defer (runWhenIdle)
 import Data.Argonaut.Decode (decodeJson, (.:), (.!=), (.:?))
 import Data.Argonaut.Decode.Error (printJsonDecodeError)
 import Data.Argonaut.Parser (jsonParser) as Parser
@@ -15,23 +14,29 @@ import Data.Array as Array
 import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Foldable (any)
+import Data.Map as Map
 import Data.Maybe (Maybe(..), isJust)
 import Data.Set as Set
 import Data.String as String
 import Data.String.CodeUnits as SCU
 import Data.String.Pattern (Pattern(..))
+import Defer (runWhenIdle)
 import Effect (Effect)
 import Effect.Console (warn)
 import Effect.Ref as Ref
+import IslandDelegation (initMarkdownProseDelegation)
 import Luna.App (HydrationBootstrapOptions, makeHydrateOrBuild)
 import Luna.Html.ModelState (deserializeModelWithDefault)
 import Luna.Interpreter (merge, never)
 import Luna.Routing as Routing
+import Measure (measureToolCards)
+import RelativeTimePatch (patchRelativeDates)
 import RouteInput (setupRouteInputs)
 import Routes (lunaRouteCodec, parseRoutePath)
+import Theme (applyThemeMode, getStoredThemeMode, patchSsrThemeButtons)
 import TocActive (setupScrollSpy, tickScrollSpy)
-import Data.Map as Map
 import Types (BodyBlock, Route(..), SiteManifest, TocItem, emptySiteManifest)
+import Utils (afterPaint, everyMsInterval, fetchText)
 import Web.DOM.Element (toNode) as DOMElement
 import Web.DOM.Node (Node) as DOMNode
 import Web.DOM.ParentNode (QuerySelector(..), querySelector) as DOM
@@ -41,21 +46,8 @@ import Web.HTML.HTMLDocument (toParentNode) as HTMLDocument
 import Web.HTML.Window (document)
 import Web.HTML.Window (location) as Window
 
-foreign import fetchText :: String -> (String -> Effect Unit) -> (String -> Effect Unit) -> Effect Unit
 foreign import mountSeaFooter :: Effect Unit
 foreign import gfxBootCheckNoCubeHosts :: Effect Unit
-foreign import getStoredThemeMode :: Effect String
-foreign import patchSsrThemeButtons :: String -> Effect Unit
-foreign import applyThemeMode :: String -> Effect Unit
-foreign import measureToolCards :: (String -> Int -> Effect Unit) -> Effect Unit
-foreign import initMarkdownProseDelegation :: DOMNode.Node -> Effect Unit
-
--- | Fire `eff` every `ms` milliseconds
-foreign import everyMsInterval :: Int -> Effect Unit -> Effect Unit
-
--- | Run `eff` after the next paint frame (rAF), ensuring VDOM patches are visible.
-foreign import afterPaint :: Effect Unit -> Effect Unit
-
 foreign import setupTocHashSync :: (String -> Effect Unit) -> Effect Unit
 
 -- | Tooling-injected `data-*` names Halogen hydration would otherwise reject (see Luna `hydrateAttributesIgnore`).
@@ -82,10 +74,6 @@ type PostContentFetchState =
   { loaded :: Set.Set String
   , failed :: Set.Set String
   }
-
-needsFullManifest :: Maybe Route -> Boolean
-needsFullManifest (Just (SectionPost _ _)) = true
-needsFullManifest _ = false
 
 postKey :: String -> String -> String
 postKey section slug = section <> "/" <> slug
@@ -142,8 +130,6 @@ startClient appRootNode = do
       { route: initialRoute
       , manifest: manifest
       , activeTocId: Nothing
-      , useRelativeDates: false
-      , relativeTimeTick: 0
       , themeMode: storedTheme
       , terminalExpanded: Map.empty
       , toolCards: Map.empty
@@ -181,13 +167,19 @@ startClient appRootNode = do
           next <- disposeBannerIfAny cur
           Ref.write next bannerHandleRef
 
+    syncScrollSpy :: Effect Unit
+    syncScrollSpy = tickScrollSpy "content-scroll"
+
+    syncToolCardMeasures :: Effect Unit
+    syncToolCardMeasures =
+      measureToolCards \id h -> inst.pushAndRun (SiteApp.ToolCardMeasured id h)
+
     syncArticleChrome :: Maybe Route -> Effect Unit
-    syncArticleChrome maybeRoute =
-      afterPaint do
-        tickScrollSpy "content-scroll"
-        runWhenIdle do
-          syncBannerForRoute maybeRoute
-          measureToolCards \id h -> inst.pushAndRun (SiteApp.ToolCardMeasured id h)
+    syncArticleChrome maybeRoute = do
+      afterPaint syncScrollSpy
+      runWhenIdle do
+        syncBannerForRoute maybeRoute
+        syncToolCardMeasures
 
     ensurePostContent :: String -> String -> Effect Unit -> Effect Unit
     ensurePostContent section slug continue = do
@@ -215,9 +207,8 @@ startClient appRootNode = do
                     Ref.write NotRequested manifestStateRef
                     Ref.modify_ (\st -> st { loaded = Set.insert key st.loaded }) postContentStateRef
                     inst.pushAndRun (SiteApp.MergePostContent payload)
-                    afterPaint do
-                      tickScrollSpy "content-scroll"
-                      runWhenIdle (measureToolCards \id h -> inst.pushAndRun (SiteApp.ToolCardMeasured id h))
+                    afterPaint syncScrollSpy
+                    runWhenIdle syncToolCardMeasures
                     continue
               )
               (\err -> do
@@ -226,61 +217,50 @@ startClient appRootNode = do
                 warn $ "Failed to load post payload for " <> key <> ": " <> err
               )
 
-    ensureRouteContent :: Maybe Route -> Effect Unit -> Effect Unit
-    ensureRouteContent maybeRoute continue =
-      case maybeRoute of
-        Just (SectionPost section slug) -> ensurePostContent section slug continue
-        _ -> continue
+    routeNeedsPostContent :: Maybe Route -> Maybe { section :: String, slug :: String }
+    routeNeedsPostContent = case _ of
+      Just (SectionPost section slug) -> Just { section, slug }
+      _ -> Nothing
 
-    ensurePathContent :: String -> Effect Unit -> Effect Unit
-    ensurePathContent path' continue =
-      case parseRoutePath path' of
-        Just (SectionPost section slug) -> ensurePostContent section slug continue
-        _ -> continue
+    withRouteContent :: Maybe Route -> Effect Unit -> Effect Unit
+    withRouteContent maybeRoute continue =
+      case routeNeedsPostContent maybeRoute of
+        Just { section, slug } -> ensurePostContent section slug continue
+        Nothing -> continue
 
-  -- Sea: `mountSeaFooter` + `gfx-boot-pause-for-sea` start compile during boot pause; if overlay is absent, idle-mount runs immediately.
+    withPathContent :: String -> Effect Unit -> Effect Unit
+    withPathContent path' continue =
+      withRouteContent (parseRoutePath path') continue
+
   mountSeaFooter
   mountCubeLogo
   gfxBootCheckNoCubeHosts
   inst.run
   applyThemeMode storedTheme
-  -- VDOM: switch post dates from calendar (hydration-safe) to Intl relative time.
-  inst.pushAndRun SiteApp.EnableRelativeDates
+  -- Client-side: swap calendar dates to relative-time labels after hydration.
+  patchRelativeDates
+  everyMsInterval 60000 patchRelativeDates
   case initialRoute of
     SectionPost section slug
       | not (postHasBodyBlocks manifest section slug) ->
         ensurePostContent section slug do pure unit
     _ -> pure unit
   syncArticleChrome (Just initialRoute)
-  -- Re-render once per minute so "8h ago" etc.
-  everyMsInterval 60000 (inst.pushAndRun SiteApp.TickRelativeDates)
   _ <-
     setupRouteInputs
       appRootNode
       lunaRouteCodec
       Routing.PathRouting
       (\maybeRoute ->
-        if needsFullManifest maybeRoute then
-          ensureRouteContent maybeRoute do
-            inst.pushAndRun (SiteApp.RouteChanged maybeRoute)
-            syncArticleChrome maybeRoute
-        else
-          do
-            inst.pushAndRun (SiteApp.RouteChanged maybeRoute)
-            syncArticleChrome maybeRoute
+        withRouteContent maybeRoute do
+          inst.pushAndRun (SiteApp.RouteChanged maybeRoute)
+          syncArticleChrome maybeRoute
       )
       (\path' ->
-        let
-          route = parseRoutePath path'
-        in
-          if needsFullManifest route then
-            ensurePathContent path' do
-              inst.pushAndRun (SiteApp.RouteChanged route)
-              syncArticleChrome route
-          else
-            do
-              inst.pushAndRun (SiteApp.RouteChanged route)
-              syncArticleChrome route
+        withPathContent path' do
+          let route = parseRoutePath path'
+          inst.pushAndRun (SiteApp.RouteChanged route)
+          syncArticleChrome route
       )
       (\id -> inst.pushAndRun (SiteApp.SetActiveToc id))
   setupScrollSpy "content-scroll" \maybeId ->

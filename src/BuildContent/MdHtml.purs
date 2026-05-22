@@ -1,7 +1,5 @@
 module BuildContent.MdHtml
-  ( renderMarkdownHtml
-  , buildToc
-  , renderDocument
+  ( renderDocument
   ) where
 
 import Prelude
@@ -186,27 +184,6 @@ simpleHash :: String -> Int
 simpleHash str =
   Array.foldl (\acc ch -> (acc * 33 + fromEnum ch) `mod` 1000003) 0 (CU.toCharArray str)
 
-renderTerminalToolCard :: String -> String -> String -> String -> String
-renderTerminalToolCard title command output infoForId =
-  let
-    base = "term-" <> show (simpleHash (infoForId <> title <> command))
-  in
-    BBH.renderTerminalShell base title command output
-
-renderDiffToolCard :: ToolDisplayMeta -> String -> String -> String
-renderDiffToolCard meta content infoForId =
-  BBH.renderDiffToolCardWithId
-    ("diff-card-" <> slugify meta.file <> "-" <> show (simpleHash (infoForId <> content)))
-    { file: meta.file, addStat: meta.addStat, delStat: meta.delStat }
-    content
-
-renderToolDisplayCard :: ToolDisplayMeta -> String -> String -> String
-renderToolDisplayCard meta content infoForId =
-  BBH.renderToolDisplayCardWithId
-    ("tool-card-" <> slugify meta.file <> "-" <> show (simpleHash (infoForId <> content)))
-    { file: meta.file, addStat: meta.addStat, delStat: meta.delStat }
-    content
-
 fenceToBodyBlock :: MdToken -> Maybe BodyBlock
 fenceToBodyBlock (MdToken t)
   | t.type /= "fence" = Nothing
@@ -273,30 +250,14 @@ tokensToBlocksAndHtml tokens =
   in
     { html, blocks: blocksFin }
 
-renderFence :: MdToken -> String
-renderFence (MdToken t) =
-  case parseDiffFenceInfo t.info of
-    Just meta -> renderDiffToolCard meta t.content t.info
-    Nothing ->
-      case parseToolDisplayCardInfo t.info of
-        Just meta -> renderToolDisplayCard meta t.content t.info
-        Nothing ->
-          case parseTerminalInfo t.info of
-            Just title ->
-              let parts = splitTerminalContent t.content
-              in renderTerminalToolCard title parts.command parts.output t.info
-            Nothing ->
-              let
-                lang = if t.info == "" then "" else " class=\"language-" <> escapeAttr t.info <> "\""
-              in
-                "<pre><code" <> lang <> ">" <> escapeHtml t.content <> "</code></pre>\n"
-
 renderBlockToken :: MdToken -> String
 renderBlockToken (MdToken t)
   | t.hidden = ""
   | otherwise = case t.type of
       "inline" -> renderInline (MdToken t)
-      "fence" -> renderFence (MdToken t)
+      "fence" ->
+        let lang = if t.info == "" then "" else " class=\"language-" <> escapeAttr t.info <> "\""
+        in "<pre><code" <> lang <> ">" <> escapeHtml t.content <> "</code></pre>\n"
       "code_block" -> "<pre><code>" <> escapeHtml t.content <> "</code></pre>\n"
       "hr" -> "<hr />\n"
       "html_block" -> t.content
@@ -345,9 +306,3 @@ renderDocument src =
     out = tokensToBlocksAndHtml tokens
   in
     { html: out.html, toc, blocks: out.blocks }
-
-renderMarkdownHtml :: String -> String
-renderMarkdownHtml src = (renderDocument src).html
-
-buildToc :: String -> Array { id :: String, title :: String, level :: Int }
-buildToc src = (renderDocument src).toc

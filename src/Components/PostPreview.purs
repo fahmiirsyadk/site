@@ -6,8 +6,8 @@ import Types (Post, Route(..))
 import Luna.Html as H
 import Luna.Html (Html)
 
-postPreview :: forall i. Boolean -> Post -> Html i
-postPreview useRelativeDates p =
+postPreview :: forall i. Post -> Html i
+postPreview p =
   let
     route = SectionPost p.section p.slug
   in
@@ -22,6 +22,8 @@ postPreview useRelativeDates p =
         [ H.classes [ "min-h-px", "min-w-[1.5rem]", "flex-1", "border-b", "border-solid", "border-neutral-300", "dark:border-neutral-600" ] ]
         []
     , H.span
-        [ H.classes [ "shrink-0", "whitespace-nowrap", "text-right", "text-neutral-500" ] ]
-        [ H.text (postDateLabel useRelativeDates p.date) ]
+        [ H.classes [ "shrink-0", "whitespace-nowrap", "text-right", "text-neutral-500" ]
+        , H.attr "data-relative-date" p.date
+        ]
+        [ H.text (postDateLabel p.date) ]
     ]

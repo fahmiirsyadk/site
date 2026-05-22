@@ -8,126 +8,6 @@ export const gfxBootCheckNoCubeHosts = () => {
     }
   } catch (_) {}
 };
-
-export const everyMsInterval = (ms) => (eff) => () =>
-  setInterval(() => eff(), ms);
-export const afterPaint = (eff) => () => requestAnimationFrame(() => eff());
-export const fetchText = (url) => (onOk) => (onErr) => () => {
-  fetch(url)
-    .then((r) => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.text();
-    })
-    .then((t) => onOk(t)())
-    .catch((e) => onErr(String(e))());
-};
-
-const THEME_STORAGE_KEY = "theme";
-const getStoredMode = () => {
-  try {
-    const s = localStorage.getItem(THEME_STORAGE_KEY);
-    return s === "dark" ? "dark" : "light";
-  } catch {
-    return "light";
-  }
-};
-const effectiveDark = (m) => m === "dark";
-
-const TOOL_DISPLAY_COLLAPSED_MAX_PX = 200;
-export const measureToolCards = (cb) => () => {
-  document
-    .querySelectorAll(
-      '[data-component="tool-display-card"][data-block-id]:not(.terminal-card)',
-    )
-    .forEach((card) => {
-      const id = card.dataset.blockId,
-        body = card.querySelector(".tool-display-body");
-      if (!id || !body) return;
-      const prev = body.style.maxHeight;
-      body.style.maxHeight = "none";
-      const h = body.scrollHeight;
-      body.style.maxHeight = prev;
-      cb(id)(h)();
-      const luna = card.getAttribute("data-measured-island") === "true";
-      if (!luna) {
-        const btn = card.querySelector(".tool-display-expand-btn");
-        if (h <= TOOL_DISPLAY_COLLAPSED_MAX_PX + 1) {
-          card.classList.add("tool-display-card--no-expand");
-          card.classList.remove("is-expanded");
-          btn?.setAttribute("aria-expanded", "false");
-        } else {
-          card.classList.remove("tool-display-card--no-expand");
-          card.classList.add("is-expanded");
-          btn?.setAttribute("aria-expanded", "true");
-        }
-      }
-    });
-};
-
-let markdownBound = false;
-export const initMarkdownProseDelegation = (appNode) => () => {
-  if (!appNode || markdownBound) return;
-  markdownBound = true;
-  appNode.addEventListener("click", (e) => {
-    const toolBtn = e.target.closest("[data-tool-display-toggle]");
-    if (toolBtn) {
-      const card = toolBtn.closest('[data-component="tool-display-card"]');
-      if (card && !card.classList.contains("terminal-card")) {
-        const was = toolBtn.getAttribute("aria-expanded") === "true";
-        toolBtn.setAttribute("aria-expanded", String(!was));
-        card.classList.toggle("is-expanded", !was);
-        e.preventDefault();
-        return;
-      }
-    }
-    const tToggle = e.target.closest("[data-terminal-toggle]");
-    if (tToggle) {
-      const id = tToggle.dataset.target;
-      const body = document.getElementById(id);
-      const was = tToggle.getAttribute("aria-expanded") === "true";
-      tToggle.setAttribute("aria-expanded", String(!was));
-      if (body) body.hidden = was;
-      e.preventDefault();
-      return;
-    }
-    const tCopy = e.target.closest("[data-terminal-copy]");
-    if (tCopy) {
-      navigator.clipboard
-        ?.writeText(tCopy.dataset.command || "")
-        .catch(() => {});
-      tCopy.setAttribute("title", "Copied");
-      setTimeout(() => tCopy.setAttribute("title", "Copy"), 900);
-      e.preventDefault();
-    }
-  });
-};
-
-export const getStoredThemeMode = () => getStoredMode();
-export const applyThemeMode = (mode) => () => {
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, mode);
-  } catch {}
-  document.documentElement.classList.toggle("dark", effectiveDark(mode));
-  try {
-    document.documentElement.style.colorScheme = effectiveDark(mode)
-      ? "dark"
-      : "light";
-  } catch {}
-};
-export const patchSsrThemeButtons = (mode) => () => {
-  const map = new Map([
-    ["Use light theme", "light"],
-    ["Use dark theme", "dark"],
-  ]);
-  document
-    .querySelectorAll("[data-theme-controls] button[aria-label]")
-    .forEach((btn) => {
-      const m = map.get(btn.getAttribute("aria-label"));
-      if (m) btn.setAttribute("aria-pressed", m === mode ? "true" : "false");
-    });
-};
-
-/** iOS Safari: `requestIdleCallback` is often missing or may not run before navigation; always bound `fn` to one invocation. */
 function scheduleHeavyGpuWork(fn) {
   let ran = false;
   const run = () => {
@@ -670,7 +550,7 @@ function initSeaFooterWithFragment(canvas, fullSrc) {
     renderState.isSimple = label === "simple";
     Object.assign(renderState, queryUniforms(prog));
     if (renderState.uQ && label === "simple") gl.uniform1f(renderState.uQ, 0);
-    const cloudQ = saveData ? 0.22 : narrow ? 0.45 : coarse ? 0.35 : 1.0;
+    const cloudQ = saveData ? 0.22 : narrow ? 0.45 : coarse ? 0.35 : 0.6;
     if (renderState.uQ && label !== "simple")
       gl.uniform1f(renderState.uQ, cloudQ);
 
@@ -822,19 +702,12 @@ function initSeaFooterWithFragment(canvas, fullSrc) {
       const pollDeadline = performance.now() + 14000;
       let pollRaf = 0;
       let linkPollStart = performance.now();
+      let noExtLastCheck = 0;
 
       function finalizeFull() {
         if (fullFinished) return;
         fullFinished = true;
         if (pollRaf) cancelAnimationFrame(pollRaf);
-
-        seaPerfMark("link_end");
-        window.__gfxBoot?.markPhase("sea_full_linked", 88);
-        if (!gl.getProgramParameter(fullProg, gl.LINK_STATUS)) {
-          const log = gl.getProgramInfoLog(fullProg) || "(no log)";
-          console.error("[sea] full program link failed:\n" + log);
-          return;
-        }
 
         // Activate full shader immediately so first frame can reach 100%.
         window.__gfxBoot?.markPhase("sea_full_active", 92);
@@ -863,7 +736,7 @@ function initSeaFooterWithFragment(canvas, fullSrc) {
           }
         });
 
-        const cloudQ = saveData ? 0.22 : narrow ? 0.45 : coarse ? 0.35 : 1.0;
+        const cloudQ = saveData ? 0.22 : narrow ? 0.45 : coarse ? 0.35 : 0.6;
         const perf = window.__seaMountResult || {};
         console.log(
           "[sea] full shader active; cloudQ=" +
@@ -881,36 +754,79 @@ function initSeaFooterWithFragment(canvas, fullSrc) {
       }
 
       function pollFull() {
-        const parallelDone =
-          !ext2 || gl.getProgramParameter(fullProg, ext2.COMPLETION_STATUS_KHR);
+        const hasExt = !!ext2;
         const timedOut = performance.now() > pollDeadline;
+        const elapsed = performance.now() - linkPollStart;
+        const frac = Math.min(0.9, elapsed / 5000);
+        const pct = 76 + Math.round(frac * 12);
 
-        // Report incremental link progress (78-88% range).
-        if (!parallelDone && !timedOut) {
-          const elapsed = performance.now() - linkPollStart;
-          const frac = Math.min(0.9, elapsed / 5000);
-          const pct = 76 + Math.round(frac * 12);
-          // Log only every 10th poll (≈160ms) to avoid console flood.
-          if (Math.round(frac * 50) % 10 === 0) {
-            console.log(
-              "[sea] link polling: " +
-                elapsed.toFixed(0) +
-                "ms  → progress=" +
-                pct +
-                "%",
-            );
+        // Always report incremental progress (76→88% over ~5s).
+        if (Math.round(frac * 50) % 10 === 0) {
+          console.log(
+            "[sea] link polling: " +
+              elapsed.toFixed(0) +
+              "ms  → progress=" +
+              pct +
+              "%",
+          );
+        }
+        window.__gfxBoot?.markPhase("sea_full_linking", pct);
+
+        if (hasExt) {
+          // Non-blocking poll via KHR_parallel_shader_compile
+          const parallelDone = gl.getProgramParameter(
+            fullProg,
+            ext2.COMPLETION_STATUS_KHR,
+          );
+          if (parallelDone || timedOut) {
+            if (timedOut && !parallelDone)
+              console.warn(
+                "[sea] KHR_parallel_shader_compile still false; finalizing",
+              );
+            // Yield before checking LINK_STATUS so progress bar can paint
+            requestAnimationFrame(function () {
+              seaPerfMark("link_end");
+              window.__gfxBoot?.markPhase("sea_full_linked", 88);
+              if (!gl.getProgramParameter(fullProg, gl.LINK_STATUS)) {
+                const log = gl.getProgramInfoLog(fullProg) || "(no log)";
+                console.error("[sea] full program link failed:\n" + log);
+                return;
+              }
+              finalizeFull();
+            });
+            return;
           }
-          window.__gfxBoot?.markPhase("sea_full_linking", pct);
+        } else {
+          // No KHR extension: let progress updates paint before checking
+          // LINK_STATUS, which may block on some drivers.
+          var shouldCheck =
+            timedOut ||
+            (elapsed > 1000 &&
+              elapsed - noExtLastCheck > 500 &&
+              noExtLastCheck > 0);
+          if (!noExtLastCheck) shouldCheck = elapsed > 1800;
+          if (shouldCheck) {
+            noExtLastCheck = elapsed;
+            // Yield before the potential block so progress bar paints
+            requestAnimationFrame(function () {
+              seaPerfMark("link_end");
+              window.__gfxBoot?.markPhase("sea_full_linked", 88);
+              const ok = gl.getProgramParameter(fullProg, gl.LINK_STATUS);
+              if (ok || timedOut) {
+                if (!ok) {
+                  console.warn(
+                    "[sea] link status timeout; activating anyway",
+                  );
+                }
+                finalizeFull();
+                return;
+              }
+              pollRaf = requestAnimationFrame(pollFull);
+            });
+            return;
+          }
         }
 
-        if (parallelDone || timedOut) {
-          if (timedOut && !parallelDone)
-            console.warn(
-              "[sea] KHR_parallel_shader_compile still false; finalizing (possible iOS driver quirk)",
-            );
-          finalizeFull();
-          return;
-        }
         pollRaf = requestAnimationFrame(pollFull);
       }
       pollRaf = requestAnimationFrame(pollFull);
@@ -919,9 +835,11 @@ function initSeaFooterWithFragment(canvas, fullSrc) {
 
   // Start full shader compilation after a short delay so the simple shader
   // has a few frames to settle and the boot animation is already visible.
+  window.__gfxBoot?.markPhase("sea_full_scheduling", 39);
   setTimeout(() => {
+    window.__gfxBoot?.markPhase("sea_full_scheduled", 41);
     if (!fullDeferredOnce) compileFullShaderNow();
-  }, 600);
+  }, 200);
 }
 
 export const setupTocHashSync = (pushId) => () => {

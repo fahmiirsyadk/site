@@ -6,9 +6,7 @@ function createLinkedProgram(gl, vsSource, fsSource) {
     const sh = gl.createShader(type);
     gl.shaderSource(sh, source);
     gl.compileShader(sh);
-    if (ext) {
-      while (!gl.getShaderParameter(sh, ext.COMPLETION_STATUS_KHR)) {}
-    }
+    if (ext) gl.getShaderParameter(sh, ext.COMPLETION_STATUS_KHR);
     if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
       console.warn("Banner shader compile:", gl.getShaderInfoLog(sh));
       gl.deleteShader(sh);
@@ -26,9 +24,7 @@ function createLinkedProgram(gl, vsSource, fsSource) {
   gl.attachShader(program, fs);
   gl.linkProgram(program);
 
-  if (ext) {
-    while (!gl.getProgramParameter(program, ext.COMPLETION_STATUS_KHR)) {}
-  }
+  if (ext) gl.getProgramParameter(program, ext.COMPLETION_STATUS_KHR);
 
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     console.warn("Banner program link:", gl.getProgramInfoLog(program));

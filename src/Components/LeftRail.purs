@@ -7,11 +7,11 @@ module Components.LeftRail
 import Prelude
 
 import Components.Logo (cubeLogoLink)
-import Data.Array (null)
-import Data.Maybe (Maybe(..))
-import Luna.Html (Html, attr, unsafeRawHtml)
+import Components.Toc (showTocSidebar, tocBlock)
+import Components.ThemeToggle (themeToggle, themeToggleInline)
+import Data.Maybe (Maybe)
+import Luna.Html (Html, attr)
 import Luna.Html as H
-import Luna.Html.Events (always_, onClick)
 import Routes (printRoutePath)
 import Types (Route(..), TocItem)
 
@@ -28,14 +28,6 @@ routeCrumb = case _ of
   SectionIndex s -> s
   SectionPost section slug -> section <> " · " <> slug
 
--- | Font Awesome–style home glyph for the mobile crumb on `/`.
-homeCrumbIcon :: forall i. Html i
-homeCrumbIcon =
-  unsafeRawHtml
-    """
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 shrink-0 text-neutral-600 dark:text-neutral-300" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-"""
-
 routeCrumbElt :: forall i. Route -> Html i
 routeCrumbElt = case _ of
   Home ->
@@ -44,15 +36,6 @@ routeCrumbElt = case _ of
     H.span
       [ H.classes [ "truncate", "text-[11px]", "font-medium", "tracking-wide", "text-neutral-500", "dark:text-neutral-400" ] ]
       [ H.text (routeCrumb r) ]
-
--- | Desktop TOC sidebar (and TOC in the mobile drawer) only for long-form sections that ship headings.
-tocSidebarSection :: String -> Boolean
-tocSidebarSection s = s == "articles" || s == "collection"
-
--- | Show the aside / TOC rail when this post has outline headings to navigate.
-showTocSidebar :: Route -> Array TocItem -> Boolean
-showTocSidebar (SectionPost section _) toc = tocSidebarSection section && not (null toc)
-showTocSidebar _ _ = false
 
 railScrollable :: forall i. Route -> Array TocItem -> Maybe String -> Html i
 railScrollable current toc activeTocId =
@@ -226,95 +209,6 @@ floatingToc current toc activeTocId =
       [ tocBlock toc activeTocId ]
   else
     H.div [] []
-
-tocBlock :: forall i. Array TocItem -> Maybe String -> Html i
-tocBlock items activeId =
-  H.div [ H.classes [ "flex", "flex-col", "gap-1" ] ]
-    [ H.p [ H.classes [ "mb-1", "text-[10px]", "font-medium", "uppercase", "tracking-[0.07em]", "text-neutral-500" ] ] [ H.text "TOC" ]
-    , H.div [ H.classes [ "space-y-0.5" ] ] (map (\item -> tocLink item activeId) items)
-    ]
-
-tocLink :: forall i. TocItem -> Maybe String -> Html i
-tocLink item activeId =
-  H.a
-    ( [ H.href ("#" <> item.id)
-      , attr "data-toc-id" item.id
-      ]
-        <>
-          [ H.classes
-              ( [ "block"
-                , "transition-colors"
-                , "duration-200"
-                , "ease-out"
-                ]
-                  <> if activeId == Just item.id
-                    then [ "text-[#FF4B26]", "decoration-[#FF4B26]" ]
-                    else [ "decoration-neutral-300", "text-[#171717]", "hover:text-[#FF4B26]", "hover:decoration-[#FF4B26]", "dark:text-neutral-200", "dark:hover:text-[#FF6B4A]" ]
-                  <> if item.level > 2 then [ "pl-3" ] else []
-              )
-          ]
-    )
-    [ H.text ("- " <> item.title) ]
-
--- | Tabler-style stroke icons (MIT), inlined to avoid an extra font or sprite sheet.
-themeSvgSun :: String
-themeSvgSun =
-  """
-<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none" aria-hidden="true"><path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1M5.6 5.6l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/></svg>
-"""
-
-themeSvgMoon :: String
-themeSvgMoon =
-  """
-<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none" aria-hidden="true"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/></svg>
-"""
-
-themeModeBtn :: forall i. String -> String -> String -> String -> (String -> i) -> Html i
-themeModeBtn mode ariaLabel svg themeMode onThemeMode =
-  H.button
-    [ attr "type" "button"
-    , attr "aria-pressed" (if themeMode == mode then "true" else "false")
-    , attr "aria-label" ariaLabel
-    , onClick (always_ (onThemeMode mode))
-    , H.classes
-        [ "theme-mode-btn"
-        , "rounded-md"
-        , "p-2"
-        , "text-neutral-500"
-        , "transition-colors"
-        , "hover:bg-neutral-100"
-        , "hover:text-[#171717]"
-        , "dark:text-neutral-400"
-        , "dark:hover:bg-neutral-800"
-        , "dark:hover:text-neutral-100"
-        , "aria-pressed:text-[#FF4B26]"
-        , "dark:aria-pressed:text-[#FF6B4A]"
-        ]
-    ]
-    [ unsafeRawHtml svg ]
-
--- | Theme button `aria-label` values must stay aligned with `patchSsrThemeButtons` in `Main.js`.
-themeToggleGroup :: forall i. String -> (String -> i) -> Html i
-themeToggleGroup themeMode onThemeMode =
-  H.div
-    [ H.classes [ "flex", "items-center", "justify-center", "gap-0.5" ]
-    , attr "data-theme-controls" ""
-    , attr "role" "group"
-    , attr "aria-label" "Theme"
-    ]
-    [ themeModeBtn "light" "Use light theme" themeSvgSun themeMode onThemeMode
-    , themeModeBtn "dark" "Use dark theme" themeSvgMoon themeMode onThemeMode
-    ]
-
-themeToggle :: forall i. String -> (String -> i) -> Html i
-themeToggle themeMode onThemeMode =
-  H.div
-    [ H.classes [ "shrink-0", "pt-4" ] ]
-    [ themeToggleGroup themeMode onThemeMode ]
-
-themeToggleInline :: forall i. String -> (String -> i) -> Html i
-themeToggleInline themeMode onThemeMode =
-  H.div [ H.classes [ "shrink-0" ] ] [ themeToggleGroup themeMode onThemeMode ]
 
 defaultRail :: forall i. Route -> Html i
 defaultRail current =
