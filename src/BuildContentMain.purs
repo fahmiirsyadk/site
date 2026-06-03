@@ -15,7 +15,7 @@ import Node.FS.Sync as FS
 import Node.Path (concat) as Path
 import Node.Process (cwd)
 import Sections (extraTagsForSection, isThoughtSection)
-import Types (Post, SiteManifest, Thought)
+import Types (Post, SiteManifest, Thought, sectionFrom)
 
 byDateDesc :: forall a. { date :: String | a } -> { date :: String | a } -> Ordering
 byDateDesc a b = compare b.date a.date
@@ -37,7 +37,7 @@ mkPost section baseName parsed =
     , bodyHtml: Just parsed.rendered.bodyHtml
     , bodyBlocks: parsed.rendered.bodyBlocks
     , toc: parsed.rendered.toc
-    , section
+      , section: sectionFrom section
     , tags
     , excerpt: fromMaybe "" parsed.fields.excerpt
     , banner: fromMaybe "" parsed.fields.banner

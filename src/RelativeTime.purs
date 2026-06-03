@@ -8,7 +8,7 @@ import Data.Enum (fromEnum)
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.Time.Duration (Milliseconds(..))
-import IsoInstant (parseIsoToMillis)
+import FFI (parseIsoToMillis)
 
 millisToInstant :: String -> Maybe Instant
 millisToInstant s =

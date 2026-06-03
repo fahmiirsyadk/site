@@ -16,13 +16,13 @@ import Luna.Transition (Transition, purely)
 import Pages.About as AboutPage
 import Pages.Article as ArticlePage
 import Pages.Home as HomePage
-import Types (BodyBlock, Post, Route(..), SiteManifest, TocItem, ToolCardState, defaultToolCardState)
+import Types (BodyBlock, Route(..), Section, SiteManifest, ThemeMode(..), TocItem, ToolCardState, defaultToolCardState, findPost, sectionFrom, themeModeFrom, themeModeToString)
 
 type Model =
   { route :: Route
   , manifest :: SiteManifest
   , activeTocId :: Maybe String
-  , themeMode :: String
+  , themeMode :: ThemeMode
   , terminalExpanded :: Map.Map String Boolean
   , toolCards :: Map.Map String ToolCardState
   }
@@ -41,7 +41,7 @@ data Action
   | ToolToggle String
   | ToolCardMeasured String Int
   | SetActiveToc String
-  | SetThemeMode String
+  | SetThemeMode ThemeMode
 
 app :: Model -> LunaApp.App (Const Void) (Const Void) Model Action
 app initialModel =
@@ -99,18 +99,16 @@ update model = case _ of
         model { toolCards = Map.insert id { expanded, needsExpand: needs } model.toolCards }
   SetActiveToc id ->
     purely model { activeTocId = if id == "" then Nothing else Just id }
-  SetThemeMode raw ->
-    purely model { themeMode = normalizeThemeMode raw }
+  SetThemeMode mode ->
+    purely model { themeMode = mode }
   where
   mergeContent payload post =
-    if post.section == payload.section && post.slug == payload.slug then
+    if post.section == sectionFrom payload.section && post.slug == payload.slug then
       post { bodyHtml = Just payload.bodyHtml, bodyBlocks = payload.bodyBlocks, toc = payload.toc }
     else
       post
 
-normalizeThemeMode :: String -> String
-normalizeThemeMode s =
-  if s == "dark" then "dark" else "light"
+-- Remove unused normalizeThemeMode
 
 render :: Model -> Html Action
 render model =
@@ -120,7 +118,7 @@ render model =
 
 renderStatic :: SiteManifest -> Route -> Html Action
 renderStatic manifest route =
-  siteLayout route (currentToc manifest route) Nothing "light" SetThemeMode
+  siteLayout route (currentToc manifest route) Nothing Light SetThemeMode
     (renderPage manifest route Map.empty Map.empty)
 
 -- | Prerender / SSG `<body>`: `GfxBoot.bootOverlay` + `#app` (hydrate target) + async `gfx-boot.js`.
@@ -142,22 +140,18 @@ renderPage manifest route termExp toolSt =
   case route of
     Home -> HomePage.view manifest.posts
     About -> AboutPage.view
-    SectionIndex section -> HomePage.view (Array.filter (\p -> p.section == section) manifest.posts)
-    SectionPost section slug ->
-      ArticlePage.view termExp toolSt TerminalToggle ToolToggle slug section manifest.posts
+    SectionIndex sectionStr -> HomePage.view (Array.filter (\p -> p.section == sectionFrom sectionStr) manifest.posts)
+    SectionPost sectionStr slug ->
+      ArticlePage.view termExp toolSt TerminalToggle ToolToggle slug sectionStr manifest.posts
 
 currentToc :: SiteManifest -> Route -> Array TocItem
 currentToc manifest route = case route of
-  SectionPost section slug -> maybe [] _.toc (findPostBySectionSlug manifest.posts section slug)
+  SectionPost sectionStr slug -> maybe [] _.toc (findPost manifest.posts (sectionFrom sectionStr) slug)
   _ -> []
 
-findPostBySectionSlug :: Array Post -> String -> String -> Maybe Post
-findPostBySectionSlug posts section slug =
-  Array.find (\p -> p.slug == slug && p.section == section) posts
-
 -- | Shared shell for client (`render`) and prerender (`renderStatic`). Static HTML passes no TOC
--- | highlight and default `"light"` theme; `Main.js` aligns theme controls with stored preference on boot.
-siteLayout :: Route -> Array TocItem -> Maybe String -> String -> (String -> Action) -> Html Action -> Html Action
+-- | highlight and default `Light` theme; client aligns theme controls with stored preference on boot.
+siteLayout :: Route -> Array TocItem -> Maybe String -> ThemeMode -> (ThemeMode -> Action) -> Html Action -> Html Action
 siteLayout current toc activeTocId themeMode onThemeMode pageContent =
   H.div
     [ H.classes [ "min-h-screen", "bg-[#F5F5F5]", "text-[#171717]", "antialiased", "dark:bg-neutral-950", "dark:text-neutral-100" ] ]

@@ -14,6 +14,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String as String
 import Data.String.CodeUnits as CU
+import EscapeHtml (escapeAttr, escapeHtml)
 import MarkdownIt (MdToken(..), MdAttr)
 import Types (BodyBlock(..))
 
@@ -22,17 +23,6 @@ type TocRow =
   , title :: String
   , level :: Int
   }
-
-escapeHtml :: String -> String
-escapeHtml =
-  String.replaceAll (String.Pattern "&") (String.Replacement "&amp;")
-    >>> String.replaceAll (String.Pattern "<") (String.Replacement "&lt;")
-    >>> String.replaceAll (String.Pattern ">") (String.Replacement "&gt;")
-    >>> String.replaceAll (String.Pattern "\"") (String.Replacement "&quot;")
-    >>> String.replaceAll (String.Pattern "'") (String.Replacement "&#39;")
-
-escapeAttr :: String -> String
-escapeAttr = escapeHtml
 
 renderAttrs :: Array MdAttr -> String
 renderAttrs = foldMap \a -> " " <> a.key <> "=\"" <> escapeAttr a.value <> "\""
@@ -88,12 +78,6 @@ diffFencePrefix = "diff"
 terminalFencePrefix :: String
 terminalFencePrefix = "terminal"
 
-infoWords :: String -> Array String
-infoWords s =
-  Array.filter (\w -> String.length (String.trim w) > 0)
-    $ map String.trim
-    $ String.split (String.Pattern " ") s
-
 digitsOnly :: String -> Boolean
 digitsOnly str =
   all (\c -> c >= '0' && c <= '9') (CU.toCharArray str)
@@ -148,19 +132,19 @@ parseFileAndStats parts =
 
 parseToolDisplayCardInfo :: String -> Maybe ToolDisplayMeta
 parseToolDisplayCardInfo info =
-  case Array.uncons (infoWords info) of
+  case Array.uncons (BBH.infoWords info) of
     Just { head: h, tail: tl } | h == toolDisplayCardPrefix -> Just (parseFileAndStats tl)
     _ -> Nothing
 
 parseDiffFenceInfo :: String -> Maybe ToolDisplayMeta
 parseDiffFenceInfo info =
-  case Array.uncons (infoWords info) of
+  case Array.uncons (BBH.infoWords info) of
     Just { head: h, tail: tl } | h == diffFencePrefix -> Just (parseFileAndStats tl)
     _ -> Nothing
 
 parseTerminalInfo :: String -> Maybe String
 parseTerminalInfo info =
-  case Array.uncons (infoWords info) of
+  case Array.uncons (BBH.infoWords info) of
     Just { head: h, tail: tl } | h == terminalFencePrefix -> Just (String.joinWith " " tl)
     _ -> Nothing
 

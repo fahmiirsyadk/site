@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Maybe (Maybe)
 import Effect (Effect)
-import LinkInterceptor (interceptLinks)
+import FFI (interceptLinks)
 import Luna.Routing as Routing
 import Web.DOM.Node (Node)
 

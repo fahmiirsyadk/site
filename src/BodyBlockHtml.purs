@@ -1,7 +1,7 @@
 -- | HTML string rendering for structured `BodyBlock` values (browser + build).
 -- | Kept separate from `BuildContent.MdHtml` so the client bundle does not pull markdown-it.
 module BodyBlockHtml
-  ( escapeHtml
+  ( infoWords
   , normalizeLines
   , renderBodyBlock
   , renderCopyButtonHtml
@@ -23,18 +23,8 @@ import Data.Foldable (fold, foldMap)
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.String as String
 import Data.String.CodeUnits as CU
+import EscapeHtml (escapeAttr, escapeHtml)
 import Types (BodyBlock(..))
-
-escapeHtml :: String -> String
-escapeHtml =
-  String.replaceAll (String.Pattern "&") (String.Replacement "&amp;")
-    >>> String.replaceAll (String.Pattern "<") (String.Replacement "&lt;")
-    >>> String.replaceAll (String.Pattern ">") (String.Replacement "&gt;")
-    >>> String.replaceAll (String.Pattern "\"") (String.Replacement "&quot;")
-    >>> String.replaceAll (String.Pattern "'") (String.Replacement "&#39;")
-
-escapeAttr :: String -> String
-escapeAttr = escapeHtml
 
 normalizeLines :: String -> Array String
 normalizeLines s =

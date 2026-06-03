@@ -17,7 +17,7 @@ import Data.Nullable (toMaybe)
 import Data.TransformationMatrix.Matrix4 as M
 import Data.TransformationMatrix.Rotation (Radians(..))
 import Data.TransformationMatrix.Vector3 (Vector3(..))
-import Defer (runWhenIdle)
+import FFI (runWhenIdle)
 import Effect (Effect)
 import Effect.Ref as Ref
 import Data.Foldable (for_)

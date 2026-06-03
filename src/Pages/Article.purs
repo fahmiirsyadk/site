@@ -13,7 +13,7 @@ import RelativeTime (postDateLabel)
 import Luna.Html (Html, attr, unsafeRawHtml)
 import Luna.Html as H
 import Routes (printRoutePath)
-import Types (BodyBlock(..), Post, Route(..), ToolCardState, defaultToolCardState)
+import Types (BodyBlock(..), Post, Route(..), ToolCardState, defaultToolCardState, findPost, sectionFrom, sectionToString)
 
 view
   :: forall i
@@ -26,13 +26,13 @@ view
   -> Array Post
   -> Html i
 view termExpanded toolCards onTerminalToggle onToolToggle slug section posts =
-  case Array.find (\p -> p.slug == slug && p.section == section) posts of
+  case findPost posts (sectionFrom section) slug of
     Nothing ->
       H.div [ H.classes [ "space-y-3" ] ]
         [ H.h1 [ H.classes [ "text-[12px]", "leading-[1.7]", "font-semibold", "text-[#171717]", "dark:text-neutral-100" ] ] [ H.text "Article not found" ] ]
     Just p ->
       let
-        sectionPosts = Array.filter (\post -> post.section == section) posts
+        sectionPosts = Array.filter (\post -> post.section == sectionFrom section) posts
         currentIndex = Array.findIndex (\post -> post.slug == slug) sectionPosts
         previousPost = case currentIndex of
           Just i -> Array.index sectionPosts (i + 1)
@@ -145,7 +145,7 @@ view termExpanded toolCards onTerminalToggle onToolToggle slug section posts =
                           H.div [ H.classes [ "min-h-[2.5rem]" ] ] []
                         Just prev ->
                           H.a
-                            [ H.href (printRoutePath (SectionPost prev.section prev.slug))
+                            [ H.href (printRoutePath (SectionPost (sectionToString prev.section) prev.slug))
                             , H.classes
                                 [ "flex"
                                 , "flex-col"
@@ -165,7 +165,7 @@ view termExpanded toolCards onTerminalToggle onToolToggle slug section posts =
                           H.div [ H.classes [ "min-h-[2.5rem]" ] ] []
                         Just nxt ->
                           H.a
-                            [ H.href (printRoutePath (SectionPost nxt.section nxt.slug))
+                            [ H.href (printRoutePath (SectionPost (sectionToString nxt.section) nxt.slug))
                             , H.classes
                                 [ "flex"
                                 , "flex-col"

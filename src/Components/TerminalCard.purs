@@ -6,6 +6,7 @@ import BodyBlockHtml as BBH
 import Data.Array as Array
 import Data.Maybe (fromMaybe)
 import Data.String as String
+import EscapeHtml (escapeHtml)
 import Luna.Html (Html, attr, prop, unsafeRawHtml)
 import Luna.Html as H
 import Luna.Html.Events (always_, onClick)
@@ -20,7 +21,7 @@ terminalCard expanded onToggle p =
     cmdCode s =
       H.code
         [ H.classes [ "min-w-0", "whitespace-pre-wrap", "break-words", "font-mono", "text-[13px]", "text-neutral-800", "dark:text-neutral-200" ]
-        , prop "innerHTML" (BBH.escapeHtml s)
+        , prop "innerHTML" (escapeHtml s)
         ]
         []
     cmdRow c =
@@ -55,7 +56,7 @@ terminalCard expanded onToggle p =
             [ H.pre
                 [ H.classes [ "m-0", "min-w-full", "whitespace-pre", "px-2", "py-2", "font-mono", "text-[13px]", "leading-6", "text-neutral-600", "dark:text-neutral-300" ]
                 , attr "style" "max-height:400px; overflow:auto;"
-                , prop "innerHTML" (BBH.escapeHtml p.output)
+                , prop "innerHTML" (escapeHtml p.output)
                 ]
                 []
             ]

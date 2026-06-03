@@ -10,6 +10,49 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe, maybe)
 import Foreign.Object as FO
 
+-- | Typed site section replaces bare `String` to prevent typos at compile time.
+data Section
+  = Articles
+  | Projects
+  | TIL
+  | Custom String
+
+derive instance eqSection :: Eq Section
+derive instance ordSection :: Ord Section
+
+sectionToString :: Section -> String
+sectionToString Articles = "articles"
+sectionToString Projects = "projects"
+sectionToString TIL = "til"
+sectionToString (Custom s) = s
+
+sectionFrom :: String -> Section
+sectionFrom = case _ of
+  "articles" -> Articles
+  "projects" -> Projects
+  "til" -> TIL
+  s -> Custom s
+
+instance encodeJsonSection :: EncodeJson Section where
+  encodeJson = encodeJson <<< sectionToString
+
+instance decodeJsonSection :: DecodeJson Section where
+  decodeJson j = sectionFrom <$> decodeJson j
+
+-- | Typed theme mode replaces bare `"light"` / `"dark"` strings.
+data ThemeMode
+  = Light
+  | Dark
+
+derive instance eqThemeMode :: Eq ThemeMode
+
+themeModeToString :: ThemeMode -> String
+themeModeToString Light = "light"
+themeModeToString Dark = "dark"
+
+themeModeFrom :: String -> ThemeMode
+themeModeFrom s = if s == "dark" then Dark else Light
+
 -- | Structured markdown body segments (fenced cards + prose HTML). See `docs/content-blocks.md`.
 data BodyBlock
   = BodyProseHtml String
@@ -102,7 +145,7 @@ type Post =
   , bodyHtml :: Maybe String
   , bodyBlocks :: Array BodyBlock
   , toc :: Array TocItem
-  , section :: String
+  , section :: Section
   , tags :: Array String
   , excerpt :: String
   , banner :: String
@@ -113,6 +156,18 @@ type TocItem =
   , title :: String
   , level :: Int
   }
+
+type PostContentPayload =
+  { section :: String
+  , slug :: String
+  , bodyHtml :: String
+  , bodyBlocks :: Array BodyBlock
+  , toc :: Array TocItem
+  }
+
+findPost :: Array Post -> Section -> String -> Maybe Post
+findPost posts section slug =
+  Array.find (\p -> p.slug == slug && p.section == section) posts
 
 type Thought =
   { slug :: String

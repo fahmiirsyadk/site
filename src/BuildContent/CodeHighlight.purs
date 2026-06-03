@@ -10,13 +10,7 @@ import Data.Int (rem)
 import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.String.CodeUnits as CU
-
-escapeHtml :: String -> String
-escapeHtml =
-  String.replaceAll (String.Pattern "&") (String.Replacement "&amp;")
-    >>> String.replaceAll (String.Pattern "<") (String.Replacement "&lt;")
-    >>> String.replaceAll (String.Pattern ">") (String.Replacement "&gt;")
-    >>> String.replaceAll (String.Pattern "\"") (String.Replacement "&quot;")
+import EscapeHtml (escapeHtml)
 
 keywords :: Array String
 keywords =

@@ -9,7 +9,7 @@ module ManifestSlice
 import Prelude
 
 import Data.Maybe (Maybe(..))
-import Types (Post, Route(..), SiteManifest, Thought)
+import Types (Post, Route(..), SiteManifest, Thought, sectionFrom)
 
 stripThoughtBody :: Thought -> Thought
 stripThoughtBody t = t { bodyHtml = "" }
@@ -21,7 +21,7 @@ stripPost p = p { bodyHtml = Nothing, bodyBlocks = [] }
 
 slicePostForRoute :: String -> String -> Post -> Post
 slicePostForRoute sec slug p =
-  if p.section == sec && p.slug == slug then
+  if p.section == sectionFrom sec && p.slug == slug then
     p { bodyHtml = Nothing }
   else
     stripPost p

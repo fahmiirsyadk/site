@@ -2,14 +2,14 @@ module Components.PostPreview where
 
 import Routes (printRoutePath)
 import RelativeTime (postDateLabel)
-import Types (Post, Route(..))
+import Types (Post, Route(..), sectionToString)
 import Luna.Html as H
 import Luna.Html (Html)
 
 postPreview :: forall i. Post -> Html i
 postPreview p =
   let
-    route = SectionPost p.section p.slug
+      route = SectionPost (sectionToString p.section) p.slug
   in
   H.div
     [ H.classes [ "flex", "w-full", "items-center", "gap-3", "py-2", "text-normal", "leading-[1.7]" ] ]

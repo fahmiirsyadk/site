@@ -1,35 +1,27 @@
 package:
   name: site
   dependencies:
-    - aff
     - argonaut-codecs
     - arrays
-    - canvas
     - console
     - datetime
     - effect
     - either
     - foldable-traversable
     - foreign-object
-    - integers
     - js-date
-    - js-intl
     - luna
     - markdown-it-js
     - maybe
     - node-fs
     - node-path
     - node-process
-    - now
     - nullable
     - prelude
     - routing
     - routing-duplex
-    - simple-json
     - strings
     - transformation-matrix
-    - tuples
-    - unsafe-coerce
     - web-dom
     - web-html
     - yaml-next

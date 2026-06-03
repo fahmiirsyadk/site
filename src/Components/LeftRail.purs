@@ -13,9 +13,9 @@ import Data.Maybe (Maybe)
 import Luna.Html (Html, attr)
 import Luna.Html as H
 import Routes (printRoutePath)
-import Types (Route(..), TocItem)
+import Types (Route(..), ThemeMode, TocItem)
 
-leftRail :: forall i. Route -> Array TocItem -> Maybe String -> String -> (String -> i) -> Html i
+leftRail :: forall i. Route -> Array TocItem -> Maybe String -> ThemeMode -> (ThemeMode -> i) -> Html i
 leftRail current toc activeTocId themeMode onThemeMode =
   H.div
     [ H.classes [ "contents" ] ]
@@ -44,7 +44,7 @@ railScrollable current toc activeTocId =
     [ if showTocSidebar current toc then tocBlock toc activeTocId else defaultRail current ]
 
 -- | Desktop header: logo, primary links, theme (same on every page; mobile uses the drawer).
-desktopMainChrome :: forall i. Route -> String -> (String -> i) -> Html i
+desktopMainChrome :: forall i. Route -> ThemeMode -> (ThemeMode -> i) -> Html i
 desktopMainChrome current themeMode onThemeMode =
   H.div
     [ H.classes
@@ -89,7 +89,7 @@ desktopMainChrome current themeMode onThemeMode =
     , themeToggleInline themeMode onThemeMode
     ]
 
-mobileTopNav :: forall i. Route -> Array TocItem -> Maybe String -> String -> (String -> i) -> Html i
+mobileTopNav :: forall i. Route -> Array TocItem -> Maybe String -> ThemeMode -> (ThemeMode -> i) -> Html i
 mobileTopNav current toc activeTocId themeMode onThemeMode =
   H.nav
     [ H.classes
