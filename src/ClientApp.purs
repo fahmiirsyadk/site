@@ -225,12 +225,14 @@ startClient cfg appRootNode = do
         withRouteContent maybeRoute do
           inst.pushAndRun (SiteApp.RouteChanged maybeRoute)
           syncArticleChrome maybeRoute
+          patchRelativeDates
       )
       (\path' ->
         withPathContent path' do
           let route = parseRoutePath path'
           inst.pushAndRun (SiteApp.RouteChanged route)
           syncArticleChrome route
+          patchRelativeDates
       )
       (\id -> inst.pushAndRun (SiteApp.SetActiveToc id))
   setupScrollSpy "content-scroll" \maybeId ->
