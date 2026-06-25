@@ -29,19 +29,28 @@ mkPost section baseName parsed =
     extra = extraTagsForSection section
     tags = Array.nub (baseTags <> extra)
     title = fromMaybe slug parsed.fields.title
+    resolvedTitle = if String.length title > 0 then title else slug
+    resolvedDescription = fromMaybe "" parsed.fields.description
+    resolvedExcerpt = fromMaybe "" parsed.fields.excerpt
+    resolvedBanner = fromMaybe "" parsed.fields.banner
   in
     { slug
-    , title: if String.length title > 0 then title else slug
+    , title: resolvedTitle
     , date: parsed.dateIso
-    , description: fromMaybe "" parsed.fields.description
+    , description: resolvedDescription
     , bodyHtml: Just parsed.rendered.bodyHtml
     , bodyBlocks: parsed.rendered.bodyBlocks
     , toc: parsed.rendered.toc
       , section: sectionFrom section
     , tags
-    , excerpt: fromMaybe "" parsed.fields.excerpt
-    , banner: fromMaybe "" parsed.fields.banner
+    , excerpt: resolvedExcerpt
+    , banner: resolvedBanner
+    , ogTitle: fromMaybe resolvedTitle parsed.fields.ogTitle
+    , ogDescription: fromMaybe (nonEmpty resolvedDescription resolvedExcerpt) parsed.fields.ogDescription
+    , ogImage: fromMaybe resolvedBanner parsed.fields.ogImage
     }
+  where
+    nonEmpty a b = if String.length a > 0 then a else b
 
 mkThought :: String -> ParsedDocument -> Thought
 mkThought baseName parsed =

@@ -149,6 +149,9 @@ type Post =
   , tags :: Array String
   , excerpt :: String
   , banner :: String
+  , ogTitle :: String
+  , ogDescription :: String
+  , ogImage :: String
   }
 
 type TocItem =

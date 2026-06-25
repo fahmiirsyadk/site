@@ -290,6 +290,14 @@ export const patchRelativeDates = () => {
     const t = parseIsoToMillis(iso);
     if (t < 0) return;
     const label = formatAgo(now - t);
-    if (el.textContent !== label) el.textContent = label;
+    // Defensive: replace all children with a single text node, regardless
+    // of what the current DOM state is. `el.textContent = label` already
+    // does this, but we go through explicit node replacement to avoid any
+    // browser/extension interaction that could leave stale text behind.
+    if (el.firstChild && el.firstChild.nodeType === 3 && el.childNodes.length === 1) {
+      if (el.firstChild.nodeValue !== label) el.firstChild.nodeValue = label;
+    } else if (el.textContent !== label) {
+      el.textContent = label;
+    }
   });
 };

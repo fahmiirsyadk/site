@@ -39,6 +39,9 @@ type FrontFields =
   , tags :: Maybe (Array String)
   , status :: Maybe String
   , pinned :: Maybe Boolean
+  , ogTitle :: Maybe String
+  , ogDescription :: Maybe String
+  , ogImage :: Maybe String
   }
 
 type RenderedBody =
@@ -106,6 +109,9 @@ parseFrontFields j =
       , tags: Nothing
       , status: Nothing
       , pinned: Nothing
+      , ogTitle: Nothing
+      , ogDescription: Nothing
+      , ogImage: Nothing
       }
     Just o ->
       let
@@ -120,6 +126,9 @@ parseFrontFields j =
         , tags: lk "tags" >>= readJsonStringArray
         , status: lk "status" >>= readJsonString
         , pinned: lk "pinned" >>= hush <<< decodeJson
+        , ogTitle: lk "ogTitle" >>= readJsonString
+        , ogDescription: lk "ogDescription" >>= readJsonString
+        , ogImage: lk "ogImage" >>= readJsonString
         }
 
 yamlToFrontFields :: String -> FrontFields

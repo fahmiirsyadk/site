@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "content": "pnpm exec spago run -p site --main BuildContentMain",
-    "copy:assets": "mkdir -p dist/assets dist/fonts && (cp -r public/assets/* dist/assets/ 2>/dev/null || true) && (cp -r public/fonts/* dist/fonts/ 2>/dev/null || true) && cp public/gfx-boot.js dist/gfx-boot.js",
-    "css": "mkdir -p dist/css && BROWSERSLIST_IGNORE_OLD_DATA=1 pnpm exec tailwindcss -c tailwind.config.cjs -i ./css/style.css -o ./dist/css/style.css --minify",
+    "copy:assets": "node scripts/fsx.mjs mkdir dist/assets dist/fonts && node scripts/fsx.mjs cp -r public/assets dist/assets && node scripts/fsx.mjs cp -r public/fonts dist/fonts && node scripts/fsx.mjs cp public/gfx-boot.js dist/gfx-boot.js",
+    "css": "node scripts/fsx.mjs mkdir dist/css && cross-env BROWSERSLIST_IGNORE_OLD_DATA=1 pnpm exec tailwindcss -c tailwind.config.cjs -i ./css/style.css -o ./dist/css/style.css --minify",
     "prerender": "pnpm exec spago run -p site --main PrerenderMain",
     "shaders": "node scripts/glsl-to-inline.mjs",
-    "bundle": "pnpm run shaders && mkdir -p dist && pnpm exec spago bundle -p site --platform browser --bundle-type app --module Main --outfile dist/app.js && cp public/gfx-boot.js dist/gfx-boot.js",
-    "bundle:prod": "pnpm run shaders && mkdir -p dist && pnpm exec purs-backend-es build --int-tags && pnpm exec purs-backend-es bundle-app -m Main -p browser --minify --no-build -t dist/app.js && cp public/gfx-boot.js dist/gfx-boot.js",
+    "bundle": "pnpm run shaders && node scripts/fsx.mjs mkdir dist && pnpm exec spago bundle -p site --platform browser --bundle-type app --module Main --outfile dist/app.js && node scripts/fsx.mjs cp public/gfx-boot.js dist/gfx-boot.js",
+    "bundle:prod": "pnpm run shaders && node scripts/fsx.mjs mkdir dist && pnpm exec purs-backend-es build --int-tags && pnpm exec purs-backend-es bundle-app -m Main -p browser --minify --no-build -t dist/app.js && node scripts/fsx.mjs cp public/gfx-boot.js dist/gfx-boot.js",
     "bundle:with-css": "pnpm run bundle && pnpm run css",
     "bundle:prod:with-css": "pnpm run bundle:prod && pnpm run css",
     "bundle:report": "node scripts/bundle-breakdown.mjs",
@@ -18,7 +18,8 @@
     "build": "pnpm run content && pnpm run spago:build && pnpm run bundle:prod && pnpm run prerender && pnpm run css && pnpm run copy:assets",
     "serve": "serve dist -l 8080",
     "tunnel": "cloudflared tunnel run --token \"$CLOUDFLARED_TUNNEL_TOKEN\"",
-    "format": "purs-tidy format-in-place src"
+    "format": "purs-tidy format-in-place src",
+    "postinstall": "node scripts/postinstall.mjs"
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",
+    "cross-env": "^7.0.3",
     "esbuild": "^0.28.0",
     "purescript": "0.15.15",
     "purs-backend-es": "1.4.3",

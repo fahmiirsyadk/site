@@ -17,7 +17,7 @@ import Node.FS.Perms (permsAll)
 import Node.FS.Sync as FS
 import Node.Path (concat, dirname)
 import Node.Process (cwd, exit', lookupEnv)
-import Prerender.Config (mkHeadConfig)
+import Prerender.Config (SiteMeta, loadSiteMeta, mkHeadConfig)
 import Prerender.Document (renderPage, toOutputFile)
 import Prerender.Pages as Pages
 import Routes (printRoutePath)
@@ -60,8 +60,8 @@ writeSiteManifest outDir manifest =
     (concat [ outDir, "site-manifest.json" ])
     (toJsonString (encodeJson (manifestForSiteIndexJson manifest)))
 
-writeRoutePages :: String -> String -> Maybe Int -> SiteManifest -> Effect Unit
-writeRoutePages buildHash outDir mbInlineLimit manifest =
+writeRoutePages :: String -> SiteMeta -> String -> Maybe Int -> SiteManifest -> Effect Unit
+writeRoutePages buildHash site outDir mbInlineLimit manifest =
   for_ (Pages.allRoutes manifest) \route -> do
     let slicedManifest = sliceManifest route manifest
         slicedJson = toJsonString (encodeJson slicedManifest)
@@ -76,13 +76,15 @@ writeRoutePages buildHash outDir mbInlineLimit manifest =
         outputDir = dirname outputFile
     when (outputDir /= ".") do
       ensureDir (concat [ outDir, outputDir ])
-    let doc = renderPage (mkHeadConfig buildHash) manifest route
+    let doc = renderPage (mkHeadConfig site buildHash) manifest route
     FS.writeTextFile Enc.UTF8 (concat [ outDir, outputFile ]) doc
 
 main :: Effect Unit
 main = do
   projectRoot <- cwd
   buildHash <- buildTimestamp
+  site <- loadSiteMeta
+  log $ "Site meta: " <> site.siteUrl
   let outDir = concat [ projectRoot, "dist" ]
   ensureDir outDir
   manifestResult <- readSiteManifest
@@ -92,5 +94,5 @@ main = do
       mbInlineLimit <- readInlineModelLimit
       writeSiteManifest outDir manifest
       for_ manifest.posts (writePostPayload outDir)
-      writeRoutePages buildHash outDir mbInlineLimit manifest
+      writeRoutePages buildHash site outDir mbInlineLimit manifest
       log "Prerendered site to dist/"

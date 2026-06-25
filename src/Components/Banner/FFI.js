@@ -49,18 +49,26 @@ function parseHexColor(hex) {
 }
 
 function resizeToDisplaySize(handle) {
-  const rect = handle.canvas.getBoundingClientRect();
+  const { image, canvas } = handle;
+  if (image && image.naturalWidth > 0 && image.naturalHeight > 0) {
+    const aspect = image.naturalWidth / image.naturalHeight;
+    const targetHeight = Math.round(canvas.clientWidth / aspect);
+    if (Math.abs(canvas.clientHeight - targetHeight) > 0.5) {
+      canvas.style.height = `${targetHeight}px`;
+    }
+  }
+  const rect = canvas.getBoundingClientRect();
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const width = Math.max(1, Math.round(rect.width * dpr));
   const height = Math.max(1, Math.round(rect.height * dpr));
-  if (handle.canvas.width !== width || handle.canvas.height !== height) {
-    handle.canvas.width = width;
-    handle.canvas.height = height;
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
   }
   handle.gl.viewport(0, 0, width, height);
 }
 
-function updateContainGeometry(handle) {
+function updateCoverGeometry(handle) {
   const { image, canvas } = handle;
   if (!image || image.naturalWidth <= 0 || image.naturalHeight <= 0) return;
 
@@ -70,9 +78,9 @@ function updateContainGeometry(handle) {
   let sy = 1.0;
 
   if (imageAspect > canvasAspect) {
-    sy = canvasAspect / imageAspect;
-  } else {
     sx = imageAspect / canvasAspect;
+  } else {
+    sy = canvasAspect / imageAspect;
   }
 
   const pos = new Float32Array([
@@ -94,7 +102,7 @@ function draw(handle) {
   gl.uniform3f(handle.uColorDark, handle.colorDark[0], handle.colorDark[1], handle.colorDark[2]);
   gl.clear(gl.COLOR_BUFFER_BIT);
   if (!image || !handle.textureReady) return;
-  updateContainGeometry(handle);
+  updateCoverGeometry(handle);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 }
 

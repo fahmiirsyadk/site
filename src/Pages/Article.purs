@@ -95,12 +95,12 @@ view termExpanded toolCards onTerminalToggle onToolToggle slug section posts =
                   [ H.text (postDateLabel p.date) ]
               ]
           , H.div
-              [ H.classes [ "flex", "h-48", "w-full", "items-center", "justify-center", "overflow-hidden" ] ]
+              [ H.classes [ "flex", "w-full", "items-center", "justify-center", "overflow-hidden" ] ]
               [ H.canvas
                   [ H.id_ "article-banner-canvas"
                   , attr "aria-label" (p.title <> " banner")
-                  , H.classes [ "block", "h-full", "w-full" ]
-                  , attr "style" "display:block;width:100%;height:192px;"
+                  , H.classes [ "block", "w-full" ]
+                  , attr "style" "display:block;width:100%;height:auto;"
                   ]
               ]
           , H.div
