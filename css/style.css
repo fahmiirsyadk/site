@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Inter + Instrument Serif: linked from prerendered HTML for parallel fetch (see PrerenderMain). */
-
 @layer base {
   html {
     @apply h-full scroll-smooth;
@@ -26,7 +24,6 @@
   }
 }
 
-/* Sea only: short canvas, horizon at top; page bg shows through transparent sky in light mode. */
 #sea-canvas {
   display: block;
   width: 100%;
@@ -40,12 +37,10 @@
   }
 }
 
-/* Same hex as Tailwind neutral-900 / #content-scroll; backs the GL surface so edges match sRGB. */
 html.dark #sea-canvas {
   background-color: rgb(21,21,21);
 }
 
-/* WebGL mount failed (`data-sea-footer-error` from Main.js): match page bg so the band is not empty white. */
 #sea-canvas[data-sea-footer-error="1"] {
   background-color: rgb(245, 245, 245);
 }
@@ -53,97 +48,13 @@ html.dark #sea-canvas[data-sea-footer-error="1"] {
   background-color: rgb(21, 21, 21);
 }
 
-/* On desktop we want `#content-scroll` to be the only vertical scroller. */
 @media (min-width: 768px) {
   body {
     overflow-y: hidden;
   }
-
-  /* Prevent scroll anchoring jumps inside the real scroller. */
   #content-scroll {
     overflow-anchor: none;
   }
-}
-
-/* Fenced tool/diff/terminal cards — contract: docs/content-blocks.md */
-[data-component="tool-display-card"] .tool-display-body {
-  max-height: 200px;
-  overflow: hidden;
-  transition: max-height 0.3s ease-in-out;
-  mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 1rem), transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 1rem), transparent 100%);
-}
-
-[data-component="tool-display-card"] {
-  overflow-anchor: none;
-  contain: layout paint;
-}
-
-[data-component="tool-display-card"].is-expanded .tool-display-body {
-  max-height: min(70vh, 42rem);
-  overflow: auto;
-  mask-image: none;
-  -webkit-mask-image: none;
-}
-
-.terminal-card {
-  contain: layout paint;
-  overflow-anchor: none;
-}
-
-.terminal-card button svg {
-  transition: transform 0.2s ease;
-}
-
-/* Luna header uses `button` + `aria-expanded`; string terminals use `data-terminal-toggle` on the same button. */
-.terminal-card button[aria-expanded="true"] .terminal-chevron {
-  transform: rotate(90deg);
-}
-
-.terminal-card button[aria-expanded="false"] .terminal-chevron {
-  transform: rotate(0deg);
-}
-
-.terminal-copy[data-copied="1"]::after {
-  content: "Copied";
-  position: absolute;
-  right: 0;
-  top: -0.4rem;
-  transform: translateY(-100%);
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.375rem;
-  background: #171717;
-  color: #fff;
-  font-size: 11px;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.tool-display-chevron {
-  transition: transform 0.2s ease;
-}
-
-/* Tool/diff islands + string cards: footer button + aria-expanded (terminals use .terminal-card, excluded). */
-[data-component="tool-display-card"]:not(.terminal-card) button.tool-display-expand-btn[aria-expanded="true"]
-  .tool-display-chevron {
-  transform: rotate(180deg);
-}
-
-[data-component="tool-display-card"]:not(.terminal-card) button.tool-display-expand-btn[aria-expanded="false"]
-  .tool-display-chevron {
-  transform: rotate(0deg);
-}
-
-/* Short snippets: full height, no expand row (see measureToolCards in Main.js). */
-[data-component="tool-display-card"].tool-display-card--no-expand .tool-display-body {
-  max-height: none;
-  overflow: visible;
-  mask-image: none;
-  -webkit-mask-image: none;
-}
-
-[data-component="tool-display-card"].tool-display-card--no-expand .tool-display-expand-btn {
-  display: none;
 }
 
 @layer utilities {
@@ -166,7 +77,6 @@ html.dark #sea-canvas[data-sea-footer-error="1"] {
   }
 }
 
-/* `unsafeRawHtml` wrapper: child SVG is absolutely positioned; span full overlay so mask IDs resolve predictably. */
 .gfx-boot-overlay > .luna-raw-html {
   position: absolute;
   inset: 0;
@@ -174,7 +84,6 @@ html.dark #sea-canvas[data-sea-footer-error="1"] {
   overflow: hidden;
 }
 
-/* Same grid as canvas holes: black rects in SVG mask punch out chrome (`public/gfx-boot.js`). */
 #gfx-boot-chrome {
   mask-image: url(#gfx-boot-chrome-cut-mask);
   mask-mode: luminance;
@@ -198,3 +107,75 @@ html.dark #sea-canvas[data-sea-footer-error="1"] {
   letter-spacing: 0.02em;
 }
 
+/* Article cover: banner image rendered as an ordered-dither duotone (js/cover.js) */
+.post-cover {
+  position: relative;
+  aspect-ratio: 16 / 7;
+  background-color: #eceae6;
+}
+html.dark .post-cover {
+  background-color: rgb(21, 21, 21);
+}
+.post-cover > img {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+.cover-scene {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.cover-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  height: 100%;
+  width: 100%;
+  image-rendering: pixelated;
+}
+
+/* duotone palette — consumed by js/cover.js via getComputedStyle */
+:root {
+  --duotone-dark: #ff4b26;   /* shadows -> accent orange */
+  --duotone-light: #ffffff;  /* highlights -> white */
+}
+html.dark {
+  --duotone-dark: #ff4b26;
+  --duotone-light: #f2f2f2;
+}
+
+/* Pandoc footnotes: the prose layer strips list markers, restore them here */
+.prose .footnotes {
+  margin-top: 2.5rem;
+  border-top: 1px solid #e5e5e5;
+  padding-top: 1rem;
+  font-size: 0.85em;
+  color: rgb(115, 115, 115);
+}
+html.dark .prose .footnotes {
+  border-top-color: rgb(38, 38, 38);
+  color: rgb(163, 163, 163);
+}
+.prose .footnotes ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+.prose .footnotes li {
+  margin: 0.35rem 0;
+}
+.prose .footnotes li::marker {
+  color: rgb(163, 163, 163);
+}
+.prose a.footnote-ref,
+.prose a.footnote-ref:hover {
+  text-decoration: none;
+  font-weight: 500;
+}
+.prose a.footnote-ref sup,
+.prose sup a {
+  font-variant-numeric: normal;
+}
