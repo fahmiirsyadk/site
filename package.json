@@ -3,8 +3,8 @@
   "private": true,
   "description": "CSS toolchain only for TailwindDX on the Haskell blog built with Shake+Lucid+Slick.",
   "scripts": {
-    "css:dev": "tailwindcss --watch -i ./src/input.css -o ./build/static/tailwind.css",
-    "css:build": "tailwindcss -i ./src/input.css -o ./build/static/tailwind.css --minify"
+    "css:dev": "tailwindcss --watch -i ./css/style.css -o ./build/css/style.css",
+    "css:build": "tailwindcss -i ./css/style.css -o ./build/css/style.css --minify"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",

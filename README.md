@@ -49,3 +49,13 @@ cabal run site -- serve --port 3000
 > source (`src/`, `app/`) require restarting the server to recompile the binary.
 
 The generated site is written to `build/` (git-ignored).
+
+## Deploy
+
+The site is fully static. Build it, then publish the generated `build/`
+directory to Cloudflare Pages (currently uploaded manually via the dashboard):
+
+```sh
+cabal run site        # writes the static site to ./build
+# then drag-and-drop ./build into Cloudflare Pages
+```
