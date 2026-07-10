@@ -115,7 +115,10 @@
   // Fetch happens BEFORE the view transition so the cross-fade snapshot isn't
   // held open across the network round-trip.
   function navigate(path) {
-    return fetch(path, { headers: { Accept: "text/html" } })
+    return fetch(path, {
+      cache: "no-cache",
+      headers: { Accept: "text/html" }
+    })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.text();

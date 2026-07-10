@@ -13,3 +13,5 @@ dist-newstyle/
 build/
 # Local agent data
 .claude/
+.pi/*
+AGENTS.md

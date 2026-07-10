@@ -148,6 +148,48 @@ html.dark {
   --duotone-light: #f2f2f2;
 }
 
+/* Match Tailwind Typography's generated pre selector explicitly. The theme
+   config also emits light pre variables for DEFAULT and prose-neutral; this
+   rule makes the light-mode surface independent of variable inheritance. */
+html:not(.dark) .prose :where(pre):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  color: #404040;
+  background-color: #ffffff;
+  border: 1px solid #e5e5e5;
+  font-weight: 500;
+}
+html:not(.dark) .prose code.sourceCode {
+  color: inherit;
+  background-color: transparent;
+}
+html.dark .prose pre {
+  border: 1px solid #262626;
+}
+
+/* Plaintext blocks are hand-drawn diagrams, not source-code cards. Remove
+   Typography's frame and padding so the diagram's own box characters define
+   its edges; unit line-height keeps consecutive │ glyphs visually joined. */
+.prose pre.text,
+html.dark .prose pre.text {
+  margin: 2rem 0;
+  padding-left: 0;
+  padding-right: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  /* font-family: Menlo, "DejaVu Sans Mono", Consolas, "Liberation Mono", monospace; */
+  font-weight: 500;
+  line-height: 1;
+}
+.prose pre.text > code {
+  display: block;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  line-height: inherit;
+}
+
 /* Pandoc footnotes: the prose layer strips list markers, restore them here */
 .prose .footnotes {
   margin-top: 2.5rem;

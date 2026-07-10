@@ -161,7 +161,7 @@ buildRules = do
     paths <- getDirectoryFiles "." [contentGlob]
     need (map postOutPath paths)
     forM_ allSections (\s -> need [sectionOutPath (sectionLabel s)])
-    need ["build/index.html", "build/about/index.html", "build/css/style.css", "build/gfx.js", "build/spa.js", "build/theme.js", "build/cover.js"]
+    need ["build/index.html", "build/about/index.html", "build/_headers", "build/css/style.css", "build/gfx.js", "build/spa.js", "build/theme.js", "build/cover.js"]
     pubs <- getDirectoryFiles "." ["public/assets//**", "public/fonts//**"]
     need (map (\p -> "build" </> makeRelative "public" p) pubs)
 
@@ -201,6 +201,10 @@ buildRules = do
     hsFiles <- getDirectoryFiles "" ["app//*.hs", "src//*.hs"]
     need hsFiles
     command [Cwd "."] "npx" ["tailwindcss", "-i", "css/style.css", "-o", out]
+
+  "build/_headers" %> \out -> do
+    need ["public/_headers"]
+    copyFile' "public/_headers" out
 
   "build/gfx.js" %> \out -> do
     need ["gfx/gfx.js"]
