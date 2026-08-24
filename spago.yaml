@@ -1,0 +1,55 @@
+package:
+  name: site-ps
+  dependencies:
+    - arrays: ">=7.3.0 <8.0.0"
+    - console: ">=6.1.0 <7.0.0"
+    - effect: ">=4.0.0 <5.0.0"
+    - functions: ">=6.0.0 <7.0.0"
+    - integers: ">=6.0.0 <7.0.0"
+    - numbers: ">=9.0.1 <10.0.0"
+    - prelude: ">=6.0.2 <7.0.0"
+    - strings: ">=6.0.1 <7.0.0"
+  test:
+    main: Test.Main
+    dependencies: []
+workspace:
+  backend:
+    cmd: node
+    args:
+      - scripts/purs-ts-backend.mjs
+      - build
+      - --runtime
+      - effect
+      - --adt-runtime
+      - constructor
+      - --corefn-dir
+      - output
+      - --module
+      - App.Entry
+      - --module
+      - App.Core
+      - --module
+      - App.Route
+      - --module
+      - App.View
+      - --module
+      - Content.Repository
+      - --module
+      - Domain.Content
+      - --module
+      - Runtime.Canvas
+      - --module
+      - Runtime.Dither
+      - --module
+      - Runtime.Frame
+      - --module
+      - Runtime.HollowGeometry
+      - --module
+      - Runtime.HollowMotion
+      - --module
+      - Runtime.Scribble
+      - --module
+      - Runtime.SeaMotion
+  buildOpts:
+    output: output
+  extraPackages: {}

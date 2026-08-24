@@ -1,5 +1,0 @@
-# The site uses stable HTML, CSS, and JavaScript URLs. Keep cached responses,
-# but require browsers and intermediary caches to validate their ETag before
-# reuse so a new Pages deployment is visible after a normal reload.
-/*
-  Cache-Control: public, no-cache, must-revalidate

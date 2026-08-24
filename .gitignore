@@ -1,7 +1,14 @@
-# Node / Tailwind toolchain
+# Node / TypeScript toolchain
 node_modules/
 package-lock.json
 npm-debug.log*
+dist/
+.vite/
+
+# PureScript / Spago generated output
+.spago/
+output/
+/purs
 
 # Haskell / Cabal
 dist-newstyle/
