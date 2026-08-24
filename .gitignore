@@ -7,8 +7,10 @@ dist/
 
 # PureScript / Spago generated output
 .spago/
+/corefn/
 output/
 /purs
+.purs-ts-roots
 
 # Haskell / Cabal
 dist-newstyle/

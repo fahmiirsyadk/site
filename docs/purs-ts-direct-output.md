@@ -6,10 +6,10 @@ This branch uses the TypeScript backend as the application boundary:
 PureScript source
       │ purs / Spago
       ▼
-CoreFn in output/
+CoreFn/docs in corefn/
       │ purs-ts backend
       ▼
-output/**/*.ts
+generated TypeScript in output/**/*.ts
       │ Vite / Node
       ▼
 browser application
@@ -92,12 +92,14 @@ pnpm build
 pnpm dev
 ```
 
-`build:ps` clears generated `output/`, runs Spago, and invokes the backend for
-the selected application modules. `check:generated` fails if a required host
-root is missing, any `.js` artifact exists, or generated TypeScript imports
-JavaScript. `pnpm build` then runs the Vite production build and metadata
-prerender. `pnpm dev` performs the same initial backend build before Vite starts;
-the Vite plugin rebuilds and reloads after `.purs` or Interop `.ts` changes.
+`build:ps` discovers direct PureScript imports from the TypeScript host into
+`.purs-ts-roots`, clears both `corefn/` and generated `output/`, runs Spago, and
+invokes the backend with the roots manifest. `check:generated` fails if a
+required host root is missing, any `.js` artifact exists, or generated
+TypeScript imports JavaScript. `pnpm build` then runs the Vite production build
+and metadata prerender. `pnpm dev` performs the same initial backend build
+before Vite starts; the Vite plugin rebuilds and reloads after `.purs` or Interop
+`.ts` changes.
 
 Agents should use the command contract documented in `AGENTS.md`. A successful
 compile prints `Compiling with backend "node"` followed by `Backend build

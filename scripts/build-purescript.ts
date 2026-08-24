@@ -3,6 +3,8 @@ import { delimiter, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
+import { writePureScriptRoots } from "./purs-ts-roots.js";
+
 const projectRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const localBin = resolve(projectRoot, "node_modules", ".bin");
 const spago = resolve(
@@ -11,7 +13,10 @@ const spago = resolve(
 );
 
 export const buildPureScript = (): number => {
+  rmSync(resolve(projectRoot, "corefn"), { recursive: true, force: true });
   rmSync(resolve(projectRoot, "output"), { recursive: true, force: true });
+  const roots = writePureScriptRoots(projectRoot);
+  console.log(`purs-ts roots: ${roots.length} direct host root(s)`);
   const pathEntries = [
     existsSync(resolve(projectRoot, "purs")) ? projectRoot : undefined,
     localBin,

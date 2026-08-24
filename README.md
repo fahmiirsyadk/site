@@ -16,6 +16,10 @@ pnpm preview
 `purs-backend-ts` is installed from the vendored archive under `vendor/`, so
 normal development does not require a sibling backend repository or an npm
 release. `pnpm check:backend` verifies the archive checksum and installed CLI.
+The PureScript compiler products live under `corefn/`; generated TypeScript
+modules live under `output/`. `scripts/build-purescript.ts` regenerates the
+`.purs-ts-roots` manifest from direct TypeScript host imports, so `spago.yaml`
+does not need a hardcoded module list.
 
 The production build writes the SPA bundle under `dist/`, prerenders unique
 document metadata for every public route, and emits `sitemap.xml` and

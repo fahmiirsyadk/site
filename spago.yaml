@@ -23,33 +23,11 @@ workspace:
       - --adt-runtime
       - constructor
       - --corefn-dir
+      - corefn
+      - --ts-output-dir
       - output
-      - --module
-      - App.Entry
-      - --module
-      - App.Core
-      - --module
-      - App.Route
-      - --module
-      - App.View
-      - --module
-      - Content.Repository
-      - --module
-      - Domain.Content
-      - --module
-      - Runtime.Canvas
-      - --module
-      - Runtime.Dither
-      - --module
-      - Runtime.Frame
-      - --module
-      - Runtime.HollowGeometry
-      - --module
-      - Runtime.HollowMotion
-      - --module
-      - Runtime.Scribble
-      - --module
-      - Runtime.SeaMotion
+      - --roots-file
+      - .purs-ts-roots
   buildOpts:
-    output: output
+    output: corefn
   extraPackages: {}
