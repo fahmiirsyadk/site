@@ -30,12 +30,13 @@ The old declaration bridge is no longer part of the build:
 - `generate:types` is no longer a build step.
 - TypeScript consumers import generated modules from `output/` directly.
 
-The backend wrapper is [`scripts/purs-ts-backend.mjs`](../scripts/purs-ts-backend.mjs).
-By default it resolves the installed, self-contained package at
+Spago invokes the installed, self-contained backend directly at
 `node_modules/purs-backend-ts/dist/purs-ts.mjs`. The package comes from the
 versioned tarball under `vendor/`, so builds do not require a sibling backend
-checkout or npm publication. A backend developer can set `PURS_TS_BACKEND` to
-an alternate CLI path explicitly.
+checkout, a compiler wrapper, or npm publication. The only site script involved
+in this phase is `scripts/build-purescript.ts`, which discovers host roots and
+delegates the build to Spago; the backend command itself is owned by
+`spago.yaml`.
 
 ## TypeScript FFI boundary
 

@@ -16,7 +16,7 @@ workspace:
   backend:
     cmd: node
     args:
-      - scripts/purs-ts-backend.mjs
+      - node_modules/purs-backend-ts/dist/purs-ts.mjs
       - build
       - --runtime
       - effect

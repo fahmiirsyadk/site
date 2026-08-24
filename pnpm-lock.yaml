@@ -1964,7 +1964,7 @@ packages:
     hasBin: true
 
   purs-backend-ts@file:vendor/purs-backend-ts-0.1.0.tgz:
-    resolution: {integrity: sha512-/4jTtwoCDt+b3xOIVeIAGOHpYxcTCR8lCKew2i3qBgmKBR/28kYShAK7fKPAoC+Rgle97LX5rZnpphjwupDVGg==, tarball: file:vendor/purs-backend-ts-0.1.0.tgz}
+    resolution: {integrity: sha512-6nnAyr9kUU0GOuGZpwfxX7kZzDvbHadSUZ1GSRAkRVvL02+js3G20qvgvxRirp0wLf7KrJk2WWZ0sKUdGjIqqg==, tarball: file:vendor/purs-backend-ts-0.1.0.tgz}
     version: 0.1.0
     engines: {node: '>=22'}
     hasBin: true
