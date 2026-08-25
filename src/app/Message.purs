@@ -17,11 +17,17 @@ data Message
   | LoadedTheme Theme.Theme
   | SelectedTheme Theme.Theme
   | CompletedLoadExternal
+  | FailedLoadExternal
   | CompletedMountSeaShader
-  | CompletedMountDitheredImage
   | CompletedMountHollowMark
   | CompletedMountRandomScribble
+  | FailedMountSeaShader
+  | FailedMountHollowMark
+  | FailedMountRandomScribble
   | CompletedPersistTheme
+  | FailedReadTheme
+  | FailedPersistTheme
   | CompletedResetScroll
+  | FailedResetScroll
   | CompletedSyncDocumentMetadata
-  | Unknown String
+  | FailedSyncDocumentMetadata

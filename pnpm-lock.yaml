@@ -63,6 +63,9 @@ importers:
       purescript:
         specifier: 0.15.16
         version: 0.15.16(bluebird@3.7.2)(supports-color@10.2.2)
+      purescript-foldkit:
+        specifier: file:vendor/purescript-foldkit-0.1.0.tgz
+        version: file:vendor/purescript-foldkit-0.1.0.tgz(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))
       purs-backend-ts:
         specifier: file:vendor/purs-backend-ts-0.1.0.tgz
         version: file:vendor/purs-backend-ts-0.1.0.tgz
@@ -1954,6 +1957,14 @@ packages:
   pure-rand@8.4.2:
     resolution: {integrity: sha512-vvuOGgcuPJAirlHvuQw1TrOiw7ptaIXXmIbNuiNOY6lNGJJH49PQ1Kj4nd783nPdQhQdicgOjVI2yI/9BD6/Ng==}
 
+  purescript-foldkit@file:vendor/purescript-foldkit-0.1.0.tgz:
+    resolution: {integrity: sha512-ta5+jBl4wCvGamrxfnIXcp97bY4c9Kr/GsL0hOQo30lLFchkK5MRKxRYvBLY31cF3P51AuoDiFAzQzuwYObH+A==, tarball: file:vendor/purescript-foldkit-0.1.0.tgz}
+    version: 0.1.0
+    engines: {node: '>=22'}
+    peerDependencies:
+      effect: 4.0.0-rc.111
+      foldkit: 0.151.0
+
   purescript-installer@0.3.5:
     resolution: {integrity: sha512-w04BBvW4BSQlspLsZ9Bs5vtUBZqvC4bC+FizC5GUp2/rpmYvXJ0CTf79Q3MKo2A8p1ZjqbhCI+SqdTQ30UZUIQ==}
     engines: {node: '>=12'}
@@ -1964,7 +1975,7 @@ packages:
     hasBin: true
 
   purs-backend-ts@file:vendor/purs-backend-ts-0.1.0.tgz:
-    resolution: {integrity: sha512-vHMgvYNU+0w44Hd/M7zHXZJLnenFEFfQg6zbKGLeHywYd8Y6z10K0bb5cmk7gUzWIqf1hm6XEM9ca6tIp/mccw==, tarball: file:vendor/purs-backend-ts-0.1.0.tgz}
+    resolution: {integrity: sha512-M3dDzqMsfXGK9yzonUbi9PF9dTwYA5z/Wja6wUtoQhchcTWDtcy9NJIH2n3Er7oNLJDCQbR5RirBNbD2C0lfaA==, tarball: file:vendor/purs-backend-ts-0.1.0.tgz}
     version: 0.1.0
     engines: {node: '>=22'}
     hasBin: true
@@ -4141,6 +4152,11 @@ snapshots:
   punycode@2.3.1: {}
 
   pure-rand@8.4.2: {}
+
+  purescript-foldkit@file:vendor/purescript-foldkit-0.1.0.tgz(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111)):
+    dependencies:
+      effect: 4.0.0-rc.111
+      foldkit: 0.151.0(effect@4.0.0-rc.111)
 
   purescript-installer@0.3.5(bluebird@3.7.2)(supports-color@10.2.2):
     dependencies:

@@ -5,18 +5,17 @@ import Prelude
 import Component.Icon as Icon
 import Data.Array as Array
 import App.Site as Site
-import Interop.Foldkit as FK
-import Interop.Foldkit.Html as HH
-import Interop.Foldkit.Prop as HP
+import Foldkit.Html as HH
+import Foldkit.Html.Prop as HP
 import Page.Home.Model as Home
 
-view :: forall message. Home.Status -> FK.Child message
+view :: forall message. Home.Status -> HH.Child message
 view status =
   HH.span [ HP.class_ "github-preview group/github relative inline-block" ]
     [ HH.a
-        [ HP.attr "href" Site.githubProfileUrl
-        , HP.attr "target" "_blank"
-        , HP.attr "rel" "noreferrer"
+        [ HP.href Site.githubProfileUrl
+        , HP.target "_blank"
+        , HP.rel "noreferrer"
         , HP.class_ "underline decoration-dotted decoration-neutral-400 underline-offset-4 hover:text-[#FF4B26]"
         ]
         [ Icon.github
@@ -27,8 +26,8 @@ view status =
         ]
         [ HH.span [ HP.class_ "flex items-center gap-2.5" ]
             [ HH.img
-                [ HP.attr "src" Site.githubAvatarUrl
-                , HP.attr "alt" ""
+                [ HP.src Site.githubAvatarUrl
+                , HP.alt ""
                 , HP.class_ "h-8 w-8 rounded-full"
                 ] []
             , HH.span [ HP.class_ "flex min-w-0 flex-col leading-tight" ]
@@ -40,7 +39,7 @@ view status =
         ]
     ]
 
-activity :: forall message. Home.Status -> FK.Child message
+activity :: forall message. Home.Status -> HH.Child message
 activity status = case status of
   Home.Loading ->
     HH.span [ HP.class_ "mt-3 block h-14 w-full animate-pulse rounded-sm bg-neutral-100 dark:bg-neutral-800" ] []
@@ -51,13 +50,13 @@ activity status = case status of
       [ HH.span [ HP.class_ "github-contribution-grid mt-3 grid w-full grid-flow-col grid-rows-4 gap-[2px]" ]
           (Array.mapWithIndex
             (\index level -> HH.keyed "i" (show index)
-              [ HP.attr "data-level" (show level)
+              [ HP.dataAttribute "level" (show level)
               , HP.class_ "github-contribution block aspect-square w-full rounded-[1px]"
               ] [])
             github.levels)
       , HH.span [ HP.class_ "mt-2 flex items-center gap-1.5 text-[10px] text-neutral-400" ]
           [ HH.span [] [ HH.strong [ HP.class_ "font-semibold text-neutral-600 dark:text-neutral-300" ] [ HH.text (show github.contributions) ], HH.text " contributions" ]
-          , HH.span [ HP.attr "aria-hidden" "true" ] [ HH.text "·" ]
+          , HH.span [ HP.ariaHidden true ] [ HH.text "·" ]
           , HH.span [] [ HH.strong [ HP.class_ "font-semibold text-neutral-600 dark:text-neutral-300" ] [ HH.text (show github.followers) ], HH.text " followers" ]
           ]
       ]

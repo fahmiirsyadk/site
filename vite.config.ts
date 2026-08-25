@@ -5,13 +5,11 @@ import { defineConfig } from 'vite'
 import { foldkit } from '@foldkit/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 
-import { pureScript } from './scripts/purescript-vite.js'
 import { siteContent } from './scripts/site-content-plugin.ts'
 
 export default defineConfig({
   plugins: [
     siteContent(),
-    pureScript(),
     tailwindcss(),
     foldkit({
       devToolsMcpPort: 9988,
@@ -23,6 +21,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    entries: ['src/entry.ts'],
+    entries: ['output/entry.ts'],
   },
 })

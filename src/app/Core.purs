@@ -1,16 +1,14 @@
 module App.Core where
 
+import App.Message as AppMessage
 import App.Update as Update
-import App.Wire.Command as CommandWire
-import App.Wire.Message as MessageWire
 import Domain.Theme as Theme
+import Foldkit.Runtime (Url, UrlRequest(..))
+import Page.Home.Message as HomeMessage
 
 type Message = Update.Message
-type RawMessage = Update.RawMessage
-type CommandSpec = Update.CommandSpec
 type Model = Update.Model
 type UpdateResult = Update.UpdateResult
-type RuntimeUpdateResult = Update.RuntimeUpdateResult
 
 initialModel :: String -> Model
 initialModel = Update.initialModel
@@ -18,44 +16,31 @@ initialModel = Update.initialModel
 init :: String -> UpdateResult
 init = Update.init
 
-initInput :: { path :: String } -> RuntimeUpdateResult
-initInput = Update.initInput
-
 update :: Model -> Message -> UpdateResult
 update = Update.update
 
-updateInput :: { model :: Model, message :: RawMessage } -> RuntimeUpdateResult
-updateInput = Update.updateInput
+clickedCopyPostLink :: String -> Message
+clickedCopyPostLink = AppMessage.ClickedCopyPostLink
 
-encodeResult :: UpdateResult -> RuntimeUpdateResult
-encodeResult = Update.encodeResult
+clickedLink :: UrlRequest -> Message
+clickedLink request = case request of
+  Internal input -> AppMessage.ClickedInternalLink (urlPath input.url)
+  External input -> AppMessage.ClickedExternalLink input.href
 
-clickedCopyPostLink :: String -> RawMessage
-clickedCopyPostLink = MessageWire.clickedCopyPostLink
+selectedTheme :: Theme.Theme -> Message
+selectedTheme = AppMessage.SelectedTheme
 
-clickedLink :: { requestTag :: String, requestUrl :: String, requestHref :: String } -> RawMessage
-clickedLink = MessageWire.clickedLink
+hoveredLab :: Message
+hoveredLab = AppMessage.GotHomeMessage HomeMessage.HoveredLab
 
-selectedTheme :: Theme.Theme -> RawMessage
-selectedTheme = MessageWire.selectedTheme
+leftLab :: Message
+leftLab = AppMessage.GotHomeMessage HomeMessage.LeftLab
 
-hoveredLab :: RawMessage
-hoveredLab = MessageWire.hoveredLab
+changedUrl :: Url -> Message
+changedUrl url = AppMessage.ChangedUrl (urlPath url)
 
-leftLab :: RawMessage
-leftLab = MessageWire.leftLab
-
-isKnownMessageTag :: String -> Boolean
-isKnownMessageTag = MessageWire.isKnownTag
-
-changedUrl :: String -> RawMessage
-changedUrl = MessageWire.changedUrl
-
-messageTags :: Array String
-messageTags = MessageWire.messageTags
-
-commandTags :: Array String
-commandTags = CommandWire.commandTags
+urlPath :: Url -> String
+urlPath url = url.pathname
 
 routeMotionName :: Model -> String
 routeMotionName = Update.routeMotionName

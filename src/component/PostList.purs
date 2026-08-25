@@ -4,18 +4,17 @@ import Prelude
 
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
-import Interop.Foldkit as FK
-import Interop.Foldkit.Html as HH
-import Interop.Foldkit.Prop as HP
+import Foldkit.Html as HH
+import Foldkit.Html.Prop as HP
 
 type Input item message =
   { posts :: Array item
   , emptyLabel :: String
   , emptyText :: String
-  , render :: item -> FK.Child message
+  , render :: item -> HH.Child message
   }
 
-view :: forall item message. Input item message -> FK.Child message
+view :: forall item message. Input item message -> HH.Child message
 view input =
   HH.section [ HP.class_ "space-y-6" ]
     [ HH.p [ HP.class_ "text-[12px] text-neutral-500" ] [ HH.text input.emptyLabel ]

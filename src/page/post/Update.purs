@@ -31,3 +31,7 @@ update model message = case message of
     { model
     , commands: []
     }
+  Message.FailedMountDitheredImage ->
+    { model
+    , commands: []
+    }

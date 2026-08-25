@@ -6,3 +6,4 @@ data Message
   | FailedCopyLink
   | CompletedResetCopyStatus
   | CompletedMountDitheredImage
+  | FailedMountDitheredImage

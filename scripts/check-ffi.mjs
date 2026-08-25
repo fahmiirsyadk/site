@@ -35,10 +35,6 @@ for (const path of pursFiles) {
       }
     }
 
-    if (declaration.includes("->")) {
-      violations.push(`${path}:${index + 1}: use FnN instead of a curried FFI type`)
-    }
-
     const name = declaration.match(/foreign import\s+([A-Za-z0-9_']+)\s*::/)?.[1]
     if (name !== undefined) foreignNames.push(name)
   }
@@ -71,5 +67,5 @@ if (violations.length > 0) {
   console.error(violations.join("\n"))
   process.exitCode = 1
 } else {
-  console.log(`Checked ${pursFiles.length} PureScript file(s): FFI arity and implementation exports are valid.`)
+  console.log(`Checked ${pursFiles.length} PureScript file(s): TypeScript FFI providers and exports are valid.`)
 }

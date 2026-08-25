@@ -13,38 +13,39 @@ pnpm build
 pnpm preview
 ```
 
-`purs-backend-ts` is installed from the vendored archive under `vendor/`, so
-normal development does not require a sibling backend repository or an npm
-release. `pnpm check:backend` verifies the archive checksum and installed CLI.
-The PureScript compiler products live under `corefn/`; generated TypeScript
-modules live under `output/`. `scripts/build-purescript.ts` regenerates the
-`.purs-ts-roots` manifest from direct TypeScript host imports, so `spago.yaml`
-does not need a hardcoded module list.
+`purs-backend-ts` and `purescript-foldkit` are installed from vendored archives
+under `vendor/`, so development needs neither sibling repositories nor npm
+publication. `pnpm check:backend` verifies both checksums, installed versions,
+binding metadata, and the compiler CLI. `purs-ts` discovers Spago sources,
+installed bindings, `main`, and PureScript modules imported by TypeScript. It
+stores compiler state under `.purs-ts/` and atomically generates application
+TypeScript under `output/`; `spago.yaml` contains no backend or root arguments.
 
 The production build writes the SPA bundle under `dist/`, prerenders unique
 document metadata for every public route, and emits `sitemap.xml` and
 `robots.txt`.
 
 The application core is PureScript-owned in `src/app/`: `Core` is the public
-facade, `Message` and `Command` hold typed internal alternatives, `Route`
-holds the route ADT, `Model` composes root and page state, and `View` composes
-the document and pages. `App.Wire` owns the raw `_tag` transport records,
-codecs, and canonical tag registries used at the Foldkit/JavaScript boundary.
-Page-owned state lives beside its page in
+facade, `Message` is the application ADT, `Command` creates typed Foldkit
+commands from native Effect values, `Route` holds the route ADT, `Model`
+composes root and page state, and `View` composes the document and pages.
+Generated tagged-record ADTs cross the Foldkit boundary directly; there is no
+application wire-message type, encoder, decoder, or tag registry. Page-owned state lives beside its page in
 `src/page/home/Model.purs` and `src/page/post/Model.purs`; shared domain state
 is limited to genuinely shared values such as the theme. Page views are
-message-polymorphic pure trees, and only `App.View` interprets the tree with
-Foldkit's `HtmlBuilder` once. The tree uses a small Halogen-style DSL (`HH.*`
-and `HP.*`) backed by opaque PureScript types. Its node and property algebra is
-interpreted by the strict, discriminated TypeScript adapter in
-`src/platform/browser/foldkit-html.ts`.
+message-polymorphic pure trees built with the generated `Foldkit.Html` and
+`Foldkit.Html.Prop` DSL. Renderer newtypes hide Foldkit's `HtmlBuilder`, and
+`Foldkit.Submodel` keeps child/parent message mapping typed without exposing a
+builder. The reusable API and its strict TypeScript providers are owned by the
+installed `purescript-foldkit` binding package rather than copied into the site.
 
-`src/entry.ts` is only the Vite boot module. Native browser executors are
-isolated under `src/platform/browser`: Foldkit runtime, Effect Command, Mount,
-Html, DOM, and WebGL adapters live there behind minimal TypeScript FFI
-re-exports. PureScript modules and their FFI providers are compiled or copied
-to TypeScript by the
-`purs-ts` backend; there is no generated Bridge declaration layer. The
+`src/app/Entry.purs` owns runtime startup and `purs-ts` generates the Vite boot
+module at `output/entry.ts`. Native browser executors are isolated behind
+`src/Platform/Browser.purs` and its TypeScript sibling. Those providers return
+native Effect v4 values and contain only browser/library operations such as
+DOM, navigation, storage, fetch, and WebGL resource acquisition.
+PureScript modules and their FFI providers are compiled or copied to TypeScript
+by `purs-ts`; there is no generated Bridge declaration layer. The
 remaining TypeScript owns build-time content compilation and browser-specific
 WebGL, shader, clock, and cover effects. Canvases are declared by PureScript
 views and acquire their resources through Foldkit Mounts, so the runtime owns
@@ -56,14 +57,11 @@ frame decisions, `Runtime.Frame` owns shared frame timing, and
 `Runtime.SeaMotion` and `Runtime.HollowMotion` own independent interaction state
 transitions. `Runtime.HollowGeometry` owns the split sphere
 and cube mesh, and `Runtime.Scribble` owns scribble data, selection, keyframes,
-and animation timing. `App.Wire.Message` constructs the complete Foldkit result
-envelopes that browser adapters pass back to PureScript.
+and animation timing.
 The Html tree algebra and recursive traversal also live in PureScript. The
 corresponding TypeScript files only execute Foldkit constructors, DOM APIs,
 WebGL calls, observers, and animation frames. Shader programs are `.vert` and
-`.frag` assets rather than TypeScript strings. Runtime message-tag recognition
-comes from `App.Wire.Message`; the same canonical registries also drive the
-generated TypeScript unions, avoiding a second handwritten tag allowlist.
+`.frag` assets rather than TypeScript strings.
 
 ## Verification
 

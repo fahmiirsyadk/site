@@ -10,7 +10,8 @@ dist/
 /corefn/
 output/
 /purs
-.purs-ts-roots
+.purs-ts/
+.purs-ts-output/
 
 # Haskell / Cabal
 dist-newstyle/

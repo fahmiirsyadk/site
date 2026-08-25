@@ -13,21 +13,4 @@ package:
     main: Test.Main
     dependencies: []
 workspace:
-  backend:
-    cmd: node
-    args:
-      - node_modules/purs-backend-ts/dist/purs-ts.mjs
-      - build
-      - --runtime
-      - effect
-      - --adt-runtime
-      - constructor
-      - --corefn-dir
-      - corefn
-      - --ts-output-dir
-      - output
-      - --roots-file
-      - .purs-ts-roots
-  buildOpts:
-    output: corefn
   extraPackages: {}

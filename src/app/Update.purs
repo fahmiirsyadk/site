@@ -7,10 +7,9 @@ import App.Message as AppMessage
 import App.Model as AppModel
 import App.Route as Route
 import App.RouteTransition as RouteMotion
-import App.Wire.Command as CommandWire
-import App.Wire.Message as MessageWire
 import Content.Repository as Repository
 import Domain.Theme as Theme
+import Foldkit.Update as FoldkitUpdate
 import Page.Home.Command as HomeCommand
 import Page.Home.Model as HomeModel
 import Page.Home.Update as HomeUpdate
@@ -18,19 +17,9 @@ import Page.Post.Message as PostMessage
 import Page.Post.Update as PostUpdate
 
 type Message = AppMessage.Message
-type RawMessage = MessageWire.RawMessage
-type CommandSpec = CommandWire.RawCommand
 type Model = AppModel.Model
 
-type UpdateResult =
-  { model :: Model
-  , commands :: Array Command.Command
-  }
-
-type RuntimeUpdateResult =
-  { model :: Model
-  , commands :: Array CommandSpec
-  }
+type UpdateResult = FoldkitUpdate.Return Model Message
 
 initialModel :: String -> Model
 initialModel = AppModel.initialModel
@@ -38,16 +27,11 @@ initialModel = AppModel.initialModel
 init :: String -> UpdateResult
 init path =
   let model = initialModel path
-  in { model
-     , commands:
+  in result model
       [ Command.ReadTheme
       , Command.fromHome HomeCommand.LoadGitHub
       , Command.SyncDocumentMetadata (Repository.metadataForPath (Route.routePath model.route))
       ]
-     }
-
-initInput :: { path :: String } -> RuntimeUpdateResult
-initInput input = encodeResult (init input.path)
 
 update :: Model -> Message -> UpdateResult
 update model message = case message of
@@ -82,24 +66,25 @@ update model message = case message of
   AppMessage.LoadedTheme theme -> result (model { theme = theme }) []
   AppMessage.SelectedTheme theme -> result (model { theme = theme }) [ Command.PersistTheme theme ]
   AppMessage.CompletedLoadExternal -> result model []
+  AppMessage.FailedLoadExternal -> result model []
   AppMessage.CompletedMountSeaShader -> result model []
-  AppMessage.CompletedMountDitheredImage -> result model []
   AppMessage.CompletedMountHollowMark -> result model []
   AppMessage.CompletedMountRandomScribble -> result model []
+  AppMessage.FailedMountSeaShader -> result model []
+  AppMessage.FailedMountHollowMark -> result model []
+  AppMessage.FailedMountRandomScribble -> result model []
   AppMessage.CompletedPersistTheme -> result model []
+  AppMessage.FailedReadTheme -> result model []
+  AppMessage.FailedPersistTheme -> result model []
   AppMessage.CompletedResetScroll -> result model []
+  AppMessage.FailedResetScroll -> result model []
   AppMessage.CompletedSyncDocumentMetadata -> result model []
-  AppMessage.Unknown _ -> result model []
-  where
-  result nextModel commands = { model: nextModel, commands }
+  AppMessage.FailedSyncDocumentMetadata -> result model []
 
-updateInput :: { model :: Model, message :: RawMessage } -> RuntimeUpdateResult
-updateInput input = encodeResult (update input.model (MessageWire.decode input.message))
-
-encodeResult :: UpdateResult -> RuntimeUpdateResult
-encodeResult result =
-  { model: result.model
-  , commands: map CommandWire.encode result.commands
+result :: Model -> Array Command.Command -> UpdateResult
+result model commands =
+  { model
+  , commands: map Command.toRuntime commands
   }
 
 routeMotionName :: Model -> String

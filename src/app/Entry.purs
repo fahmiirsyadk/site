@@ -4,17 +4,14 @@ import Prelude
 
 import App.Core as Core
 import App.View as View
-import App.Wire.Message as MessageWire
-import Effect (Effect)
-import Interop.Foldkit.Runtime as Runtime
+import Foldkit.Runtime as Runtime
+import PursTs.Effect as Fx
 
-main :: Effect Unit
-main = Runtime.start
-  { init: \path -> Core.initInput { path }
-  , update: Core.updateInput
+main :: Fx.Effect Fx.Never Fx.NoServices Unit
+main = Runtime.run
+  { init: Core.init <<< Core.urlPath
+  , update: Core.update
   , view: View.view
-  , clickedLink: Core.clickedLink
-  , changedUrl: Core.changedUrl
-  , isKnownMessageTag: Core.isKnownMessageTag
-  , messageConstructors: MessageWire.messageConstructors
+  , onUrlRequest: Core.clickedLink
+  , onUrlChange: Core.changedUrl
   }
