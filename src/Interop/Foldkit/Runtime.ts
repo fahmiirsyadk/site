@@ -1,1 +1,1 @@
-export { startImpl } from "../../src/platform/browser/foldkit-runtime.ts";
+export { startImpl } from "../../platform/browser/foldkit-runtime.ts";

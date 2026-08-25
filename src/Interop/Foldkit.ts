@@ -10,4 +10,4 @@ export {
   onMountImpl,
   rootImpl,
   textImpl,
-} from "../../src/platform/browser/foldkit-html.ts";
+} from "../platform/browser/foldkit-html.ts";

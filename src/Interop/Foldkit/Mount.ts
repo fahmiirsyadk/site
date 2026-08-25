@@ -3,4 +3,4 @@ export {
   hollowMark,
   randomScribble,
   seaShader,
-} from "../../src/platform/browser/foldkit-mount.ts";
+} from "../../platform/browser/foldkit-mount.ts";
