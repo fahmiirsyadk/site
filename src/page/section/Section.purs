@@ -32,7 +32,7 @@ postPreview post =
     , HH.span [ HP.class_ "min-h-px min-w-6 flex-1 border-b border-neutral-300 dark:border-neutral-600" ] []
     , HH.span
         [ HP.dataAttribute "relative-date" post.date
-        , HP.class_ "shrink-0 whitespace-nowrap text-right text-neutral-500"
+        , HP.class_ "shrink-0 whitespace-nowrap text-right text-neutral-600 dark:text-neutral-400"
         ]
         [ HH.text post.dateLabel ]
     ]
@@ -43,6 +43,6 @@ view input =
     [ HH.h1 [ HP.class_ "text-[12px] font-semibold leading-[1.7] text-[#171717] dark:text-neutral-100" ]
         [ HH.text input.section ]
     , case Array.uncons input.posts of
-        Nothing -> HH.p [ HP.class_ "text-[12px] text-neutral-500" ] [ HH.text "Nothing here yet." ]
+        Nothing -> HH.p [ HP.class_ "text-[12px] text-neutral-600 dark:text-neutral-400" ] [ HH.text "Nothing here yet." ]
         Just _ -> HH.div [ HP.class_ "flex w-full flex-col" ] (map postPreview input.posts)
     ]

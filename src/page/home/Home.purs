@@ -33,7 +33,7 @@ postPreview post =
     ]
     [ HH.span [ HP.class_ "min-w-0 font-instrument text-[16px] leading-[1.3] text-[#171717] transition-colors group-hover:text-[#FF4B26] dark:text-neutral-200 dark:group-hover:text-[#FF6B4A]" ] [ HH.text post.title ]
     , HH.span [ HP.class_ "min-h-px min-w-6 flex-1 border-b border-neutral-300 dark:border-neutral-600" ] []
-    , HH.span [ HP.dataAttribute "relative-date" post.date, HP.class_ "shrink-0 whitespace-nowrap text-right text-neutral-500 max-sm:hidden" ] [ HH.text post.dateLabel ]
+    , HH.span [ HP.dataAttribute "relative-date" post.date, HP.class_ "shrink-0 whitespace-nowrap text-right text-neutral-600 dark:text-neutral-400 max-sm:hidden" ] [ HH.text post.dateLabel ]
     ]
 
 thinkingAbout :: forall message. MountAction message -> HH.Child message

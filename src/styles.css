@@ -28,6 +28,8 @@
     line-height: 1.7;
     scrollbar-gutter: stable;
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   html.dark {
@@ -120,8 +122,8 @@
 
 .footer-theme-toggle {
   display: grid;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
   padding: 0;
   place-items: center;
   border: 0;
@@ -132,27 +134,31 @@
   transition: color 150ms ease, transform 150ms ease;
 }
 
-.footer-theme-toggle:hover,
-.footer-theme-toggle:focus-visible {
-  color: #ff4b26;
-  outline: none;
+.footer-theme-toggle:hover {
+  color: #c24120;
   transform: rotate(12deg);
+}
+
+.footer-theme-toggle:focus-visible {
+  color: #c24120;
+  outline: 2px solid #c24120;
+  outline-offset: 3px;
 }
 
 .post-action-bar {
   display: flex;
-  min-height: 2.25rem;
+  min-height: 2.5rem;
   width: 100%;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6rem;
+  margin-top: 3rem;
   user-select: none;
 }
 
 .post-action-button {
   display: grid;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
   padding: 0;
   place-items: center;
   border: 0;
@@ -161,18 +167,21 @@
   color: #525252;
   cursor: pointer;
   text-decoration: none;
-  transition: color 200ms ease-out, transform 200ms ease-out;
-  will-change: transform;
+  transition: color 150ms ease-out, transform 150ms ease-out;
 }
 
-.post-action-button:hover,
+.post-action-button:hover {
+  color: #c24120;
+}
+
 .post-action-button:focus-visible {
-  color: #171717;
-  outline: none;
+  color: #c24120;
+  outline: 2px solid #c24120;
+  outline-offset: 3px;
 }
 
 .post-action-button:active {
-  transform: scale(0.97);
+  transform: scale(0.96);
 }
 
 .post-action-icon {
@@ -190,9 +199,22 @@ html.dark .post-action-button {
   color: #a3a3a3;
 }
 
-html.dark .post-action-button:hover,
+html.dark .post-action-button:hover {
+  color: #ff6b4a;
+}
+
 html.dark .post-action-button:focus-visible {
-  color: #f5f5f5;
+  color: #ff6b4a;
+  outline-color: #ff6b4a;
+}
+
+html.dark .footer-theme-toggle:hover {
+  color: #ff6b4a;
+}
+
+html.dark .footer-theme-toggle:focus-visible {
+  color: #ff6b4a;
+  outline-color: #ff6b4a;
 }
 
 #sea-canvas {
@@ -349,23 +371,109 @@ html.dark .github-contribution[data-level='0'] {
   image-rendering: pixelated;
 }
 
-.prose pre {
+.post-prose {
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.post-prose :where(h1, h2, h3, h4, h5, h6) {
+  text-wrap: balance;
+}
+
+.post-prose :where(p, li, blockquote, figcaption) {
+  text-wrap: pretty;
+}
+
+.post-prose :where(a) {
+  color: #c24120;
+  text-decoration-line: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.2em;
+}
+
+.post-prose :where(a:hover) {
+  text-decoration-thickness: 0.12em;
+}
+
+html.dark .post-prose :where(a) {
+  color: #ff6b4a;
+}
+
+.post-prose :where(code) {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  font-weight: 400;
+  border-radius: 0.25rem;
+  background: #f0f0f0;
+  padding: 0.08em 0.35em;
+}
+
+.post-prose :where(code)::before,
+.post-prose :where(code)::after {
+  content: none;
+}
+
+.post-prose :where(pre) {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  tab-size: 2;
+}
+
+.post-prose :where(pre code) {
+  font-size: inherit;
+  font-weight: 400;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.post-prose :where(table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.post-prose pre {
   border: 1px solid #e5e5e5;
-  background: #fff;
+  background: #fafafa;
   color: #404040;
 }
 
-html.dark .prose pre {
-  border-color: #262626;
+html.dark .post-prose pre {
+  border-color: #404040;
+  background: #0f0f0f;
+  color: #d4d4d4;
 }
 
-.prose .footnotes {
+.post-prose .markdown-image-plain,
+.post-prose .markdown-video-plain,
+.post-prose .dithered-image-inline {
+  outline: 1px solid oklch(0 0 0 / 0.1);
+  outline-offset: -1px;
+}
+
+html.dark .post-prose .markdown-image-plain,
+html.dark .post-prose .markdown-video-plain,
+html.dark .post-prose .dithered-image-inline {
+  outline-color: oklch(1 0 0 / 0.1);
+}
+
+html.dark .post-prose :where(code) {
+  background: #262626;
+}
+
+html.dark .post-prose :where(pre code) {
+  background: transparent;
+}
+
+.post-prose .footnotes {
   margin-top: 2.5rem;
   border-top: 1px solid #e5e5e5;
   padding-top: 1rem;
   font-size: 0.85em;
 }
 
-html.dark .prose .footnotes {
+html.dark .post-prose .footnotes {
   border-top-color: #262626;
 }

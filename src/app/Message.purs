@@ -6,7 +6,6 @@ import Page.Post.Message as Post
 
 data Message
   = CompletedNavigateInternal
-  | FailedNavigateInternal
   | StartedRouteEntry
   | GotHomeMessage HomeMessage.Message
   | ClickedCopyPostLink String
@@ -17,7 +16,6 @@ data Message
   | LoadedTheme Theme.Theme
   | SelectedTheme Theme.Theme
   | CompletedLoadExternal
-  | FailedLoadExternal
   | CompletedMountSeaShader
   | CompletedMountHollowMark
   | CompletedMountRandomScribble
@@ -25,7 +23,6 @@ data Message
   | FailedMountHollowMark
   | FailedMountRandomScribble
   | CompletedPersistTheme
-  | FailedReadTheme
   | FailedPersistTheme
   | CompletedResetScroll
   | FailedResetScroll

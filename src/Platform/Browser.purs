@@ -21,29 +21,8 @@ type DocumentMetadata =
   , contentType :: String
   }
 
-foreign import afterPaint
-  :: Fx.Effect Fx.Never Fx.NoServices Unit
-
-foreign import prefersReducedMotion
-  :: Fx.Effect Fx.Never Fx.NoServices Boolean
-
-foreign import pushUrl
-  :: String -> Fx.Effect BrowserError Fx.NoServices Unit
-
-foreign import loadExternal
-  :: String -> Fx.Effect BrowserError Fx.NoServices Unit
-
 foreign import loadGitHub
   :: String -> Fx.Effect BrowserError Fx.NoServices GitHubActivity
-
-foreign import copyPostLink
-  :: String -> Fx.Effect BrowserError Fx.NoServices Unit
-
-foreign import readTheme
-  :: Fx.Effect BrowserError Fx.NoServices String
-
-foreign import persistTheme
-  :: String -> Fx.Effect BrowserError Fx.NoServices Unit
 
 foreign import resetScroll
   :: Fx.Effect BrowserError Fx.NoServices Unit

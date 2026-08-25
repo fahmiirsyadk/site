@@ -1,6 +1,4 @@
 import { Effect, Schema as S } from 'effect'
-import { Render } from 'foldkit'
-import { load, pushUrl as navigate } from 'foldkit/navigation'
 
 import { mountDitheredImage } from '../platform/browser/dithered-image.ts'
 import { mountHollowMark } from '../platform/browser/hollow-mark.ts'
@@ -32,15 +30,6 @@ const setMeta = (selector: string, attribute: readonly [string, string], value: 
   }
 }
 
-export const afterPaint = Render.afterPaint
-
-export const prefersReducedMotion =
-  Effect.sync(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
-
-export const pushUrl = (url: string) => navigate(url)
-
-export const loadExternal = (href: string) => load(href)
-
 export const loadGitHub = (username: string) =>
   Effect.gen(function* () {
     const [profileResponse, contributionsResponse] = yield* Effect.all([
@@ -65,25 +54,6 @@ export const loadGitHub = (username: string) =>
     }
   })
 
-export const copyPostLink = (url: string) =>
-  Effect.tryPromise(() => navigator.clipboard.writeText(url))
-
-export const readTheme =
-  Effect.try(() => {
-    const theme = localStorage.getItem('theme') === 'dark' ? 'Dark' : 'Light'
-    document.documentElement.classList.toggle('dark', theme === 'Dark')
-    document.documentElement.style.colorScheme = theme === 'Dark' ? 'dark' : 'light'
-    return theme
-  })
-
-export const persistTheme = (theme: string) =>
-  Effect.try(() => {
-    const dark = theme === 'Dark'
-    document.documentElement.classList.toggle('dark', dark)
-    document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
-    localStorage.setItem('theme', dark ? 'dark' : 'light')
-  })
-
 export const resetScroll =
   Effect.try(() => {
     document.getElementById('content-scroll')?.scrollTo({ top: 0, behavior: 'auto' })
@@ -103,19 +73,19 @@ export const syncDocumentMetadata = (metadata: DocumentMetadata) =>
     setMeta('meta[name="twitter:image"]', ['name', 'twitter:image'], metadata.image)
   })
 
-const acquire = (loadMount: () => Promise<(element: Element) => Cleanup>, element: Element) =>
-  Effect.tryPromise(() => loadMount().then(mount => mount(element)))
+const acquire = (mount: (element: Element) => Cleanup, element: Element) =>
+  Effect.try(() => mount(element))
 
 export const acquireDitheredImage = (element: Element) =>
-  acquire(() => Promise.resolve(mountDitheredImage), element)
+  acquire(mountDitheredImage, element)
 
 export const acquireHollowMark = (element: Element) =>
-  acquire(() => Promise.resolve(mountHollowMark), element)
+  acquire(mountHollowMark, element)
 
 export const acquireRandomScribble = (element: Element) =>
-  acquire(() => Promise.resolve(mountRandomScribble), element)
+  acquire(mountRandomScribble, element)
 
 export const acquireSeaShader = (element: Element) =>
-  acquire(() => Promise.resolve(mountSeaShader), element)
+  acquire(mountSeaShader, element)
 
 export const release = (cleanup: Cleanup) => Effect.sync(cleanup)

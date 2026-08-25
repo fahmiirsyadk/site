@@ -46,7 +46,8 @@ routeView model =
             { slotId: "post"
             , model: model.post
             , view: \postModel -> Post.view
-                { post: Repository.postPage post
+                { homePath: Route.sectionPath { section }
+                , post: Repository.postPage post
                 , copyStatus: postModel.copyStatus
                 , copyMessage: PostMessage.ClickedCopyLink (Repository.pathFor post.section post.slug)
                 , mount: Mount.ditheredImage

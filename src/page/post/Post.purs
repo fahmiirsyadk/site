@@ -21,7 +21,8 @@ type Post =
   }
 
 type Input message =
-  { post :: Post
+  { homePath :: String
+  , post :: Post
   , copyStatus :: PostModel.CopyStatus
   , copyMessage :: message
   , mount :: MountAction message
@@ -45,18 +46,33 @@ checkIcon = Icon.outlined "m5 12.5 4.25 4.25L19 7" "post-action-icon"
 
 view :: forall message. Input message -> HH.Child message
 view input =
-  HH.article [ HP.class_ "min-w-0 space-y-6 overflow-x-auto" ]
+  HH.article [ HP.class_ "min-w-0 space-y-6" ]
         [ if input.post.banner == "" then HH.empty else cover input
-        , HH.div [ HP.class_ "flex w-full items-center gap-3 text-[12px] leading-[1.7]" ]
-            [ HH.h1 [ HP.class_ "shrink-0 font-instrument text-xl leading-tight text-[#171717] dark:text-neutral-100" ] [ HH.text input.post.title ]
+        , HH.div [ HP.class_ "flex w-full min-w-0 items-center gap-3 text-[12px] leading-[1.7]" ]
+            [ HH.h1 [ HP.class_ "min-w-0 font-instrument text-2xl leading-tight text-balance text-[#171717] dark:text-neutral-100" ] [ HH.text input.post.title ]
             , HH.span [ HP.class_ "min-h-px min-w-6 flex-1 border-b border-neutral-300 dark:border-neutral-600" ] []
-            , HH.span [ HP.dataAttribute "relative-date" input.post.date, HP.class_ "shrink-0 text-right text-neutral-500" ] [ HH.text input.post.dateLabel ]
+            , HH.span [ HP.dataAttribute "relative-date" input.post.date, HP.class_ "shrink-0 text-right text-neutral-600 dark:text-neutral-400" ] [ HH.text input.post.dateLabel ]
             ]
         , HH.div
-            [ HP.class_ "prose prose-sm prose-neutral dark:prose-invert max-w-none prose-headings:font-instrument prose-a:text-[#FF4B26] prose-a:no-underline hover:prose-a:underline prose-ul:list-none prose-ol:list-none"
+            [ HP.class_ "post-prose prose prose-neutral dark:prose-invert max-w-none prose-headings:font-instrument"
             , HP.innerHtml input.post.html
             , HP.onMount { action: input.mount }
             ] []
+        , HH.div [ HP.class_ "post-action-bar" ]
+            [ HH.a
+                [ HP.href input.homePath
+                , HP.ariaLabel "Back to section"
+                , HP.title "Back to section"
+                , HP.class_ "post-action-button"
+                ] [ homeArrowIcon ]
+            , HH.button
+                [ HP.type_ "button"
+                , HP.onClick { message: input.copyMessage }
+                , HP.ariaLabel (copyAriaLabel input.copyStatus)
+                , HP.title (copyTitle input.copyStatus)
+                , HP.class_ "post-action-button"
+                ] [ copyIcon input.copyStatus ]
+            ]
         , Navigation.view { previous: input.previous, next: input.next }
         ]
 

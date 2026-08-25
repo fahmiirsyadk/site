@@ -36,7 +36,6 @@ init path =
 update :: Model -> Message -> UpdateResult
 update model message = case message of
   AppMessage.CompletedNavigateInternal -> result model []
-  AppMessage.FailedNavigateInternal -> result (model { routeMotion = RouteMotion.Idle }) []
   AppMessage.StartedRouteEntry -> result (model { routeMotion = RouteMotion.Idle }) []
   AppMessage.GotHomeMessage childMessage ->
     let childResult = HomeUpdate.update model.home childMessage
@@ -66,7 +65,6 @@ update model message = case message of
   AppMessage.LoadedTheme theme -> result (model { theme = theme }) []
   AppMessage.SelectedTheme theme -> result (model { theme = theme }) [ Command.PersistTheme theme ]
   AppMessage.CompletedLoadExternal -> result model []
-  AppMessage.FailedLoadExternal -> result model []
   AppMessage.CompletedMountSeaShader -> result model []
   AppMessage.CompletedMountHollowMark -> result model []
   AppMessage.CompletedMountRandomScribble -> result model []
@@ -74,7 +72,6 @@ update model message = case message of
   AppMessage.FailedMountHollowMark -> result model []
   AppMessage.FailedMountRandomScribble -> result model []
   AppMessage.CompletedPersistTheme -> result model []
-  AppMessage.FailedReadTheme -> result model []
   AppMessage.FailedPersistTheme -> result model []
   AppMessage.CompletedResetScroll -> result model []
   AppMessage.FailedResetScroll -> result model []

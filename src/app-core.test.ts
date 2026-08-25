@@ -4,9 +4,9 @@ import {
   ChangedUrl,
   ClickedCopyPostLink,
   ClickedInternalLink,
-  FailedNavigateInternal,
   GotHomeMessage,
   GotPostMessage,
+  StartedRouteEntry,
 } from 'purescript/App.Message/index.ts'
 import { init, routeMotionName, update } from 'purescript/App.Update/index.ts'
 import { routePath } from 'purescript/App.Route/index.ts'
@@ -50,13 +50,13 @@ describe('PureScript application core', () => {
     })
   })
 
-  test('recovers route motion when internal navigation fails', () => {
+  test('completes route motion after the render barrier', () => {
     const initialized = init('/')
     const leaving = update(initialized.model, ClickedInternalLink('/thought/'))
-    const recovered = update(leaving.model, FailedNavigateInternal)
+    const completed = update(leaving.model, StartedRouteEntry)
 
     expect(routeMotionName(leaving.model)).toBe('leaving')
-    expect(routeMotionName(recovered.model)).toBe('idle')
+    expect(routeMotionName(completed.model)).toBe('idle')
   })
 
   test('delegates Home and Post state transitions to their page updates', () => {

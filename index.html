@@ -18,6 +18,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" />
+    <script>
+      (() => {
+        try {
+          const storedTheme = localStorage.getItem('theme')
+          const dark = storedTheme === 'dark' || (storedTheme === null && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.classList.toggle('dark', dark)
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+        } catch {}
+      })()
+    </script>
     <link href="/src/styles.css" rel="stylesheet" />
     <title>Faah</title>
   </head>
