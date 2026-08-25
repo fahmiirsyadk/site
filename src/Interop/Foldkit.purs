@@ -28,6 +28,9 @@ data Child message
       , attributes :: Array (Prop message)
       , children :: Array (Child message)
       }
+  | Submodel (SubmodelNode message)
+
+foreign import data SubmodelNode :: Type -> Type
 
 type AttributeInput =
   { key :: String
@@ -65,6 +68,21 @@ type RenderInput message =
   , child :: Child message
   }
 
+type SubmodelInput model childMessage parentMessage =
+  { slotId :: String
+  , model :: model
+  , child :: Child childMessage
+  , toParentMessage :: childMessage -> parentMessage
+  }
+
+type SubmodelNodeInput model childMessage parentMessage =
+  { slotId :: String
+  , model :: model
+  , child :: Child childMessage
+  , toParentMessage :: childMessage -> parentMessage
+  , renderChild :: HtmlBuilder childMessage -> Child childMessage -> RenderedChild childMessage
+  }
+
 foreign import attributeImpl :: forall message. Fn3 (HtmlBuilder message) String String (RenderedProp message)
 foreign import emptyImpl :: forall message. Fn1 (HtmlBuilder message) (RenderedChild message)
 foreign import elementImpl :: forall message. Fn2 (HtmlBuilder message) (RenderedElementInput message) (RenderedChild message)
@@ -74,8 +92,19 @@ foreign import onClickImpl :: forall message. Fn2 (HtmlBuilder message) message 
 foreign import onMouseEnterImpl :: forall message. Fn2 (HtmlBuilder message) message (RenderedProp message)
 foreign import onMouseLeaveImpl :: forall message. Fn2 (HtmlBuilder message) message (RenderedProp message)
 foreign import onMountImpl :: forall message. Fn2 (HtmlBuilder message) (MountAction message) (RenderedProp message)
+foreign import submodelNodeImpl :: forall model childMessage parentMessage. Fn1 (SubmodelNodeInput model childMessage parentMessage) (SubmodelNode parentMessage)
+foreign import renderSubmodelImpl :: forall message. Fn2 (HtmlBuilder message) (SubmodelNode message) (RenderedChild message)
 foreign import rootImpl :: forall message. Fn1 (RenderedChild message) (Html message)
 foreign import textImpl :: forall message. Fn1 String (RenderedChild message)
+
+submodel :: forall model childMessage parentMessage. SubmodelInput model childMessage parentMessage -> Child parentMessage
+submodel input = Submodel (runFn1 submodelNodeImpl
+  { slotId: input.slotId
+  , model: input.model
+  , child: input.child
+  , toParentMessage: input.toParentMessage
+  , renderChild
+  })
 
 attribute :: forall message. AttributeInput -> Prop message
 attribute input = Attribute input.key input.value
@@ -145,6 +174,7 @@ renderChild builder child = case child of
         , attributes
         , children
         }
+  Submodel node -> runFn2 renderSubmodelImpl builder node
 
 render :: forall message. RenderInput message -> Html message
 render input = runFn1 rootImpl (renderChild input.builder input.child)

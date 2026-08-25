@@ -72,11 +72,11 @@ export const startImpl = (app: PurescriptApplication): (() => void) => () => {
     Model: RuntimeModelSchema,
     init: url => {
       const result = app.init(pathOf(url))
-      return [result.model, commandsOf(result.commands)]
+      return { model: result.model, commands: commandsOf(result.commands) }
     },
     update: (model, message) => {
       const result = app.update({ model, message })
-      return [result.model, commandsOf(result.commands)]
+      return { model: result.model, commands: commandsOf(result.commands) }
     },
     view: (model, builder) => app.view(model)(builder),
     container: document.getElementById('root'),

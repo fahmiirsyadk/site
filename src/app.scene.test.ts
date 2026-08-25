@@ -4,6 +4,7 @@ import type { Model as RuntimeModel } from "purescript/App.Update/index.ts";
 import type { RawMessage as RuntimeMessage } from "purescript/App.Wire.Message/index.ts";
 import { initInput, updateInput } from "purescript/App.Update/index.ts";
 import { view } from "purescript/App.View/index.ts";
+import { CompletedMountDitheredImage } from "purescript/Page.Post.Message/index.ts";
 
 import type { HtmlBuilder } from "foldkit/html";
 import type { Document } from "foldkit/html";
@@ -11,6 +12,7 @@ import * as Scene from "foldkit/scene";
 
 import { commandImpl } from "./platform/browser/foldkit-command";
 import {
+  ditheredImage,
   hollowMark,
   randomScribble,
   seaShader,
@@ -18,7 +20,7 @@ import {
 
 const update = (model: RuntimeModel, message: RuntimeMessage) => {
   const result = updateInput({ model, message });
-  return [result.model, result.commands.map(commandImpl)] as const;
+  return { model: result.model, commands: result.commands.map(commandImpl) };
 };
 
 const render = (model: RuntimeModel, builder: HtmlBuilder<RuntimeMessage>) =>
@@ -44,6 +46,13 @@ const resolveHomeMounts = Scene.Mount.resolveAll(
 
 const resolvePageMounts = Scene.Mount.resolveAll(
   [hollowMark, message("CompletedMountHollowMark")],
+  [seaShader, message("CompletedMountSeaShader")],
+);
+
+const resolvePostMounts = Scene.Mount.resolveAll(
+  [hollowMark, message("CompletedMountHollowMark")],
+  [ditheredImage, CompletedMountDitheredImage],
+  [ditheredImage, CompletedMountDitheredImage],
   [seaShader, message("CompletedMountSeaShader")],
 );
 
@@ -78,6 +87,17 @@ describe("application view integration", () => {
       ),
       Scene.expect(Scene.text("Chaotic pendulum")).toExist(),
       resolvePageMounts,
+    );
+  });
+
+  test("renders a thought page through the Foldkit submodel boundary", () => {
+    Scene.scene(
+      { update, view: render },
+      Scene.given(initInput({ path: "/thought/chaotic-pendulum/" }).model),
+      Scene.expect(
+        Scene.role("heading", { name: "Chaotic pendulum" }),
+      ).toExist(),
+      resolvePostMounts,
     );
   });
 

@@ -8,6 +8,8 @@ export {
   onMouseEnterImpl,
   onMouseLeaveImpl,
   onMountImpl,
+  renderSubmodelImpl,
   rootImpl,
+  submodelNodeImpl,
   textImpl,
 } from "../platform/browser/foldkit-html.ts";

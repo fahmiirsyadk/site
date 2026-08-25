@@ -27,3 +27,7 @@ update model message = case message of
     { model: model { copyStatus = Model.NotCopied }
     , commands: []
     }
+  Message.CompletedMountDitheredImage ->
+    { model
+    , commands: []
+    }

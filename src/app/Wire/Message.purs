@@ -64,6 +64,7 @@ encode message = case message of
   AppMessage.GotPostMessage Post.SucceededCopyLink -> emptyRaw "SucceededCopyPostLink"
   AppMessage.GotPostMessage Post.FailedCopyLink -> emptyRaw "FailedCopyPostLink"
   AppMessage.GotPostMessage Post.CompletedResetCopyStatus -> emptyRaw "CompletedResetCopyStatus"
+  AppMessage.GotPostMessage Post.CompletedMountDitheredImage -> emptyRaw "CompletedMountDitheredImage"
   AppMessage.ClickedInternalLink url -> modifyRaw (emptyRaw "ClickedLink") (_ { requestTag = "Internal", requestUrl = url })
   AppMessage.ClickedExternalLink href -> modifyRaw (emptyRaw "ClickedLink") (_ { requestTag = "External", requestHref = href })
   AppMessage.ChangedUrl url -> modifyRaw (emptyRaw "ChangedUrl") (_ { url = url })
@@ -99,7 +100,7 @@ decode (RawMessage raw) =
     "SelectedTheme" -> AppMessage.SelectedTheme (Theme.fromString raw.theme)
     "CompletedLoadExternal" -> AppMessage.CompletedLoadExternal
     "CompletedMountSeaShader" -> AppMessage.CompletedMountSeaShader
-    "CompletedMountDitheredImage" -> AppMessage.CompletedMountDitheredImage
+    "CompletedMountDitheredImage" -> AppMessage.GotPostMessage Post.CompletedMountDitheredImage
     "CompletedMountHollowMark" -> AppMessage.CompletedMountHollowMark
     "CompletedMountRandomScribble" -> AppMessage.CompletedMountRandomScribble
     "CompletedPersistTheme" -> AppMessage.CompletedPersistTheme

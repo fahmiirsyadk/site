@@ -12,8 +12,8 @@ importers:
         specifier: 4.0.0-rc.111
         version: 4.0.0-rc.111
       foldkit:
-        specifier: 0.150.0
-        version: 0.150.0(effect@4.0.0-rc.111)
+        specifier: 0.151.0
+        version: 0.151.0(effect@4.0.0-rc.111)
       markdown-it:
         specifier: ^14.3.0
         version: 14.3.0
@@ -25,20 +25,20 @@ importers:
         version: 4.3.3
     devDependencies:
       '@foldkit/devtools':
-        specifier: 0.150.0
-        version: 0.150.0(@effect/platform-browser@4.0.0-rc.111(effect@4.0.0-rc.111))(@foldkit/ui@0.150.0(effect@4.0.0-rc.111)(foldkit@0.150.0(effect@4.0.0-rc.111)))(effect@4.0.0-rc.111)(foldkit@0.150.0(effect@4.0.0-rc.111))
+        specifier: 0.151.0
+        version: 0.151.0(@effect/platform-browser@4.0.0-rc.111(effect@4.0.0-rc.111))(@foldkit/ui@0.151.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111)))(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))
       '@foldkit/devtools-mcp':
         specifier: 0.17.0
-        version: 0.17.0(effect@4.0.0-rc.111)(foldkit@0.150.0(effect@4.0.0-rc.111))(supports-color@10.2.2)(zod@4.4.3)
+        version: 0.17.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))(supports-color@10.2.2)(zod@4.4.3)
       '@foldkit/oxlint-plugin':
-        specifier: 0.7.0
-        version: 0.7.0(effect@4.0.0-rc.111)
+        specifier: 0.8.0
+        version: 0.8.0(effect@4.0.0-rc.111)
       '@foldkit/ui':
-        specifier: 0.150.0
-        version: 0.150.0(effect@4.0.0-rc.111)(foldkit@0.150.0(effect@4.0.0-rc.111))
+        specifier: 0.151.0
+        version: 0.151.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))
       '@foldkit/vite-plugin':
         specifier: 0.17.0
-        version: 0.17.0(effect@4.0.0-rc.111)(foldkit@0.150.0(effect@4.0.0-rc.111))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))
+        version: 0.17.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))
       '@tailwindcss/typography':
         specifier: ^0.5.20
         version: 0.5.20(tailwindcss@4.3.3)
@@ -299,8 +299,8 @@ packages:
       effect: 4.0.0-rc.111
       foldkit: ^0
 
-  '@foldkit/devtools@0.150.0':
-    resolution: {integrity: sha512-TjxVCJUTwUHQBDuB+yxDIrhfmtrEPstH8OMuZqqLckQtLkQ0MdKjV4gDIPE95/VDoNS03um/MqHSnwqWOj5yGA==}
+  '@foldkit/devtools@0.151.0':
+    resolution: {integrity: sha512-gzDONiRRHohCl7W9XdkEKohh6gxDGFXUXR4ZT6OEdHdqAd+wurpLqO/OrhjECdCVCodoVFZ4Vjcln0bHx/V18A==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       '@effect/platform-browser': 4.0.0-rc.111
@@ -308,12 +308,12 @@ packages:
       effect: 4.0.0-rc.111
       foldkit: ^0
 
-  '@foldkit/oxlint-plugin@0.7.0':
-    resolution: {integrity: sha512-8nLjd0qSm0QP9S214/iN0XzOkFbavAv18D8qvLnd2oKWXp+Zd32iEi0q1W+PTnKL2E8c2YrPZ0hfo7izCEvZpg==}
+  '@foldkit/oxlint-plugin@0.8.0':
+    resolution: {integrity: sha512-dAy0sbo7N/WbEreKJghh7BviEotf0EW9llaeuhFe4rPee8I0S8mw4gNSAnnjEb3kMY5Z1PTaFv5wNkfnj+9M+Q==}
     engines: {node: '>=20.19.0 || >=22.12.0'}
 
-  '@foldkit/ui@0.150.0':
-    resolution: {integrity: sha512-YKYC8km5zcL//31ZLxGghF/Qyb4gZ4aTIw7/D5r3xpnDHNGVpEBDJECziDa8bufIdDQWrBbY2wyuPlC1Zgtt0Q==}
+  '@foldkit/ui@0.151.0':
+    resolution: {integrity: sha512-mo/lfUvXW597qvh8Tj8UWwRirmTmrIhAdC06rGVd7dHAsAxfFCKpeWTwWcKQw8pHrbGcjv86nGsVgJLuBxrz7g==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       effect: 4.0.0-rc.111
@@ -1242,8 +1242,8 @@ packages:
   flush-write-stream@1.1.1:
     resolution: {integrity: sha512-3Z4XhFZ3992uIq0XOqb9AreonueSYphE6oYbpt5+3u06JWklbsPkNv3ZKkP9Bz/r+1MWCaMoSQ28P85+1Yc77w==}
 
-  foldkit@0.150.0:
-    resolution: {integrity: sha512-dRn6Rogi4Vrs9WoB+fPryN1liuRYT0ICoZCeBjhTIHrCCvULpB8K7RBXvF++d0UjRKMK7UWru4SnrCpbNBKHBg==}
+  foldkit@0.151.0:
+    resolution: {integrity: sha512-WuaEaqmQlq4x3zrTMKWo0hokSn3rU5yt4vVCx89AvNMrRwq9NocC3o0nXFJcwHGvjnemMCygiT4Tm9o3zZEh+A==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
       effect: 4.0.0-rc.111
@@ -2585,11 +2585,11 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@foldkit/devtools-mcp@0.17.0(effect@4.0.0-rc.111)(foldkit@0.150.0(effect@4.0.0-rc.111))(supports-color@10.2.2)(zod@4.4.3)':
+  '@foldkit/devtools-mcp@0.17.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))(supports-color@10.2.2)(zod@4.4.3)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.30.0(supports-color@10.2.2)(zod@4.4.3)
       effect: 4.0.0-rc.111
-      foldkit: 0.150.0(effect@4.0.0-rc.111)
+      foldkit: 0.151.0(effect@4.0.0-rc.111)
       ws: 8.21.3
     transitivePeerDependencies:
       - '@cfworker/json-schema'
@@ -2598,30 +2598,30 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@foldkit/devtools@0.150.0(@effect/platform-browser@4.0.0-rc.111(effect@4.0.0-rc.111))(@foldkit/ui@0.150.0(effect@4.0.0-rc.111)(foldkit@0.150.0(effect@4.0.0-rc.111)))(effect@4.0.0-rc.111)(foldkit@0.150.0(effect@4.0.0-rc.111))':
+  '@foldkit/devtools@0.151.0(@effect/platform-browser@4.0.0-rc.111(effect@4.0.0-rc.111))(@foldkit/ui@0.151.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111)))(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))':
     dependencies:
       '@effect/platform-browser': 4.0.0-rc.111(effect@4.0.0-rc.111)
-      '@foldkit/ui': 0.150.0(effect@4.0.0-rc.111)(foldkit@0.150.0(effect@4.0.0-rc.111))
+      '@foldkit/ui': 0.151.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))
       clsx: 2.1.1
       effect: 4.0.0-rc.111
-      foldkit: 0.150.0(effect@4.0.0-rc.111)
+      foldkit: 0.151.0(effect@4.0.0-rc.111)
 
-  '@foldkit/oxlint-plugin@0.7.0(effect@4.0.0-rc.111)':
+  '@foldkit/oxlint-plugin@0.8.0(effect@4.0.0-rc.111)':
     dependencies:
       effect-oxlint: 0.3.3(effect@4.0.0-rc.111)
     transitivePeerDependencies:
       - effect
 
-  '@foldkit/ui@0.150.0(effect@4.0.0-rc.111)(foldkit@0.150.0(effect@4.0.0-rc.111))':
+  '@foldkit/ui@0.151.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))':
     dependencies:
       '@floating-ui/dom': 1.8.0
       effect: 4.0.0-rc.111
-      foldkit: 0.150.0(effect@4.0.0-rc.111)
+      foldkit: 0.151.0(effect@4.0.0-rc.111)
 
-  '@foldkit/vite-plugin@0.17.0(effect@4.0.0-rc.111)(foldkit@0.150.0(effect@4.0.0-rc.111))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))':
+  '@foldkit/vite-plugin@0.17.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))':
     dependencies:
       effect: 4.0.0-rc.111
-      foldkit: 0.150.0(effect@4.0.0-rc.111)
+      foldkit: 0.151.0(effect@4.0.0-rc.111)
       magic-string: 0.30.21
       vite: 8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0)
       ws: 8.21.3
@@ -3464,7 +3464,7 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 2.3.8
 
-  foldkit@0.150.0(effect@4.0.0-rc.111):
+  foldkit@0.151.0(effect@4.0.0-rc.111):
     dependencies:
       effect: 4.0.0-rc.111
       parse5: 8.0.1

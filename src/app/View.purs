@@ -2,7 +2,8 @@ module App.View where
 
 import Prelude
 
-import App.Core (Model, clickedCopyPostLink, hoveredLab, leftLab, selectedTheme)
+import App.Core (Model, hoveredLab, leftLab, selectedTheme)
+import App.Message as AppMessage
 import App.Route as Route
 import App.Wire.Message (RawMessage)
 import App.Site as Site
@@ -14,14 +15,17 @@ import Domain.Theme as Theme
 import Interop.Foldkit as FK
 import Interop.Foldkit.Html as HH
 import Interop.Foldkit.Mount as Mount
+import Interop.Foldkit.Mount (MountAction)
 import Interop.Foldkit.Prop as HP
 import Interop.Foldkit.Runtime (Document)
 import Page.Home as Home
 import Page.Home.Model as HomeModel
 import Page.NotFound as NotFound
 import Page.Post as Post
+import Page.Post.Message as PostMessage
 import Page.Section as Section
 import Page.Ssh as Ssh
+import App.Wire.Message as MessageWire
 
 routeView :: Model -> FK.Child RawMessage
 routeView model =
@@ -41,13 +45,20 @@ routeView model =
         Nothing -> NotFound.view { path: Repository.pathFor section slug }
         Just post ->
           let links = Repository.neighbors post
-          in Post.view
-            { post: Repository.postPage post
-            , copyStatus: model.post.copyStatus
-            , copyMessage: clickedCopyPostLink (Repository.pathFor post.section post.slug)
-            , mount: Mount.ditheredImage
-            , previous: links.previous
-            , next: links.next
+          in FK.submodel
+            { slotId: "post"
+            , model: model.post
+            , child: Post.view
+                { post: Repository.postPage post
+                , copyStatus: model.post.copyStatus
+                , copyMessage: PostMessage.ClickedCopyLink (Repository.pathFor post.section post.slug)
+                , mount: Mount.mapMessage
+                    (Mount.ditheredImage :: MountAction RawMessage)
+                    (\_ -> PostMessage.CompletedMountDitheredImage)
+                , previous: links.previous
+                , next: links.next
+                }
+            , toParentMessage: MessageWire.encode <<< AppMessage.GotPostMessage
             }
     Route.NotFound path -> NotFound.view { path }
 

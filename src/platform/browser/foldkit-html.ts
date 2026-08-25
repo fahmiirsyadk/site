@@ -5,6 +5,7 @@ import type {
   HtmlBuilder,
   TagName,
 } from 'foldkit/html'
+import { Submodel } from 'foldkit'
 import type { MountAction } from 'foldkit/mount'
 
 type FoldkitChild = Html | string
@@ -15,6 +16,22 @@ type ElementInput<Message> = Readonly<{
   children: ReadonlyArray<FoldkitChild>
 }>
 type KeyedInput<Message> = ElementInput<Message> & Readonly<{ key: string }>
+
+type SubmodelNode<ParentMessage> = Readonly<{
+  slotId: string
+  model: unknown
+  child: unknown
+  toParentMessage: (message: unknown) => ParentMessage
+  renderChild: (builder: HtmlBuilder<unknown>) => (child: unknown) => FoldkitChild
+}>
+
+type SubmodelNodeInput<Model, ChildMessage, ParentMessage> = Readonly<{
+  slotId: string
+  model: Model
+  child: unknown
+  toParentMessage: (message: ChildMessage) => ParentMessage
+  renderChild: (builder: HtmlBuilder<ChildMessage>) => (child: ChildMessage) => FoldkitChild
+}>
 
 export const attributeImpl = <Message>(
   builder: HtmlBuilder<Message>,
@@ -58,6 +75,30 @@ export const onMountImpl = <Message>(
   builder: HtmlBuilder<Message>,
   action: MountAction<Message>,
 ): RenderedProp<Message> => builder.OnMount(action)
+
+export const submodelNodeImpl = <Model, ChildMessage, ParentMessage>(
+  input: SubmodelNodeInput<Model, ChildMessage, ParentMessage>,
+): SubmodelNode<ParentMessage> => input as unknown as SubmodelNode<ParentMessage>
+
+export const renderSubmodelImpl = <ParentMessage>(
+  builder: HtmlBuilder<ParentMessage>,
+  node: SubmodelNode<ParentMessage>,
+): FoldkitChild => {
+  const view = Submodel.defineView<unknown, unknown>((_model, childBuilder) => {
+    const child = node.renderChild(childBuilder)(node.child)
+    if (typeof child === 'string') {
+      throw new Error('Foldkit submodel roots must be elements or empty nodes')
+    }
+    return child as Html
+  })
+
+  return builder.submodel({
+    slotId: node.slotId,
+    model: node.model,
+    view,
+    toParentMessage: node.toParentMessage,
+  })
+}
 
 export const rootImpl = (child: FoldkitChild): Html => {
   if (typeof child === 'string') {

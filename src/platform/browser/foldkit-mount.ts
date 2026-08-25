@@ -1,5 +1,5 @@
 import { Effect, Schema as S } from 'effect'
-import { define } from 'foldkit/mount'
+import { define, mapMessage as mapMountMessage, type MountAction } from 'foldkit/mount'
 import {
   completedMountDitheredImage,
   completedMountHollowMark,
@@ -67,3 +67,8 @@ const seaShaderDefinition = define('SeaShader', messageSchema)(element =>
 )
 
 export const seaShader = seaShaderDefinition()
+
+export const mapMessageImpl = <Message, NextMessage>(
+  action: MountAction<Message>,
+  f: (message: Message) => NextMessage,
+): MountAction<NextMessage> => mapMountMessage(action, f)

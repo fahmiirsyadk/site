@@ -5,3 +5,4 @@ data Message
   | SucceededCopyLink
   | FailedCopyLink
   | CompletedResetCopyStatus
+  | CompletedMountDitheredImage
