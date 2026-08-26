@@ -11,6 +11,9 @@ siteUrl = "https://faah.me"
 siteHost :: String
 siteHost = "faah.me"
 
+contentScrollSelector :: String
+contentScrollSelector = "#content-scroll"
+
 thoughtSection :: String
 thoughtSection = "thought"
 

@@ -70,6 +70,7 @@ const postMetadata = async (): Promise<ReadonlyArray<Metadata>> => {
         ogDescription: post.ogDescription ?? '',
         ogImage: post.ogImage ?? '',
         html: post.html,
+        toc: [...post.toc],
       }
       const postMeta = metadataForPostValue(runtimePost)
       const metadata: Metadata = {

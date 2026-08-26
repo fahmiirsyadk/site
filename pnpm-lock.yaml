@@ -1958,7 +1958,7 @@ packages:
     resolution: {integrity: sha512-vvuOGgcuPJAirlHvuQw1TrOiw7ptaIXXmIbNuiNOY6lNGJJH49PQ1Kj4nd783nPdQhQdicgOjVI2yI/9BD6/Ng==}
 
   purescript-foldkit@file:vendor/purescript-foldkit-0.1.0.tgz:
-    resolution: {integrity: sha512-xhRwz275t6NwgUsZfk32htR8gPWrNn+gxCcwsLe3AQ+0WvKYfTfxyUNNt6eQfHaE/Xi5U8bRdQnjgn0AB5AQWg==, tarball: file:vendor/purescript-foldkit-0.1.0.tgz}
+    resolution: {integrity: sha512-8cFEWC4c8QCzqDeGpALD9lTLFswbnd3gTAt15l1T1XgtxfdUk3X5aN4rjfspVVF4npp+c6Tpfu9p+hmFP6wY8Q==, tarball: file:vendor/purescript-foldkit-0.1.0.tgz}
     version: 0.1.0
     engines: {node: '>=22'}
     peerDependencies:
@@ -1975,7 +1975,7 @@ packages:
     hasBin: true
 
   purs-backend-ts@file:vendor/purs-backend-ts-0.1.0.tgz:
-    resolution: {integrity: sha512-M3dDzqMsfXGK9yzonUbi9PF9dTwYA5z/Wja6wUtoQhchcTWDtcy9NJIH2n3Er7oNLJDCQbR5RirBNbD2C0lfaA==, tarball: file:vendor/purs-backend-ts-0.1.0.tgz}
+    resolution: {integrity: sha512-jy063uviNuFg7aJTs3iZ9Bp7ncTw4pprucQFkKMqP17YBpPxNYXE1QtI5vDZUgIiQCF9MVujZhJndluqmVikDA==, tarball: file:vendor/purs-backend-ts-0.1.0.tgz}
     version: 0.1.0
     engines: {node: '>=22'}
     hasBin: true

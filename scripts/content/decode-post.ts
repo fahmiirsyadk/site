@@ -5,6 +5,12 @@ import { parseMarkdown } from './frontmatter.ts'
 
 export type Section = 'thought' | 'lab'
 
+export type TocEntry = Readonly<{
+  id: string
+  label: string
+  level: number
+}>
+
 export type Post = Readonly<{
   title: string
   date: string
@@ -18,10 +24,56 @@ export type Post = Readonly<{
   ogDescription: string | undefined
   ogImage: string | undefined
   html: string
+  toc: ReadonlyArray<TocEntry>
 }>
 
 const markdown = new MarkdownIt({ html: true, linkify: true, typographer: true })
 markdown.use(footnote)
+
+const slugifyHeading = (value: string): string => {
+  const slug = value
+    .normalize('NFKD')
+    .toLowerCase()
+    .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
+    .replace(/^-+|-+$/gu, '')
+  return slug.length > 0 ? slug : 'section'
+}
+
+type RenderedMarkdown = Readonly<{
+  html: string
+  toc: ReadonlyArray<TocEntry>
+}>
+
+const renderMarkdownWithToc = (source: string): RenderedMarkdown => {
+  const environment: Record<string, unknown> = {}
+  const tokens = markdown.parse(source, environment)
+  const usedIds = new Map<string, number>()
+  const toc: TocEntry[] = []
+
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index]
+    if (token?.type !== 'heading_open') continue
+
+    const level = Number(token.tag.slice(1))
+    if (level < 2 || level > 4) continue
+
+    const inline = tokens[index + 1]
+    const label = inline?.type === 'inline' ? inline.content : ''
+    const baseId = slugifyHeading(label)
+    const occurrence = usedIds.get(baseId) ?? 0
+    usedIds.set(baseId, occurrence + 1)
+    const id = occurrence === 0 ? baseId : `${baseId}-${occurrence + 1}`
+
+    token.attrSet('id', id)
+    token.attrSet('tabindex', '-1')
+    toc.push({ id, label, level })
+  }
+
+  return {
+    html: markdown.renderer.render(tokens, markdown.options, environment),
+    toc,
+  }
+}
 
 const mediaPath = (source: string): string => source.split(/[?#]/, 1)[0]?.toLowerCase() ?? ''
 const isGif = (source: string): boolean => mediaPath(source).endsWith('.gif')
@@ -47,7 +99,7 @@ markdown.renderer.rules.image = (tokens, index) => {
   return `<span class="dithered-image dithered-image-inline" data-dithered-image><img class="dithered-image-source" data-dithered-source src="${source}" alt="${alt}" loading="lazy"${titleAttribute}><canvas data-dithered-canvas aria-hidden="true"></canvas></span>`
 }
 
-export const renderMarkdown = (source: string): string => markdown.render(source)
+export const renderMarkdown = (source: string): string => renderMarkdownWithToc(source).html
 
 export const isSection = (value: string): value is Section =>
   value === 'thought' || value === 'lab'
@@ -69,6 +121,8 @@ export const decodePost = (path: string, source: string): Post => {
   const slug = maybeString(frontmatter.slug) ?? path.split('/').at(-1)?.replace(/\.md$/, '') ?? ''
   const section = parseSection(maybeString(frontmatter.section)) ?? sectionOf(path)
 
+  const rendered = renderMarkdownWithToc(parsed.body)
+
   return {
     title: maybeString(frontmatter.title) ?? slug,
     date: maybeString(frontmatter.date) ?? '',
@@ -83,6 +137,7 @@ export const decodePost = (path: string, source: string): Post => {
     ogTitle: maybeString(frontmatter.ogTitle),
     ogDescription: maybeString(frontmatter.ogDescription),
     ogImage: maybeString(frontmatter.ogImage),
-    html: renderMarkdown(parsed.body),
+    html: rendered.html,
+    toc: rendered.toc,
   }
 }

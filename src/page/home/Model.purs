@@ -1,10 +1,8 @@
 module Page.Home.Model where
 
-type Activity =
-  { contributions :: Int
-  , followers :: Int
-  , levels :: Array Int
-  }
+import Domain.GitHub as GitHub
+
+type Activity = GitHub.Activity
 
 data Status
   = Loading

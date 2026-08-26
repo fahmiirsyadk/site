@@ -8,7 +8,9 @@ import App.Model as AppModel
 import App.Route as Route
 import App.RouteTransition as RouteMotion
 import Content.Repository as Repository
+import Data.Maybe (Maybe(..))
 import Domain.Theme as Theme
+import Foldkit.Command as FoldkitCommand
 import Foldkit.Update as FoldkitUpdate
 import Page.Home.Command as HomeCommand
 import Page.Home.Model as HomeModel
@@ -28,42 +30,57 @@ init :: String -> UpdateResult
 init path =
   let model = initialModel path
   in result model
-      [ Command.ReadTheme
-      , Command.fromHome HomeCommand.LoadGitHub
-      , Command.SyncDocumentMetadata (Repository.metadataForPath (Route.routePath model.route))
+      [ Command.readTheme
+      , FoldkitCommand.mapMessage HomeCommand.loadGitHub AppMessage.GotHomeMessage
+      , Command.syncDocumentMetadata (Repository.metadataForPath (Route.routePath model.route))
       ]
 
 update :: Model -> Message -> UpdateResult
 update model message = case message of
   AppMessage.CompletedNavigateInternal -> result model []
+  AppMessage.CompletedNavigateHeading -> result model []
+  AppMessage.CompletedScrollToHeading -> result model []
+  AppMessage.CompletedScrollToProgress -> result model []
   AppMessage.StartedRouteEntry -> result (model { routeMotion = RouteMotion.Idle }) []
   AppMessage.GotHomeMessage childMessage ->
     let childResult = HomeUpdate.update model.home childMessage
-    in result
-      (model { home = childResult.model })
-      (map Command.fromHome childResult.commands)
+    in result (model { home = childResult.model }) (lifted AppMessage.GotHomeMessage childResult).commands
   AppMessage.ClickedCopyPostLink url ->
     let childResult = PostUpdate.update model.post (PostMessage.ClickedCopyLink url)
-    in result
-      (model { post = childResult.model })
-      (map Command.fromPost childResult.commands)
+    in result (model { post = childResult.model }) (lifted AppMessage.GotPostMessage childResult).commands
   AppMessage.GotPostMessage childMessage ->
     let childResult = PostUpdate.update model.post childMessage
-    in result
-      (model { post = childResult.model })
-      (map Command.fromPost childResult.commands)
-  AppMessage.ClickedInternalLink url -> result (model { routeMotion = RouteMotion.Leaving }) [ Command.NavigateInternal url ]
-  AppMessage.ClickedExternalLink href -> result model [ Command.LoadExternal href ]
-  AppMessage.ChangedUrl url ->
-    let nextHome = model.home { labInteraction = HomeModel.LabIdle }
-    in result
-      (model { route = Route.urlToAppRoute url, routeMotion = RouteMotion.Entering, home = nextHome })
-      [ Command.StartRouteEntry
-      , Command.ResetScroll
-      , Command.SyncDocumentMetadata (Repository.metadataForPath (Route.routePath (Route.urlToAppRoute url)))
-      ]
+    in result (model { post = childResult.model }) (lifted AppMessage.GotPostMessage childResult).commands
+  AppMessage.ClickedInternalLink input ->
+    case input.hash of
+      Just heading | input.path == Route.routePath model.route ->
+        result model [ Command.navigateHeading input.path heading ]
+      Just heading ->
+        result
+          (model { routeMotion = RouteMotion.Leaving })
+          [ Command.navigateInternal (input.path <> "#" <> heading) ]
+      Nothing ->
+        result (model { routeMotion = RouteMotion.Leaving }) [ Command.navigateInternal input.path ]
+  AppMessage.ClickedExternalLink href -> result model [ Command.loadExternal href ]
+  AppMessage.ChangedUrl input ->
+    if input.path == Route.routePath model.route then
+      case input.hash of
+        Just heading -> result model [ Command.scrollToHeading heading ]
+        Nothing -> result model []
+    else
+      let nextHome = model.home { labInteraction = HomeModel.LabIdle }
+          nextRoute = Route.urlToAppRoute input.path
+          commands = [ Command.startRouteEntry
+                     , Command.resetScroll
+                     , Command.syncDocumentMetadata (Repository.metadataForPath (Route.routePath nextRoute))
+                     ] <> case input.hash of
+                       Just heading -> [ Command.scrollToHeading heading ]
+                       Nothing -> []
+      in result
+        (model { route = nextRoute, routeMotion = RouteMotion.Entering, home = nextHome })
+        commands
   AppMessage.LoadedTheme theme -> result (model { theme = theme }) []
-  AppMessage.SelectedTheme theme -> result (model { theme = theme }) [ Command.PersistTheme theme ]
+  AppMessage.SelectedTheme theme -> result (model { theme = theme }) [ Command.persistTheme theme ]
   AppMessage.CompletedLoadExternal -> result model []
   AppMessage.CompletedMountSeaShader -> result model []
   AppMessage.CompletedMountHollowMark -> result model []
@@ -78,11 +95,15 @@ update model message = case message of
   AppMessage.CompletedSyncDocumentMetadata -> result model []
   AppMessage.FailedSyncDocumentMetadata -> result model []
 
-result :: Model -> Array Command.Command -> UpdateResult
-result model commands =
-  { model
-  , commands: map Command.toRuntime commands
-  }
+lifted
+  :: forall childModel childMessage
+   . (childMessage -> Message)
+   -> FoldkitUpdate.Return childModel childMessage
+   -> FoldkitUpdate.Return childModel Message
+lifted toParent = FoldkitUpdate.mapCommands toParent
+
+result :: Model -> Array (FoldkitCommand.Command Message) -> UpdateResult
+result model commands = { model, commands }
 
 routeMotionName :: Model -> String
 routeMotionName model = RouteMotion.toString model.routeMotion

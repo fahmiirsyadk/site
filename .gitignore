@@ -13,14 +13,6 @@ output/
 .purs-ts/
 .purs-ts-output/
 
-# Haskell / Cabal
-dist-newstyle/
-*.hi
-*.o
-
-# Shake build cache + generated output
-.shake/
-build/
 # Local agent data
 .claude/
 .pi/*

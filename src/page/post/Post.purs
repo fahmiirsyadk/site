@@ -5,8 +5,12 @@ import Prelude
 import Component.DitheredImage as DitheredImage
 import Component.Icon as Icon
 import Component.PostNavigation as Navigation
+import Data.Array as Array
+import Data.Int as Int
+import Data.Maybe (Maybe(..))
 import Data.String as String
 import Data.String.Pattern (Pattern(..))
+import Page.Post.Message as PostMessage
 import Page.Post.Model as PostModel
 import Foldkit.Html as HH
 import Foldkit.Mount (MountAction)
@@ -18,6 +22,13 @@ type Post =
   , dateLabel :: String
   , html :: String
   , banner :: String
+  , toc :: Array TocEntry
+  }
+
+type TocEntry =
+  { id :: String
+  , label :: String
+  , level :: Int
   }
 
 type Input message =
@@ -26,6 +37,10 @@ type Input message =
   , copyStatus :: PostModel.CopyStatus
   , copyMessage :: message
   , mount :: MountAction message
+  , trackProgress :: MountAction message
+  , readingProgress :: PostMessage.ReadingProgress
+  , moveProgress :: Int -> message
+  , setProgress :: Int -> message
   , previous :: Array Navigation.Link
   , next :: Array Navigation.Link
   }
@@ -46,35 +61,150 @@ checkIcon = Icon.outlined "m5 12.5 4.25 4.25L19 7" "post-action-icon"
 
 view :: forall message. Input message -> HH.Child message
 view input =
-  HH.article [ HP.class_ "min-w-0 space-y-6" ]
-        [ if input.post.banner == "" then HH.empty else cover input
-        , HH.div [ HP.class_ "flex w-full min-w-0 items-center gap-3 text-[12px] leading-[1.7]" ]
-            [ HH.h1 [ HP.class_ "min-w-0 font-instrument text-2xl leading-tight text-balance text-[#171717] dark:text-neutral-100" ] [ HH.text input.post.title ]
-            , HH.span [ HP.class_ "min-h-px min-w-6 flex-1 border-b border-neutral-300 dark:border-neutral-600" ] []
-            , HH.span [ HP.dataAttribute "relative-date" input.post.date, HP.class_ "shrink-0 text-right text-neutral-600 dark:text-neutral-400" ] [ HH.text input.post.dateLabel ]
-            ]
-        , HH.div
-            [ HP.class_ "post-prose prose prose-neutral dark:prose-invert max-w-none prose-headings:font-instrument"
-            , HP.innerHtml input.post.html
-            , HP.onMount { action: input.mount }
-            ] []
-        , HH.div [ HP.class_ "post-action-bar" ]
-            [ HH.a
-                [ HP.href input.homePath
-                , HP.ariaLabel "Back to section"
-                , HP.title "Back to section"
-                , HP.class_ "post-action-button"
-                ] [ homeArrowIcon ]
-            , HH.button
-                [ HP.type_ "button"
-                , HP.onClick { message: input.copyMessage }
-                , HP.ariaLabel (copyAriaLabel input.copyStatus)
-                , HP.title (copyTitle input.copyStatus)
-                , HP.class_ "post-action-button"
-                ] [ copyIcon input.copyStatus ]
-            ]
-        , Navigation.view { previous: input.previous, next: input.next }
-        ]
+  HH.div [ HP.dataAttribute "post-layout" "true", HP.class_ "post-layout relative w-full" ]
+    [ readingRail input
+    , HH.article [ HP.class_ "min-w-0 space-y-6" ]
+          [ if input.post.banner == "" then HH.empty else cover input
+          , HH.div [ HP.class_ "flex w-full min-w-0 items-center gap-3 text-[12px] leading-[1.7]" ]
+              [ HH.h1 [ HP.class_ "min-w-0 font-instrument text-2xl leading-tight text-balance text-[#171717] dark:text-neutral-100" ] [ HH.text input.post.title ]
+              , HH.span [ HP.class_ "min-h-px min-w-6 flex-1 border-b border-neutral-300 dark:border-neutral-600" ] []
+              , HH.span [ HP.dataAttribute "relative-date" input.post.date, HP.class_ "shrink-0 text-right text-neutral-600 dark:text-neutral-400" ] [ HH.text input.post.dateLabel ]
+              ]
+          , HH.div
+              [ HP.class_ "post-prose prose prose-neutral dark:prose-invert max-w-none prose-headings:font-instrument"
+              , HP.innerHtml input.post.html
+              , HP.onMount { action: input.mount }
+              ] []
+          , HH.div [ HP.class_ "post-action-bar" ]
+              [ HH.a
+                  [ HP.href input.homePath
+                  , HP.ariaLabel "Back to section"
+                  , HP.title "Back to section"
+                  , HP.class_ "post-action-button"
+                  ] [ homeArrowIcon ]
+              , HH.button
+                  [ HP.type_ "button"
+                  , HP.onClick { message: input.copyMessage }
+                  , HP.ariaLabel (copyAriaLabel input.copyStatus)
+                  , HP.title (copyTitle input.copyStatus)
+                  , HP.class_ "post-action-button"
+                  ] [ copyIcon input.copyStatus ]
+              ]
+          , Navigation.view { previous: input.previous, next: input.next }
+          ]
+    ]
+
+readingRail :: forall message. Input message -> HH.Child message
+readingRail input =
+  if Array.null input.post.toc then HH.empty
+  else
+    HH.aside
+      [ HP.class_ "absolute inset-y-0 right-[calc((100%-100vw)/2+0.25rem)] z-20 w-2.5 lg:right-[calc((100%-100vw)/2+2rem)] lg:w-4"
+      , HP.onMount { action: input.trackProgress }
+      ]
+      [ HH.div
+          [ HP.class_ "sticky top-32 h-[calc(100vh-16rem)] w-2.5 lg:w-4" ]
+          (ticks input <> [ bottomTick input, progressSlider input, progressHandle input ])
+      ]
+
+ticks :: forall message. Input message -> Array (HH.Child message)
+ticks input = map (tick input) (Array.range 0 99)
+
+tick :: forall message. Input message -> Int -> HH.Child message
+tick input progress =
+  HH.span
+    [ HP.ariaHidden true
+    , HP.dataAttribute "reading-progress-tick" (show progress)
+    , HP.class_ "group absolute right-0 z-30 h-[1%] w-16 cursor-pointer lg:w-20"
+    , HP.style { top: show progress <> "%" }
+    , HP.onClick { message: input.setProgress progress }
+    ]
+    [ tickMarker input progress ]
+
+bottomTick :: forall message. Input message -> HH.Child message
+bottomTick input =
+  HH.span
+    [ HP.ariaHidden true
+    , HP.dataAttribute "reading-progress-tick" "100"
+    , HP.class_ "group absolute right-0 z-30 h-[1%] w-16 cursor-pointer lg:w-20"
+    , HP.style { bottom: "0px" }
+    , HP.onClick { message: input.setProgress 100 }
+    ]
+    [ bottomTickMarker input 100 ]
+
+tickMarker :: forall message. Input message -> Int -> HH.Child message
+tickMarker input progress =
+  HH.span [ HP.class_ (tickMarkerClass input progress <> " top-0") ] []
+
+bottomTickMarker :: forall message. Input message -> Int -> HH.Child message
+bottomTickMarker input progress =
+  HH.span [ HP.class_ (tickMarkerClass input progress <> " bottom-0") ] []
+
+tickMarkerClass :: forall message. Input message -> Int -> String
+tickMarkerClass input progress =
+  case Array.find (\heading -> heading.progress == progress) input.readingProgress.headings of
+    Nothing -> baseTickClass
+    Just heading -> headingTickClass heading.level
+
+baseTickClass :: String
+baseTickClass =
+  "absolute right-0 h-px w-3 origin-right scale-x-[0.375] bg-neutral-300 transition-[scale,background-color] duration-150 ease-out motion-reduce:transition-none group-hover:scale-x-100 group-hover:bg-neutral-600 dark:bg-gray-800 dark:group-hover:bg-gray-500 lg:w-5"
+
+headingTickClass :: Int -> String
+headingTickClass level =
+  "absolute right-0 h-px w-3 origin-right transition-[scale,background-color] duration-150 ease-out motion-reduce:transition-none group-hover:scale-x-100 group-hover:bg-neutral-600 dark:group-hover:bg-gray-500 lg:w-5 " <> headingScale level
+
+headingScale :: Int -> String
+headingScale level = case level of
+  2 -> "scale-x-100 bg-neutral-500 dark:bg-gray-600"
+  3 -> "scale-x-[0.875] bg-neutral-500/85 dark:bg-gray-600/85"
+  4 -> "scale-x-75 bg-neutral-500/70 dark:bg-gray-600/70"
+  _ -> "scale-x-[0.625] bg-neutral-500/55 dark:bg-gray-600/55"
+
+progressSlider :: forall message. Input message -> HH.Child message
+progressSlider input =
+  let progress = input.readingProgress.progress
+  in HH.div
+      [ HP.ariaLabel "Reading progress"
+      , HP.ariaOrientation "vertical"
+      , HP.ariaValuemax 100.0
+      , HP.ariaValuemin 0.0
+      , HP.ariaValuenow (Int.toNumber progress)
+      , HP.ariaValuetext (show progress <> "% read")
+      , HP.class_ "peer absolute inset-y-0 -right-2 z-20 w-16 cursor-pointer touch-manipulation outline-none"
+      , HP.role_ "slider"
+      , HP.tabindex 0.0
+      , HP.onKeyDownPreventDefault (progressKey input)
+      ] []
+
+progressKey :: forall message. Input message -> String -> HP.KeyboardModifiers -> Maybe message
+progressKey input key _ = case key of
+  "ArrowUp" -> Just (input.moveProgress (-5))
+  "ArrowLeft" -> Just (input.moveProgress (-5))
+  "ArrowDown" -> Just (input.moveProgress 5)
+  "ArrowRight" -> Just (input.moveProgress 5)
+  "PageUp" -> Just (input.moveProgress (-10))
+  "PageDown" -> Just (input.moveProgress 10)
+  "Home" -> Just (input.setProgress 0)
+  "End" -> Just (input.setProgress 100)
+  _ -> Nothing
+
+progressHandle :: forall message. Input message -> HH.Child message
+progressHandle input =
+  let progress = input.readingProgress.progress
+  in HH.span
+      [ HP.ariaHidden true
+      , HP.class_ "pointer-events-none absolute right-0 z-40 h-px w-3 peer-focus-visible:outline-1 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-orange-500 peer-focus-visible:outline-dashed lg:w-5"
+      , HP.style { top: show progress <> "%" }
+      ]
+      [ HH.span
+          [ HP.class_ "absolute top-1/2 right-6 hidden -translate-y-1/2 lg:block" ]
+          [ HH.span [ HP.class_ "font-mono text-xs leading-none text-orange-500 tabular-nums" ]
+              [ HH.text (show progress <> "%") ]
+          ]
+      , HH.span
+          [ HP.class_ "absolute inset-0 origin-right bg-orange-500" ] []
+      ]
 
 cover :: forall message. Input message -> HH.Child message
 cover input =

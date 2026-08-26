@@ -9,7 +9,7 @@ import PursTs.Effect as Fx
 
 main :: Fx.Effect Fx.Never Fx.NoServices Unit
 main = Runtime.run
-  { init: Core.init <<< Core.urlPath
+  { init: Core.initUrl
   , update: Core.update
   , view: View.view
   , onUrlRequest: Core.clickedLink

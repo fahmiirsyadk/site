@@ -29,6 +29,7 @@ type PostPage =
   , dateLabel :: String
   , html :: String
   , banner :: String
+  , toc :: Array Interop.TocEntry
   }
 
 
@@ -82,6 +83,7 @@ postPage post =
   , dateLabel: Interop.formatDate post.date
   , html: post.html
   , banner: post.banner
+  , toc: post.toc
   }
 
 postLink :: Boolean -> Post -> Link

@@ -40,16 +40,18 @@ builder. The reusable API and its strict TypeScript providers are owned by the
 installed `purescript-foldkit` binding package rather than copied into the site.
 
 `src/app/Entry.purs` owns runtime startup and `purs-ts` generates the Vite boot
-module at `output/entry.ts`. Native browser executors are isolated behind
-`src/Platform/Browser.purs` and its TypeScript sibling. Those providers return
-native Effect v4 values and contain only browser/library operations such as
-DOM, navigation, storage, fetch, and WebGL resource acquisition.
+module at `output/entry.ts`. Native browser executors are isolated behind the
+`src/Platform/*.purs` modules and their TypeScript siblings. Those providers
+return native Effect v4 values and contain only browser/library operations such
+as DOM, navigation, storage, fetch, and WebGL resource acquisition. GitHub
+request orchestration and activity shaping live in `Platform.GitHub.purs`; its
+TypeScript sibling only fetches and validates the external response shapes.
 PureScript modules and their FFI providers are compiled or copied to TypeScript
 by `purs-ts`; there is no generated Bridge declaration layer. The
-remaining TypeScript owns build-time content compilation and browser-specific
-WebGL, shader, clock, and cover effects. Canvases are declared by PureScript
-views and acquire their resources through Foldkit Mounts, so the runtime owns
-cleanup when a view leaves the tree.
+remaining TypeScript owns build-time content compilation, small external API
+response adapters, and browser-specific WebGL, shader, clock, and cover
+effects. Canvases are declared by PureScript views and acquire their resources
+through Foldkit Mounts, so the runtime owns cleanup when a view leaves the tree.
 
 Runtime calculations follow the same boundary. `Runtime.Canvas` owns raster
 sizing, `Runtime.Dither` owns dither colors, Bayer data, texture layout, and

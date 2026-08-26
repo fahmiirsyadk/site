@@ -4,14 +4,25 @@ import {
   CompletedMountHollowMark,
   CompletedMountRandomScribble,
   CompletedMountSeaShader,
+  CompletedScrollToProgress,
   type Message,
 } from 'purescript/App.Message/index.ts'
-import { ditheredImage, hollowMark, randomScribble, seaShader } from 'purescript/App.Mount/index.ts'
+import { scrollToProgress } from 'purescript/App.Command/index.ts'
+import {
+  ditheredImage,
+  hollowMark,
+  randomScribble,
+  seaShader,
+  trackPostProgress,
+} from 'purescript/App.Mount/index.ts'
 import type { Model } from 'purescript/App.Update/index.ts'
 import { init, update } from 'purescript/App.Update/index.ts'
 import { view } from 'purescript/App.View/index.ts'
 import { renderDocumentForTest } from 'purescript-foldkit/runtime'
-import { CompletedMountDitheredImage } from 'purescript/Page.Post.Message/index.ts'
+import {
+  ChangedReadingProgress,
+  CompletedMountDitheredImage,
+} from 'purescript/Page.Post.Message/index.ts'
 
 import type { Document, HtmlBuilder } from 'foldkit/html'
 import * as Scene from 'foldkit/scene'
@@ -36,6 +47,7 @@ const resolvePostMounts = Scene.Mount.resolveAll(
   [ditheredImage, CompletedMountDitheredImage],
   [ditheredImage, CompletedMountDitheredImage],
   [seaShader, CompletedMountSeaShader],
+  [trackPostProgress, ChangedReadingProgress({ progress: 0, headings: [] })],
 )
 
 describe('application view integration', () => {
@@ -67,7 +79,30 @@ describe('application view integration', () => {
       { update, view: render },
       Scene.given(init('/thought/chaotic-pendulum/').model),
       Scene.expect(Scene.role('heading', { name: 'Chaotic pendulum' })).toExist(),
+      Scene.expect(Scene.role('slider', { name: 'Reading progress' })).toHaveAttr('aria-valuetext', '0% read'),
       resolvePostMounts,
+    )
+  })
+
+  test('clicking a progress tick dispatches the matching scroll command', () => {
+    Scene.scene(
+      { update, view: render },
+      Scene.given(init('/thought/chaotic-pendulum/').model),
+      resolvePostMounts,
+      Scene.click(Scene.selector('[data-reading-progress-tick="50"]')),
+      Scene.expectHandled(),
+      Scene.Command.resolve(scrollToProgress(50), CompletedScrollToProgress),
+    )
+  })
+
+  test('keyboard interaction on the slider clamps to the progress range', () => {
+    Scene.scene(
+      { update, view: render },
+      Scene.given(init('/thought/chaotic-pendulum/').model),
+      resolvePostMounts,
+      Scene.keydown(Scene.role('slider', { name: 'Reading progress' }), 'End'),
+      Scene.expectHandled(),
+      Scene.Command.resolve(scrollToProgress(100), CompletedScrollToProgress),
     )
   })
 

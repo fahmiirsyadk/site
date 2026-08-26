@@ -10,6 +10,11 @@ type SourcePost = Readonly<{
   ogDescription?: string
   ogImage?: string
   html: string
+  toc: ReadonlyArray<{
+    id: string
+    label: string
+    level: number
+  }>
 }>
 
 type RuntimePost = Readonly<{
@@ -24,11 +29,16 @@ type RuntimePost = Readonly<{
   ogDescription: string
   ogImage: string
   html: string
+  toc: ReadonlyArray<{
+    id: string
+    label: string
+    level: number
+  }>
 }>
 
 const content: Readonly<Record<string, SourcePost>> =
   typeof import.meta.env === 'object'
-    ? import.meta.glob<SourcePost>('../../content/*.md', {
+    ?       import.meta.glob<SourcePost>('../content/*.md', {
         eager: true,
         query: '?site-content',
         import: 'default',
@@ -47,4 +57,5 @@ export const loadedPosts: ReadonlyArray<RuntimePost> = Object.values(content).ma
   ogDescription: post.ogDescription ?? '',
   ogImage: post.ogImage ?? '',
   html: post.html,
+  toc: post.toc,
 }))

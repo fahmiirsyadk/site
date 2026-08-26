@@ -2,6 +2,12 @@ module Interop.Content where
 
 import Data.Function.Uncurried (Fn1, runFn1)
 
+type TocEntry =
+  { id :: String
+  , label :: String
+  , level :: Int
+  }
+
 type Post =
   { title :: String
   , date :: String
@@ -14,6 +20,7 @@ type Post =
   , ogDescription :: String
   , ogImage :: String
   , html :: String
+  , toc :: Array TocEntry
   }
 
 foreign import posts :: Array Post

@@ -1,9 +1,9 @@
-import { Effect, Schema as S } from 'effect'
+import { Effect } from 'effect'
 
-import { mountDitheredImage } from '../platform/browser/dithered-image.ts'
-import { mountHollowMark } from '../platform/browser/hollow-mark.ts'
-import { mountRandomScribble } from '../platform/browser/random-scribble.ts'
-import { mountSeaShader } from '../platform/browser/shader.ts'
+import { mountDitheredImage } from '../browser/dithered-image.ts'
+import { mountHollowMark } from '../browser/hollow-mark.ts'
+import { mountRandomScribble } from '../browser/random-scribble.ts'
+import { mountSeaShader } from '../browser/shader.ts'
 
 type Cleanup = () => void
 
@@ -14,12 +14,6 @@ type DocumentMetadata = Readonly<{
   contentType: string
 }>
 
-const Profile = S.Struct({ followers: S.Number })
-const Contributions = S.Struct({
-  total: S.Struct({ lastYear: S.Number }),
-  contributions: S.Array(S.Struct({ level: S.Number })),
-})
-
 const setMeta = (selector: string, attribute: readonly [string, string], value: string): void => {
   const existing = document.head.querySelector(selector)
   const element = existing instanceof HTMLMetaElement ? existing : document.createElement('meta')
@@ -29,30 +23,6 @@ const setMeta = (selector: string, attribute: readonly [string, string], value: 
     document.head.append(element)
   }
 }
-
-export const loadGitHub = (username: string) =>
-  Effect.gen(function* () {
-    const [profileResponse, contributionsResponse] = yield* Effect.all([
-      Effect.tryPromise(() => fetch(`https://api.github.com/users/${username}`)),
-      Effect.tryPromise(() =>
-        fetch(`https://github-contributions-api.jogruber.de/v4/${username}?y=last`),
-      ),
-    ])
-    if (!profileResponse.ok || !contributionsResponse.ok) {
-      return yield* Effect.fail(new Error('GitHub request failed'))
-    }
-    const profile = yield* Effect.tryPromise(() => profileResponse.json()).pipe(
-      Effect.flatMap(S.decodeUnknownEffect(Profile)),
-    )
-    const contributionData = yield* Effect.tryPromise(() => contributionsResponse.json()).pipe(
-      Effect.flatMap(S.decodeUnknownEffect(Contributions)),
-    )
-    return {
-      contributions: contributionData.total.lastYear,
-      followers: profile.followers,
-      levels: contributionData.contributions.slice(-56).map(contribution => contribution.level),
-    }
-  })
 
 export const resetScroll =
   Effect.try(() => {

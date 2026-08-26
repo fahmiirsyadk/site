@@ -20,6 +20,11 @@ type Post =
   , ogDescription :: String
   , ogImage :: String
   , html :: String
+  , toc :: Array
+      { id :: String
+      , label :: String
+      , level :: Int
+      }
   }
 
 type DocumentMetadata =

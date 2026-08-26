@@ -473,18 +473,18 @@ export const copyPostLink = (url: string) =>
 
 Constructing this command during `update` cannot start its Promise or throw from provider construction. Foldkit starts it when the command runs. Promise rejections enter Effect's typed error channel, and interruption reaches the `AbortSignal` from `Effect.tryPromise` when the provider supports cancellation.
 
-Application commands convert both expected outcomes into messages:
+The page that owns the request defines its command and converts both expected outcomes into its own messages:
 
 ```purescript
-LoadGitHub username ->
-  FoldkitCommand.named "LoadGitHub" { username } \_ ->
-    Fx.match (Browser.loadGitHub username)
-      { onFailure: const (GotHomeMessage FailedLoadGitHub)
-      , onSuccess: GotHomeMessage <<< SucceededLoadGitHub
-      }
+loadGitHub :: Command Message.Message
+loadGitHub = FoldkitCommand.named "LoadGitHub" { username } \_ ->
+  Fx.match (GitHub.load username)
+    { onFailure: const FailedLoadGitHub
+    , onSuccess: SucceededLoadGitHub
+    }
 ```
 
-Foldkit receives `Command Message`, so it never has to invent a policy for a domain error.
+`Foldkit.Update.mapCommands GotHomeMessage` lifts the child result, so Foldkit receives `Command Message` at the root without an intermediate application command type.
 
 Mounts use the requirements parameter for resource lifetime. `Effect.acquireRelease` returns an Effect requiring `Scope`, and closing that scope runs the release action. Foldkit's binding keeps the requirement in its type:
 
@@ -556,15 +556,15 @@ main = Runtime.run
   }
 ```
 
-`App.Model` contains the route, theme, route transition, home model, and post model. Each page owns its messages, model, update, commands, and view. At the boundary, `GotHomeMessage` and `GotPostMessage` wrap child messages for the parent. `Foldkit.Submodel` performs that mapping without exposing the HTML builder.
+`App.Model` contains the route, theme, route transition, home model, and post model. Each page owns its messages, model, commands, and view. At the boundary, `GotHomeMessage` and `GotPostMessage` wrap child messages for the parent. `Foldkit.Submodel` performs that mapping without exposing the HTML builder.
 
-`App.Update` contains state transitions and command descriptions. `App.Command` turns those descriptions into named Foldkit commands, retaining their names and arguments for Scene tests and devtools. `Fx.match` or `Fx.catchAll` converts expected failures into application messages.
+Pages own real Foldkit command definitions next to their updates: `Page.Home.Command.loadGitHub`, and `Page.Post.Command`'s `copyLink`, `resetCopyStatus`, and `scrollToProgress` build named commands whose effects come from Foldkit modules and Platform providers. `Foldkit.Update.mapCommands` lifts child results into the parent, so no intermediate application command type or conversion switch exists. Cross-cutting chrome — navigation, scroll targets, theme persistence, document metadata — is defined in the same style inside `App.Command`, which stays a plain library of named commands rather than an ADT plus interpreter. `Fx.match` or `Fx.catchAll` converts expected failures into application messages.
 
 `App.View` returns a typed `Document Message`, with routes selecting page views through `case`. It creates canvases and associates them with mount actions without calling WebGL itself. Once the required title and body exist, document modifiers add the canonical and Open Graph URLs.
 
-`Platform.Browser.purs` now contains only site capabilities: clipboard access,
-GitHub requests, route-specific metadata, scroll behavior, and WebGL resource
-acquisition. Foldkit owns the reusable browser primitives in
+`Platform.Browser.purs` now contains only site capabilities: route-specific
+metadata, scroll behavior, and WebGL resource acquisition. `Platform.GitHub.purs` composes the GitHub requests in PureScript: `Fx.tryPromise` (a `PursTs.Effect` intrinsic over the host promise runtime) drives `fetch` with an abort signal, status checks and Schema validation compose through `bind`, and both requests run concurrently with `Fx.zipPar`. Its TypeScript sibling only mirrors browser and library primitives — `fetch`, response accessors, and the two Schema decoders — without owning any policy.
+Foldkit owns the reusable browser primitives in
 `Foldkit.Navigation`, `Foldkit.Render`, `Foldkit.Media`, `Foldkit.Storage`,
 and `Foldkit.Root`. `App.Command` composes those primitives with the site's
 messages and policies. The remaining TypeScript FFI is therefore domain code,
@@ -584,7 +584,7 @@ Graphics use the same split. PureScript owns calculations and state transitions;
 
 `Runtime.SeaMotion` holds the drag target, smoothed position, previous position, velocity, and lab-hover interpolation. PureScript converts pointer input into a bounded target, then applies smoothing and damping on each frame.
 
-`platform/browser/shader.ts` creates the WebGL2 context and shader program, then writes PureScript state into uniforms for cube offset, velocity, time, theme, intro, cloud quality, and hover. A `ResizeObserver` updates the viewport, while an `IntersectionObserver` stops animation outside the visible area. Cleanup cancels the frame, disconnects both observers, removes pointer listeners, deletes the vertex array and shader program, and releases the context.
+`browser/shader.ts` creates the WebGL2 context and shader program, then writes PureScript state into uniforms for cube offset, velocity, time, theme, intro, cloud quality, and hover. A `ResizeObserver` updates the viewport, while an `IntersectionObserver` stops animation outside the visible area. Cleanup cancels the frame, disconnects both observers, removes pointer listeners, deletes the vertex array and shader program, and releases the context.
 
 ### Hollow mark
 
@@ -603,6 +603,10 @@ Client-side navigation replaces article HTML inside an existing container. A `Mu
 ### Random scribble
 
 `Runtime.Scribble` stores path variants, prevents the same path from being selected twice, and builds the keyframe description. Its TypeScript provider handles randomness, DOM selection, path measurement, and the Web Animations API. Selection rules and animation plans stay in testable PureScript code.
+
+### Reading progress
+
+`Runtime.Scroll` owns the deterministic scroll math: percentage clamping and rounding, heading offset-to-progress conversion against the reading anchor, snapshot equality for change detection, and scroll target arithmetic. `Platform.Browser.Scroll` builds its stream through the reusable `Foldkit.Mount.defineStreamWith` binding; the TypeScript provider only measures the live element's scroll root and post layout, reports a descriptive `FailedReadingProgress` message when required elements are missing, observes size changes on both root and content, and forwards raw geometry through the PureScript calculation. Scroll commands reuse the same target arithmetic, focus the landed heading for keyboard navigation, and complete with messages mirroring their names: `NavigateHeading`, `ScrollToHeading`, and `ScrollToProgress` each produce their own `Completed*` fact.
 
 ## Content and production output
 

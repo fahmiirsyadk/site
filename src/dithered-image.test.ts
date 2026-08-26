@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { mountDitheredImage } from './platform/browser/dithered-image'
+import { mountDitheredImage } from './browser/dithered-image'
 
 const container = (markup: string): HTMLElement => {
   const element = document.createElement('div')

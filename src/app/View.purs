@@ -51,6 +51,10 @@ routeView model =
                 , copyStatus: postModel.copyStatus
                 , copyMessage: PostMessage.ClickedCopyLink (Repository.pathFor post.section post.slug)
                 , mount: Mount.ditheredImage
+                , trackProgress: Mount.trackPostProgress
+                , readingProgress: postModel.readingProgress
+                , moveProgress: PostMessage.MoveProgress
+                , setProgress: PostMessage.SetProgress
                 , previous: links.previous
                 , next: links.next
                 }

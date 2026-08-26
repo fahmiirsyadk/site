@@ -1,4 +1,4 @@
 export {
   formatDateImpl,
   posts,
-} from "../platform/browser/content-interop.ts";
+} from "../browser/content-interop.ts";

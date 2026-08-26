@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest'
 import { posts } from 'purescript/Content.Repository/index.ts'
 import { metadataForPath } from 'purescript/Domain.Content/index.ts'
 
-import { renderMarkdown } from '../scripts/content/decode-post.ts'
+import { decodePost, renderMarkdown } from '../scripts/content/decode-post.ts'
 
 const render = (source: string): HTMLElement => {
   const root = document.createElement('div')
@@ -57,6 +57,30 @@ describe('Markdown images', () => {
     expect(video?.hasAttribute('controls')).toBe(true)
     expect(video?.getAttribute('title')).toBe('Demo video')
     expect(root.querySelector('[data-dithered-image]')).toBeNull()
+  })
+})
+
+describe('Markdown headings', () => {
+  test('adds stable heading ids and collects table-of-contents entries', () => {
+    const root = render('# Title\n\n## How it started\n\n### Details\n\n## How it started')
+
+    expect(root.querySelector('h1')?.hasAttribute('id')).toBe(false)
+    expect(root.querySelector('h2')?.getAttribute('id')).toBe('how-it-started')
+    expect(root.querySelectorAll('h2')[1]?.getAttribute('id')).toBe('how-it-started-2')
+    expect(root.querySelector('h3')?.getAttribute('id')).toBe('details')
+    expect(root.querySelector('h2')?.getAttribute('tabindex')).toBe('-1')
+  })
+
+  test('decodePost reports the collected table of contents', () => {
+    const post = decodePost(
+      'thought/how-it-started.md',
+      '---\ntitle: How it started\n---\n\n## How it started\n\n### Details',
+    )
+
+    expect(post.toc).toEqual([
+      { id: 'how-it-started', label: 'How it started', level: 2 },
+      { id: 'details', label: 'Details', level: 3 },
+    ])
   })
 })
 

@@ -8,21 +8,12 @@ import PursTs.Effect as Fx
 foreign import data BrowserError :: Type
 foreign import data Cleanup :: Type
 
-type GitHubActivity =
-  { contributions :: Int
-  , followers :: Int
-  , levels :: Array Int
-  }
-
 type DocumentMetadata =
   { title :: String
   , description :: String
   , image :: String
   , contentType :: String
   }
-
-foreign import loadGitHub
-  :: String -> Fx.Effect BrowserError Fx.NoServices GitHubActivity
 
 foreign import resetScroll
   :: Fx.Effect BrowserError Fx.NoServices Unit

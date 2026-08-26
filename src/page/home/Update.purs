@@ -1,12 +1,14 @@
 module Page.Home.Update where
 
-import Page.Home.Command as Command
+import Prelude
+
+import Foldkit.Command as Foldkit
 import Page.Home.Message as Message
 import Page.Home.Model as Model
 
 type Result =
   { model :: Model.Model
-  , commands :: Array Command.Command
+  , commands :: Array (Foldkit.Command Message.Message)
   }
 
 update :: Model.Model -> Message.Message -> Result

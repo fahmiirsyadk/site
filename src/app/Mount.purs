@@ -7,7 +7,9 @@ import Foldkit.Mount (MountAction)
 import Foldkit.Mount as Mount
 import Page.Post.Message as PostMessage
 import Platform.Browser as Browser
+import Platform.Browser.Scroll as Scroll
 import PursTs.Effect as Fx
+import Runtime.Scroll as RuntimeScroll
 
 mount
   :: forall message
@@ -44,3 +46,14 @@ seaShader = Mount.define "SeaShader"
   (mount Browser.acquireSeaShader
     AppMessage.CompletedMountSeaShader
     AppMessage.FailedMountSeaShader)
+
+trackPostProgress :: MountAction PostMessage.Message
+trackPostProgress = Scroll.trackReadingProgress
+  "TrackPostProgress"
+  { scrollRootSelector: "#content-scroll"
+  , layoutSelector: "[data-post-layout]"
+  , contentSelector: ".post-prose"
+  , headingSelector: "h2, h3, h4"
+  }
+  (\reason -> PostMessage.FailedReadingProgress reason)
+  (PostMessage.ChangedReadingProgress <<< RuntimeScroll.readingProgress)
