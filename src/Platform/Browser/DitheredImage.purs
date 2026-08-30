@@ -75,8 +75,11 @@ mountContainer element = do
   initialRoots <- Sensors.selectElements element "[data-dithered-image]"
   Sensors.forEach initialRoots (addRoot registryCell)
   contentCleanup <- Sensors.observeChildList element \delta -> do
-    Sensors.forEach delta.added (addIfRoot registryCell)
+    -- Removals first: on a content swap the outgoing roots release their GL
+    -- contexts before the incoming ones acquire theirs, and a root moved
+    -- within the container is unmounted then mounted at its new position.
     Sensors.forEach delta.removed (removeRoot registryCell)
+    Sensors.forEach delta.added (addIfRoot registryCell)
   pure
     (Sensors.composeCleanups
       [ contentCleanup

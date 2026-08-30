@@ -219,8 +219,8 @@ mountHollowReady element handle = do
   pure
     (Sensors.composeCleanups
       [ Sensors.cleanupOfCell context.loopCell
-      , disposeHollowMark handle
       , cleanups
+      , disposeHollowMark handle
       ])
 
 setupHollowCells

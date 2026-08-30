@@ -198,9 +198,9 @@ mountSeaReady element handle = do
   pure
     (Sensors.composeCleanups
       [ Sensors.cleanupOfCell context.loopCell
+      , cleanups
       , disposeSea handle
       , Sensors.cleanupOfEffect (Sensors.writeDataFlag element "initialized" false)
-      , cleanups
       ])
 
 seaInitialHover :: Array Element -> Fx.Effect Fx.Never Fx.NoServices Number
