@@ -1,9 +1,24 @@
+import { Option, Schema as S } from 'effect'
+
+export type FrontmatterValue = string | ReadonlyArray<string>
+
 export type ParsedMarkdown = Readonly<{
-  attributes: Readonly<Record<string, unknown>>
+  attributes: Readonly<Record<string, FrontmatterValue>>
   body: string
 }>
 
-const parseAttributes = (source: string): Readonly<Record<string, unknown>> =>
+const parseArrayValue = (source: string): ReadonlyArray<string> => {
+  try {
+    return Option.match(S.decodeUnknownOption(S.Array(S.String))(JSON.parse(source)), {
+      onNone: () => [],
+      onSome: value => value,
+    })
+  } catch {
+    return []
+  }
+}
+
+const parseAttributes = (source: string): Readonly<Record<string, FrontmatterValue>> =>
   Object.fromEntries(
     source.split('\n').flatMap(line => {
       const separator = line.indexOf(':')
@@ -12,14 +27,11 @@ const parseAttributes = (source: string): Readonly<Record<string, unknown>> =>
       }
       const key = line.slice(0, separator).trim()
       const rawValue = line.slice(separator + 1).trim()
-      if (rawValue.startsWith('[')) {
-        try {
-          return [[key, JSON.parse(rawValue)]]
-        } catch {
-          return [[key, []]]
-        }
-      }
-      return [[key, rawValue.replace(/^"|"$/g, '')]]
+      const value: FrontmatterValue = rawValue.startsWith('[')
+        ? parseArrayValue(rawValue)
+        : rawValue.replace(/^"|"$/g, '')
+      const entry: readonly [string, FrontmatterValue] = [key, value]
+      return [entry]
     }),
   )
 

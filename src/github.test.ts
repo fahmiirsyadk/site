@@ -7,7 +7,18 @@ import {
   fetchProfile,
 } from 'purescript/Platform.GitHub/index.ts'
 
-const jsonResponse = (body: unknown): Response =>
+type GitHubFixture =
+  | Readonly<{
+      followers: number
+    }>
+  | Readonly<{
+      total: Readonly<{
+        lastYear: number | string
+      }>
+      contributions: ReadonlyArray<Readonly<{ level: number }>>
+    }>
+
+const jsonResponse = (body: GitHubFixture): Response =>
   new Response(JSON.stringify(body), { status: 200 })
 
 const requestFailure = { message: 'GitHub request failed' }

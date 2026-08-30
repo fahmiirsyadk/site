@@ -1,6 +1,13 @@
+import { Effect } from 'effect'
 import { describe, expect, test } from 'vitest'
 
-import { mountDitheredImage } from './browser/dithered-image'
+import { mountDitheredImage } from 'purescript/Platform.Browser.DitheredImage/index.ts'
+
+// The generated PureScript signature types `Cleanup` opaquely (unknown), so the
+// teardown function is asserted at the boundary.
+// SAFETY: every mount returns Sensors.composeCleanups output — a plain () => void.
+const mount = (element: Element): (() => void) =>
+  Effect.runSync(mountDitheredImage(element)) as () => void
 
 const container = (markup: string): HTMLElement => {
   const element = document.createElement('div')
@@ -20,7 +27,7 @@ describe('dithered image mounting', () => {
       `<p>${ditherMarkup('/one.png')}</p><p>text</p><p>${ditherMarkup('/two.png')}</p><p>${ditherMarkup('/three.png')}</p>`,
     )
 
-    mountDitheredImage(prose)
+    mount(prose)
 
     const mounted = prose.querySelectorAll('[data-dithered-image][data-dither-initialized="true"]')
     expect(mounted).toHaveLength(3)
@@ -29,19 +36,22 @@ describe('dithered image mounting', () => {
   test('mounts a container that is itself a dithered image', () => {
     const cover = container(ditherMarkup('/cover.png')).firstElementChild
     expect(cover).toBeInstanceOf(HTMLElement)
+    if (!(cover instanceof HTMLElement)) {
+      throw new Error('Expected the dithered image fixture to be an HTMLElement')
+    }
 
-    mountDitheredImage(cover as HTMLElement)
+    mount(cover)
 
-    expect((cover as HTMLElement).dataset.ditherInitialized).toBe('true')
+    expect(cover.dataset.ditherInitialized).toBe('true')
   })
 
   test('mounts each image only once across repeated mounts', () => {
     const prose = container(`<p>${ditherMarkup('/one.png')}</p>`)
     const image = prose.querySelector('[data-dithered-image]')
 
-    mountDitheredImage(prose)
+    mount(prose)
     if (image instanceof HTMLElement) image.dataset.ditherFallback = 'checked'
-    mountDitheredImage(prose)
+    mount(prose)
 
     expect(image instanceof HTMLElement ? image.dataset.ditherFallback : '').toBe('checked')
   })
@@ -49,7 +59,7 @@ describe('dithered image mounting', () => {
   test('falls back without a WebGL context instead of throwing', () => {
     const prose = container(`<p>${ditherMarkup('/one.png')}</p>`)
 
-    const cleanup = mountDitheredImage(prose)
+    const cleanup = mount(prose)
 
     expect(prose.querySelector('[data-dither-fallback="true"]')).not.toBeNull()
     expect(() => cleanup()).not.toThrow()
@@ -59,7 +69,7 @@ describe('dithered image mounting', () => {
     const prose = container(`<p>${ditherMarkup('/one.png')}</p>`)
     document.body.append(prose)
 
-    mountDitheredImage(prose)
+    mount(prose)
     prose.innerHTML = `<p>${ditherMarkup('/two.png')}</p><p>${ditherMarkup('/three.png')}</p>`
     await settle()
 
@@ -71,7 +81,7 @@ describe('dithered image mounting', () => {
     const prose = container(`<p>${ditherMarkup('/one.png')}</p>`)
     document.body.append(prose)
 
-    const cleanup = mountDitheredImage(prose)
+    const cleanup = mount(prose)
     const removed = prose.querySelector('[data-dithered-image]')
     prose.innerHTML = ''
     await settle()
@@ -84,7 +94,7 @@ describe('dithered image mounting', () => {
     const prose = container(`<p>${ditherMarkup('/one.png')}</p>`)
     document.body.append(prose)
 
-    const cleanup = mountDitheredImage(prose)
+    const cleanup = mount(prose)
     cleanup()
     prose.innerHTML = `<p>${ditherMarkup('/two.png')}</p>`
     await settle()

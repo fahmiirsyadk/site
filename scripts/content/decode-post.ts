@@ -1,7 +1,8 @@
 import MarkdownIt from 'markdown-it'
 import footnote from 'markdown-it-footnote'
+import { Option, Schema as S } from 'effect'
 
-import { parseMarkdown } from './frontmatter.ts'
+import { parseMarkdown, type FrontmatterValue } from './frontmatter.ts'
 
 export type Section = 'thought' | 'lab'
 
@@ -45,7 +46,7 @@ type RenderedMarkdown = Readonly<{
 }>
 
 const renderMarkdownWithToc = (source: string): RenderedMarkdown => {
-  const environment: Record<string, unknown> = {}
+  const environment = {}
   const tokens = markdown.parse(source, environment)
   const usedIds = new Map<string, number>()
   const toc: TocEntry[] = []
@@ -112,8 +113,17 @@ const sectionOf = (path: string): Section => {
   return parseSection(name) ?? 'thought'
 }
 
-const maybeString = (value: unknown): string | undefined =>
-  typeof value === 'string' ? value : undefined
+const maybeString = (value: FrontmatterValue | undefined): string | undefined =>
+  Option.match(S.decodeUnknownOption(S.String)(value), {
+    onNone: () => undefined,
+    onSome: text => text,
+  })
+
+const maybeTags = (value: FrontmatterValue | undefined): ReadonlyArray<string> =>
+  Option.match(S.decodeUnknownOption(S.Array(S.String))(value), {
+    onNone: () => [],
+    onSome: tags => tags,
+  })
 
 export const decodePost = (path: string, source: string): Post => {
   const parsed = parseMarkdown(source)
@@ -129,9 +139,7 @@ export const decodePost = (path: string, source: string): Post => {
     slug,
     section,
     status: maybeString(frontmatter.status) ?? 'draft',
-    tags: Array.isArray(frontmatter.tags)
-      ? frontmatter.tags.filter((tag: unknown): tag is string => typeof tag === 'string')
-      : [],
+    tags: maybeTags(frontmatter.tags),
     excerpt: maybeString(frontmatter.excerpt),
     banner: maybeString(frontmatter.banner),
     ogTitle: maybeString(frontmatter.ogTitle),

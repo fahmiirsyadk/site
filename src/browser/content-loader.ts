@@ -36,14 +36,11 @@ type RuntimePost = Readonly<{
   }>
 }>
 
-const content: Readonly<Record<string, SourcePost>> =
-  typeof import.meta.env === 'object'
-    ?       import.meta.glob<SourcePost>('../content/*.md', {
-        eager: true,
-        query: '?site-content',
-        import: 'default',
-      })
-    : {}
+const content: Readonly<Record<string, SourcePost>> = import.meta.glob<SourcePost>('../content/*.md', {
+  eager: true,
+  query: '?site-content',
+  import: 'default',
+})
 
 export const loadedPosts: ReadonlyArray<RuntimePost> = Object.values(content).map(post => ({
   title: post.title,

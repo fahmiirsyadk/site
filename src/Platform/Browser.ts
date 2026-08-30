@@ -1,10 +1,5 @@
 import { Effect } from 'effect'
 
-import { mountDitheredImage } from '../browser/dithered-image.ts'
-import { mountHollowMark } from '../browser/hollow-mark.ts'
-import { mountRandomScribble } from '../browser/random-scribble.ts'
-import { mountSeaShader } from '../browser/shader.ts'
-
 type Cleanup = () => void
 
 type DocumentMetadata = Readonly<{
@@ -42,20 +37,5 @@ export const syncDocumentMetadata = (metadata: DocumentMetadata) =>
     setMeta('meta[name="twitter:description"]', ['name', 'twitter:description'], metadata.description)
     setMeta('meta[name="twitter:image"]', ['name', 'twitter:image'], metadata.image)
   })
-
-const acquire = (mount: (element: Element) => Cleanup, element: Element) =>
-  Effect.try(() => mount(element))
-
-export const acquireDitheredImage = (element: Element) =>
-  acquire(mountDitheredImage, element)
-
-export const acquireHollowMark = (element: Element) =>
-  acquire(mountHollowMark, element)
-
-export const acquireRandomScribble = (element: Element) =>
-  acquire(mountRandomScribble, element)
-
-export const acquireSeaShader = (element: Element) =>
-  acquire(mountSeaShader, element)
 
 export const release = (cleanup: Cleanup) => Effect.sync(cleanup)

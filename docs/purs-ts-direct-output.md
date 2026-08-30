@@ -20,6 +20,8 @@ exported with TypeScript-callable signatures, generated relative
 imports use `.ts`, and the Effect runtime is emitted as `effect-runtime.ts`.
 The generated `output/entry.ts` imports `App.Entry` and executes its Effect with
 the generated runtime. `index.html` references this generated entry directly.
+The generated-output Oxlint worklist is tracked in
+[`docs/oxlint-backend-followups.md`](./oxlint-backend-followups.md).
 
 ## What was removed
 
@@ -76,6 +78,37 @@ Use this ownership test before adding browser TypeScript:
 | DOM/WebGL calls, events/observers, Vite loaders, external library calls | `.ts` FFI/platform adapter |
 | generated application/runtime modules | `output/**/*.ts` (never edit) |
 
+### Codegen constraints for Effect-heavy PureScript
+
+The backend's generated TypeScript is validated with `tsc --noEmit`, and
+empirical probing (2026-08-29, while moving the four WebGL mounts into
+PureScript) found these rules for modules that pass validation:
+
+- **Foreign imports must be on the module export list to get a real type.**
+  Type information is decoded from purs `docs.json`, which only contains
+  declarations on the export list. An unexported foreign import degrades to
+  `$runtime.Dynamic` and cascades `TS2345` mismatches through every caller.
+  Same for referenced types: export `DitherUniforms` if an exported foreign
+  import mentions it.
+- **Curry foreign imports.** A curried declaration `(a) -> (b) -> Effect c`
+  keeps full types; `Fn2`/`Uncurried` forms fall back to `Dynamic`.
+- **No self-recursive functions.** They emit recursive `const`s without
+  annotations and fail with `TS7023`/`TS7024`. Break cycles through a mutable
+  cell read at invocation time (see `resumeScribbleChain`).
+- **No class-dictionary combinators in Effect chains.** `Data.Foldable`'s
+  `traverse_` generates as `(...): unknown` and poisons the chain. Use a plain
+  `forEach` foreign primitive instead.
+- **Do-blocks of roughly 12+ binds hang the `_backend` codegen process.**
+  Split mount bodies into small named helpers (~8 binds each) threading a
+  context record.
+- **TypeScript siblings must match mutability exactly.** A PS `Array a`
+  generates `a[]` (mutable); a sibling typed `ReadonlyArray<a>` fails the
+  foreign-import conversion with `TS2352`.
+- **`?raw` asset imports are not path-rewritten in the copied `foreign.ts`.**
+  Relative `.ts` imports are rewritten back to `src/`, but `?raw` imports are
+  copied verbatim and break at their new location. Route shader sources
+  through a plain TypeScript module (`Platform/Browser/Shaders.ts`).
+
 ## Current commands
 
 From the site checkout:
@@ -110,9 +143,11 @@ configuration error.
 The application migration is **9.8/10**. Application and platform FFI are
 TypeScript-only at runtime, the Bridge and generic local Foldkit bridge are
 gone, build/dev orchestration is backend-owned, runtime behavior and application
-messages remain PureScript-owned, TypeScript host roots are automatic, generated
-output has no unused declarations, the full Foldkit element/property DSL is
-declaration-generated, and regression checks enforce the boundary.
+messages remain PureScript-owned, TypeScript host roots are automatic, the
+generated-output contract passes, the full Foldkit element/property DSL is
+declaration-generated, and regression checks enforce the boundary. The generated
+TypeScript still has the backend follow-ups recorded in
+`docs/oxlint-backend-followups.md`.
 Both local `0.1.0` packages are checksummed and installation-tested. The
 remaining 0.2 is feature breadth:
 more external libraries should move to package-owned typed bindings and broader
@@ -130,8 +165,9 @@ On 2026-08-25 with Node 26.4.0:
 - Strict TypeScript checking passed with `tsc --noEmit`.
 - Vitest, strict TypeScript, Vite production bundling, and metadata prerender pass.
 - Prerender generated metadata for 7 routes, `sitemap.xml`, and `robots.txt`.
-- The generated-output gate finds no `.js` artifacts or imports, and strict
-  `oxlint` reports no unused declarations across the generated tree.
+- The generated-output gate finds no `.js` artifacts or imports. The 2026-08-27
+  generated Oxlint audit found three unused declarations; they are recorded as
+  backend follow-ups rather than edited in `output/`.
 - The live dev watcher rebuilt after a `.purs` change without restarting Vite,
   and backend SIGINT shutdown produced no exception.
 

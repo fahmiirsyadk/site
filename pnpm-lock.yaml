@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       effect:
-        specifier: 4.0.0-rc.111
-        version: 4.0.0-rc.111
+        specifier: 4.0.0-rc.112
+        version: 4.0.0-rc.112
       foldkit:
-        specifier: 0.151.0
-        version: 0.151.0(effect@4.0.0-rc.111)
+        specifier: 0.153.0
+        version: 0.153.0(effect@4.0.0-rc.112)
       markdown-it:
         specifier: ^14.3.0
         version: 14.3.0
@@ -25,20 +25,23 @@ importers:
         version: 4.3.3
     devDependencies:
       '@foldkit/devtools':
-        specifier: 0.151.0
-        version: 0.151.0(@effect/platform-browser@4.0.0-rc.111(effect@4.0.0-rc.111))(@foldkit/ui@0.151.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111)))(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))
+        specifier: 0.153.0
+        version: 0.153.0(@effect/platform-browser@4.0.0-rc.112(effect@4.0.0-rc.112))(@foldkit/ui@0.153.0(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112)))(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112))
       '@foldkit/devtools-mcp':
-        specifier: 0.17.0
-        version: 0.17.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))(supports-color@10.2.2)(zod@4.4.3)
+        specifier: 0.19.0
+        version: 0.19.0(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112))(supports-color@10.2.2)(zod@4.4.3)
       '@foldkit/oxlint-plugin':
-        specifier: 0.8.0
-        version: 0.8.0(effect@4.0.0-rc.111)
+        specifier: 0.9.0
+        version: 0.9.0(effect@4.0.0-rc.112)
       '@foldkit/ui':
-        specifier: 0.151.0
-        version: 0.151.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))
+        specifier: 0.153.0
+        version: 0.153.0(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112))
       '@foldkit/vite-plugin':
-        specifier: 0.17.0
-        version: 0.17.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))
+        specifier: 0.19.0
+        version: 0.19.0(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))
+      '@oxlint/plugins':
+        specifier: 1.80.0
+        version: 1.80.0
       '@tailwindcss/typography':
         specifier: ^0.5.20
         version: 0.5.20(tailwindcss@4.3.3)
@@ -55,8 +58,8 @@ importers:
         specifier: ^20.10.4
         version: 20.11.2
       oxlint:
-        specifier: ^1.76.0
-        version: 1.78.0
+        specifier: ^1.80.0
+        version: 1.80.0
       prettier:
         specifier: ^3.8.4
         version: 3.9.6
@@ -65,7 +68,7 @@ importers:
         version: 0.15.16(bluebird@3.7.2)(supports-color@10.2.2)
       purescript-foldkit:
         specifier: file:vendor/purescript-foldkit-0.1.0.tgz
-        version: file:vendor/purescript-foldkit-0.1.0.tgz(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))
+        version: file:vendor/purescript-foldkit-0.1.0.tgz(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112))
       purs-backend-ts:
         specifier: file:vendor/purs-backend-ts-0.1.0.tgz
         version: file:vendor/purs-backend-ts-0.1.0.tgz
@@ -124,10 +127,10 @@ packages:
     resolution: {integrity: sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==}
     engines: {node: '>=6.9.0'}
 
-  '@effect/platform-browser@4.0.0-rc.111':
-    resolution: {integrity: sha512-4SmaYB4zWsmuM82V8Dgida2yupzEWlv6/QoDL2Ogj1jOPq65KUx3VjQKcNn2NenOR6SFRWaWsUWrnxwA2IPFzg==}
+  '@effect/platform-browser@4.0.0-rc.112':
+    resolution: {integrity: sha512-GSlqNDnjILz2EqOFPhVdMEHxlPq6SGb8+KOpNnLfRvVJjXRTMawEO+v1PCuwt2CHAqESbJAa2Nk+qcQvTrv4MQ==}
     peerDependencies:
-      effect: ^4.0.0-rc.111
+      effect: ^4.0.0-rc.112
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
@@ -294,40 +297,40 @@ packages:
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
-  '@foldkit/devtools-mcp@0.17.0':
-    resolution: {integrity: sha512-+y7Z5EbcgEq3vl4N5+nccRRA0QodF520ZnV9EJiIbtoL5q76FSfirPgRj2uHBvtxlh1YUiTKxa+sl95kE59RVw==}
+  '@foldkit/devtools-mcp@0.19.0':
+    resolution: {integrity: sha512-2/rP0yJYEegsaR6gsQcnXyJ3qdaYtDc6oTTYNqiQxYIQwHbXafqFYHa1+UfEuK73VhDd6jn9QUpFHJzApqMkYg==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     peerDependencies:
-      effect: 4.0.0-rc.111
-      foldkit: ^0
+      effect: 4.0.0-rc.112
+      foldkit: '>=0.153.0'
 
-  '@foldkit/devtools@0.151.0':
-    resolution: {integrity: sha512-gzDONiRRHohCl7W9XdkEKohh6gxDGFXUXR4ZT6OEdHdqAd+wurpLqO/OrhjECdCVCodoVFZ4Vjcln0bHx/V18A==}
+  '@foldkit/devtools@0.153.0':
+    resolution: {integrity: sha512-cAX7Kw+bpUOvz5sUV2WEw8HXsuNJy2XlHrkIPVh8jc7YVhJNF65HHtxIltNtGKni5a3rXvXh8LvfRDzSYgMu0A==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      '@effect/platform-browser': 4.0.0-rc.111
+      '@effect/platform-browser': 4.0.0-rc.112
       '@foldkit/ui': ^0
-      effect: 4.0.0-rc.111
-      foldkit: ^0
+      effect: 4.0.0-rc.112
+      foldkit: '>=0.153.0'
 
-  '@foldkit/oxlint-plugin@0.8.0':
-    resolution: {integrity: sha512-dAy0sbo7N/WbEreKJghh7BviEotf0EW9llaeuhFe4rPee8I0S8mw4gNSAnnjEb3kMY5Z1PTaFv5wNkfnj+9M+Q==}
+  '@foldkit/oxlint-plugin@0.9.0':
+    resolution: {integrity: sha512-NmJU1bx1j9Y7Jtnf0vtJqBFlW05awBkrUIydLxVkSY7KNr0u0HS4lzuW0Hrfh5O8FXKy+9RwUk1t5OVFjM2tNA==}
     engines: {node: '>=20.19.0 || >=22.12.0'}
 
-  '@foldkit/ui@0.151.0':
-    resolution: {integrity: sha512-mo/lfUvXW597qvh8Tj8UWwRirmTmrIhAdC06rGVd7dHAsAxfFCKpeWTwWcKQw8pHrbGcjv86nGsVgJLuBxrz7g==}
+  '@foldkit/ui@0.153.0':
+    resolution: {integrity: sha512-gS+JrjBrDWMQJMaD4IjHuiqT9UAHEUMk7nw+rgjQdOZecCvYkan+B8I9qYv5JdZUye56KW3a5eCOEFvPc7E4Zw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      effect: 4.0.0-rc.111
-      foldkit: ^0
+      effect: 4.0.0-rc.112
+      foldkit: '>=0.153.0'
 
-  '@foldkit/vite-plugin@0.17.0':
-    resolution: {integrity: sha512-C7OjQg0AG7D1jTisaX1V1CLzJAftup/aDGWsR3gqDik8bDSGgjIrFnupLxd3IJF7x/j1LVf6FDniHPIFizNIwQ==}
+  '@foldkit/vite-plugin@0.19.0':
+    resolution: {integrity: sha512-cirSy2hmRinit9E+iVxy6hgGvNURxf9pR14RD48hd5/P8t+736g6tD7lES4Xt6NzCgMN2meyPd+9Q6w8u4FSlA==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
-      effect: 4.0.0-rc.111
-      foldkit: '>=0.148.0'
+      effect: 4.0.0-rc.112
+      foldkit: '>=0.153.0'
       vite: ^7.0.0 || ^8.0.0
 
   '@gar/promisify@1.1.3':
@@ -427,130 +430,130 @@ packages:
   '@oxc-project/types@0.144.0':
     resolution: {integrity: sha512-nuhZIOLuI6TFQ32I/WnUx+SCPY7SdSKwgnFHydAuoS1+Z4BRcaP+RRJmGzl9lw+0OFF7UmaESf7KQRXaNLHypg==}
 
-  '@oxlint/binding-android-arm-eabi@1.78.0':
-    resolution: {integrity: sha512-Bu819lmAfZMUHErrpe0cEWj3iaefuUODHSU8+UbXy67V/r7/7f4K3FL0NmbD85E+wiFLDYuhP8Zlv0XnVeXshw==}
+  '@oxlint/binding-android-arm-eabi@1.80.0':
+    resolution: {integrity: sha512-RM3Plj+biQpxa5d1GOOX6ciDlcUROmm4OZ/pLTpitkQt2mJv4jhtY4cbgaetOm5UKWZe05/TGQ6o1Vl8EOHkrA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm]
     os: [android]
 
-  '@oxlint/binding-android-arm64@1.78.0':
-    resolution: {integrity: sha512-CDfxZgB61B7buRdY2FJoAYYPPXCZ1EoC1LKscnC5dg3kjobdxiconvAvvN1BmHyW4PyFT3jRLDag/BY/roSNBQ==}
+  '@oxlint/binding-android-arm64@1.80.0':
+    resolution: {integrity: sha512-YlO5JEf0Yr2bUUlu8O8daVcUxtcGGbcSmyV7E7nSbJbfAdxTE0PFPwgnIlw7wXJaTYjb+qs5hI5q3jxUkI7cAw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [android]
 
-  '@oxlint/binding-darwin-arm64@1.78.0':
-    resolution: {integrity: sha512-2Y2U9Ahrz+OO0Ej88f9SJYq51/jUBp1Mc7iZu0ukrbeeZ3gpRGfzIFnoqfHDY96xr0GEfNrPUBFEy0nN5aD7HA==}
+  '@oxlint/binding-darwin-arm64@1.80.0':
+    resolution: {integrity: sha512-BULDOyO3AhsmdWfQeIUCykDt3dd7XZBGLhp1eIh56skRv01O+cNjNPwXMIbeW1x4+pxcln5if72wcRgViVo7PA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [darwin]
 
-  '@oxlint/binding-darwin-x64@1.78.0':
-    resolution: {integrity: sha512-rpych6eJq6m9jDRypTEaPD1xysaEW5h9+xuxhGK/QhOg+/xaqPZrCrTNoIl/f3nEjuJeCEmstNDlrE9rJi/3/g==}
+  '@oxlint/binding-darwin-x64@1.80.0':
+    resolution: {integrity: sha512-YJ4JzLw7N5TDSQFlA0hAQGHvnDZgyypm1yunObVWcWiF9KM7eGCJKYKLgTC2Fi/57OdnBhbj4OkzPGdFQJ6HyA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [darwin]
 
-  '@oxlint/binding-freebsd-x64@1.78.0':
-    resolution: {integrity: sha512-IcMGrQT3QizkOESUJd5et+rOhVqSkNDfNik1cvrKDqIbzqx9KMtRswpFgkCuNTSwylCFLKhGUu8KmqY1ZnC0Dg==}
+  '@oxlint/binding-freebsd-x64@1.80.0':
+    resolution: {integrity: sha512-AYUIk5QnL0s8oWAYsREZwkRYy1SupJTXALo93J1TgzHywxQtdM99FecRMQ87MXEdPQ0j1TmEpeeq3fGNkpvMqg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [freebsd]
 
-  '@oxlint/binding-linux-arm-gnueabihf@1.78.0':
-    resolution: {integrity: sha512-/uLdoJ0IXE6vo/0f0LKjinQAp+re+VMaCWaNT8ENIv2EOCkSsc8SGaflXAuW0Jua2dq5+GLVWm1NQK7P3UFSNQ==}
+  '@oxlint/binding-linux-arm-gnueabihf@1.80.0':
+    resolution: {integrity: sha512-9hBZVANupQ89W9dXyE0n8doCyaW5pDyGn3y6XlIMPZ+rIKuyqkr3SNUXmVJIhuvUq0NBU3RBiSXXE69l4XI6KA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm]
     os: [linux]
 
-  '@oxlint/binding-linux-arm-musleabihf@1.78.0':
-    resolution: {integrity: sha512-7xi4Wb/O8NRJhLoUXmDJMUVpNYvB5kefdhFU1Jb8rtae4QoXlTiLwI14X4YvAXVZLNZChP8m5qO9SQAlWQTbkQ==}
+  '@oxlint/binding-linux-arm-musleabihf@1.80.0':
+    resolution: {integrity: sha512-SvS2uKqzY+pbfuvAHzH4338R6Zwo805GAwrIMVvK1KxoOWCIjZUdfzTCvilD7z6JK91v011+zYMryabhDo2AsQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm]
     os: [linux]
 
-  '@oxlint/binding-linux-arm64-gnu@1.78.0':
-    resolution: {integrity: sha512-4hFW0+fVXa3OIh1Y4A5SPkmvI4wuuBSrCVKzOyE7PTjhc7yEqZ1pmvEEeS5Lj/MaqvegFxXyF33N+6jkehxdyg==}
+  '@oxlint/binding-linux-arm64-gnu@1.80.0':
+    resolution: {integrity: sha512-tCLadyqRVL3pQTRPNg7cjXKvcvS4fbyXeQHhKk5BTJ1oftQln5/yIIWbu/Xom/DX41zv2P9QGt6+D/TtQVtY3A==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@oxlint/binding-linux-arm64-musl@1.78.0':
-    resolution: {integrity: sha512-oC0mvsgBJjlMijSDEhx9KuvR9zYeHXceA9MjbuXB1F8NSR78Yj2unOBrstEvTVaq+pko+kuue6DajC00eqvTdg==}
+  '@oxlint/binding-linux-arm64-musl@1.80.0':
+    resolution: {integrity: sha512-XfpCNRlOPcLlJl4Bn/FUhjqlR6BVavEykERBf/MV7YA9VZDa5g5znVqYhyviMafcxS9Pe/i/kPvHNO0U6svEHQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@oxlint/binding-linux-ppc64-gnu@1.78.0':
-    resolution: {integrity: sha512-XAllT5SUZS+ohjuZ3/5S0cwe0r7eboiuigeStCZ5DXRYx/2KVM2UvQXvAfyzXEimtQjAB7cDQ2YxDe2Zl2WNQQ==}
+  '@oxlint/binding-linux-ppc64-gnu@1.80.0':
+    resolution: {integrity: sha512-3I4yMwcFG9NeO8ioY6JBBuKsIm5GL/x7MATt1S4tVWaxPu5HcJ+XnLUbcVBTxG8q2Wu56HSj+NmXQiVYb1lp6A==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [ppc64]
     os: [linux]
     libc: [glibc]
 
-  '@oxlint/binding-linux-riscv64-gnu@1.78.0':
-    resolution: {integrity: sha512-trucMER/0QtecoXvc1y/UVqE3kwJipDwrx4oHfj+nNm3dq2zjP44WT0CfHNDPM3G1DXIkx/gY6lAD21NSCZVhA==}
+  '@oxlint/binding-linux-riscv64-gnu@1.80.0':
+    resolution: {integrity: sha512-E1wAKymkpe1/E8helzBKdm81OBOF+ezxRyXRMEuik3ZpWDER5CPOKZwF66RsdwW98uwZv8UTFremUQtC1CzdJA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [riscv64]
     os: [linux]
     libc: [glibc]
 
-  '@oxlint/binding-linux-riscv64-musl@1.78.0':
-    resolution: {integrity: sha512-cm3O4F/HQbdzOUX5mKHqG5KDL6E5w0pnlZ+fbBy2rmLryPOowkuLagFHTopQsEIpjcaZoPOrL+BmmAytAG9HFg==}
+  '@oxlint/binding-linux-riscv64-musl@1.80.0':
+    resolution: {integrity: sha512-+gLRGD4sIo3+VA++iham5UxD9tKSoJ/VOrROCEXIcknrYtQg6iIQgvjN0cpiRF7N6UYC7pJbvHJlDnMge5LRpQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [riscv64]
     os: [linux]
     libc: [musl]
 
-  '@oxlint/binding-linux-s390x-gnu@1.78.0':
-    resolution: {integrity: sha512-33wRf6HqGNsybJ3qX4cGaQN2ODPxNmc1rMa0mrTmx3eFq1VzOnvQooi9bIGVYakW8a/wmqVx1mgsUm8R2xfTiw==}
+  '@oxlint/binding-linux-s390x-gnu@1.80.0':
+    resolution: {integrity: sha512-aR0PrzHj9leW3NmzBAAP4EzdoBNoJcs9sjnIQPIwyRnBGYrRbXUIpEB5Q39AqK3PLY5JK5uEhDQDiUa1QSAstw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [s390x]
     os: [linux]
     libc: [glibc]
 
-  '@oxlint/binding-linux-x64-gnu@1.78.0':
-    resolution: {integrity: sha512-rRdISSYegj6VganMZ9tjRjijowfHJ09IZU01i0toBAqr6n5LEtwHq2IeS4FjW2RoskOHlb6efB26H5izYb3GEQ==}
+  '@oxlint/binding-linux-x64-gnu@1.80.0':
+    resolution: {integrity: sha512-vSVh5cSo3Xxs6ghBCcFJlpbkbENzDog1qXtoXLa/HC3aCrR4XO76GZbXmQoCPHnu99nQpdCeC3H9tdNICfDh7A==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@oxlint/binding-linux-x64-musl@1.78.0':
-    resolution: {integrity: sha512-GmsP4rW0xTL6u5CVdcDsaN5Fbc7hBc382Wmar1kttbnwSEviM+rSINKOMQ+UQ6iH+AGwC+8gaAiwu134Tgh6Lg==}
+  '@oxlint/binding-linux-x64-musl@1.80.0':
+    resolution: {integrity: sha512-FfzBXpNQ8u7/ZI/p8bl73MeZ508Ax3hxWp3SiJpEFiC+BB9XcXy5FAZHTLKDPSzrUpxQZSZJAVdDmuJp/+HDBQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@oxlint/binding-openharmony-arm64@1.78.0':
-    resolution: {integrity: sha512-sy9yeYuADc8a+n4TLBayzMCZiHPW78DcIFVpOXTmdKHWQeM9xe5uzkqIIZmi326D5hY9XVwacipEB1p7tQjPAg==}
+  '@oxlint/binding-openharmony-arm64@1.80.0':
+    resolution: {integrity: sha512-zMzbkumtmprCgRwoYNzcB3iC39fXdJIMLMU33KdCjEGLlJGOEt1+LwQ4LF8ndLzAEKVz4BR0y3V6Xrkk3Nm3yA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [openharmony]
 
-  '@oxlint/binding-win32-arm64-msvc@1.78.0':
-    resolution: {integrity: sha512-rjc2hF1KfMi8fZj1X/m3AmnHbdsF3rL0v6KQg0Uc880Yb2khjz+3U14sfdZ7jWTpRnN1m1NQa/TT7uU9lJWPrA==}
+  '@oxlint/binding-win32-arm64-msvc@1.80.0':
+    resolution: {integrity: sha512-ib6iRcrXsk4t1fm3iKcwksyWh1ZkZXC/2mEzakl0ai2+6HZunf1WWMZ/xP9EJAvw9g9K4UVTC3NF/+G2qLrbTQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [win32]
 
-  '@oxlint/binding-win32-ia32-msvc@1.78.0':
-    resolution: {integrity: sha512-zcuXFVrEFHIafRfkCQT8w/Xe41o07ozl/vwHq7p94vB29xVzsB0sZGYORU1jhcYKv3Lr0J3HbJ2T4fHH5rWmvA==}
+  '@oxlint/binding-win32-ia32-msvc@1.80.0':
+    resolution: {integrity: sha512-xhRWBMpLxZvgKAH6+DJZmpP+W8Y8UdQOSU1JfxSWNXsaBaRGW77j+1hCuNHlzj7OH4SPN8fYd1q0o2qrDtoVyw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [ia32]
     os: [win32]
 
-  '@oxlint/binding-win32-x64-msvc@1.78.0':
-    resolution: {integrity: sha512-Sb5ocmLSuYeOuXd+CFOToGKp/gjXUEWDnvIGwhnh8aq8wY4TMmEnKnvbogSW7RdMZv77JSARduS7/gv+khYEjA==}
+  '@oxlint/binding-win32-x64-msvc@1.80.0':
+    resolution: {integrity: sha512-yAnO7lwBYQnz2pcfBPIGQQZWIX5zd5R/1aAKIF3oE+TVj7IhoHcROjOkz3sRDngzqhfPKfFaXqug5j5rE5dn6Q==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [win32]
 
-  '@oxlint/plugins@1.78.0':
-    resolution: {integrity: sha512-Ypt8KeRYw+4jUtlPirfcHWMrn5ms12VrrFPD+Mds477/7tJxG1Kcz2Yrg2nVcTQEUx/GdlhS+BUg1kmxNm04Ug==}
+  '@oxlint/plugins@1.80.0':
+    resolution: {integrity: sha512-QRgH1XqQEYNHa4f1vvPQ5fAdNdncHGIUG1ZWLlGIZHky3qwCEeAKYitZNbZMtaXtAQAAFFTOwqUfzESvimqZNA==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
   '@rolldown/binding-android-arm64@1.2.4':
@@ -1101,8 +1104,8 @@ packages:
     peerDependencies:
       effect: ^4.0.0-beta.100
 
-  effect@4.0.0-rc.111:
-    resolution: {integrity: sha512-ASd5L58EIR0CUNueZNKKjSsyOCd+2alxOAIaTcHaqkJkPsaYSsw5Cg/cfANk5K4Jr2YsX756xvX11shzqsreWA==}
+  effect@4.0.0-rc.112:
+    resolution: {integrity: sha512-wXxwuh1Ywnv4cPRM3Wfa0vDwuOHnZ1TsTgHJkG9XgzND6inhBH9n1vBxhg3iIXOia/OrpmvVmd3lrD4vq6bF3A==}
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -1245,11 +1248,11 @@ packages:
   flush-write-stream@1.1.1:
     resolution: {integrity: sha512-3Z4XhFZ3992uIq0XOqb9AreonueSYphE6oYbpt5+3u06JWklbsPkNv3ZKkP9Bz/r+1MWCaMoSQ28P85+1Yc77w==}
 
-  foldkit@0.151.0:
-    resolution: {integrity: sha512-WuaEaqmQlq4x3zrTMKWo0hokSn3rU5yt4vVCx89AvNMrRwq9NocC3o0nXFJcwHGvjnemMCygiT4Tm9o3zZEh+A==}
+  foldkit@0.153.0:
+    resolution: {integrity: sha512-3rFCDRVEif7+SxaGclhlSDZwJlKMdf5MIOTcpskMbJykdFdNb0nZxAKZSPiHVCv436kz8YpowvfPloNNqsnLGg==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
-      effect: 4.0.0-rc.111
+      effect: 4.0.0-rc.112
 
   foreground-child@3.3.1:
     resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
@@ -1832,8 +1835,8 @@ packages:
     resolution: {integrity: sha512-YgBpdJHPyQ2UE5x+hlSXcnejzAvD0b22U2OuAP+8OnlJT+PjWPxtgmGqKKc+RgTM63U9gN0YzrYc71R2WT/hTA==}
     engines: {node: '>=18'}
 
-  oxlint@1.78.0:
-    resolution: {integrity: sha512-QgQePuxIqKOzo1KSjG2EnITEeWvWnKAm77eq8nrMtf6AGoA+zyGc4PFYtDNJSD25g/ibOwfQ851hZ4/SPkMVoA==}
+  oxlint@1.80.0:
+    resolution: {integrity: sha512-5nTiSps4qdbCWLbxzuO00alHkEO2exR9YMN/ig6QXWrLsYSG0KaObOAM+l6oU2LcKPWoSAGYbkZIGEu1ViiWKA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -1958,12 +1961,12 @@ packages:
     resolution: {integrity: sha512-vvuOGgcuPJAirlHvuQw1TrOiw7ptaIXXmIbNuiNOY6lNGJJH49PQ1Kj4nd783nPdQhQdicgOjVI2yI/9BD6/Ng==}
 
   purescript-foldkit@file:vendor/purescript-foldkit-0.1.0.tgz:
-    resolution: {integrity: sha512-8cFEWC4c8QCzqDeGpALD9lTLFswbnd3gTAt15l1T1XgtxfdUk3X5aN4rjfspVVF4npp+c6Tpfu9p+hmFP6wY8Q==, tarball: file:vendor/purescript-foldkit-0.1.0.tgz}
+    resolution: {integrity: sha512-og3gehMiGsU1OfE8hFUBsO5mN9csAnLaCnUViX4sG8GQp3g9KhCWSq95qj2dMSaQYsfIYaijfqBRQqHW8mNIjw==, tarball: file:vendor/purescript-foldkit-0.1.0.tgz}
     version: 0.1.0
     engines: {node: '>=22'}
     peerDependencies:
-      effect: 4.0.0-rc.111
-      foldkit: 0.151.0
+      effect: 4.0.0-rc.112
+      foldkit: 0.153.0
 
   purescript-installer@0.3.5:
     resolution: {integrity: sha512-w04BBvW4BSQlspLsZ9Bs5vtUBZqvC4bC+FizC5GUp2/rpmYvXJ0CTf79Q3MKo2A8p1ZjqbhCI+SqdTQ30UZUIQ==}
@@ -1975,7 +1978,7 @@ packages:
     hasBin: true
 
   purs-backend-ts@file:vendor/purs-backend-ts-0.1.0.tgz:
-    resolution: {integrity: sha512-jy063uviNuFg7aJTs3iZ9Bp7ncTw4pprucQFkKMqP17YBpPxNYXE1QtI5vDZUgIiQCF9MVujZhJndluqmVikDA==, tarball: file:vendor/purs-backend-ts-0.1.0.tgz}
+    resolution: {integrity: sha512-3172K+k5yStL4qSD977ZYgfjErCoUadw6VUbRpMTSO5Ll+AgFvRUtWPzYNOqiszxb2Lc0+wy5h5I1vu+YRmVWA==, tarball: file:vendor/purs-backend-ts-0.1.0.tgz}
     version: 0.1.0
     engines: {node: '>=22'}
     hasBin: true
@@ -2503,9 +2506,9 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
-  '@effect/platform-browser@4.0.0-rc.111(effect@4.0.0-rc.111)':
+  '@effect/platform-browser@4.0.0-rc.112(effect@4.0.0-rc.112)':
     dependencies:
-      effect: 4.0.0-rc.111
+      effect: 4.0.0-rc.112
 
   '@esbuild/aix-ppc64@0.28.2':
     optional: true
@@ -2596,11 +2599,11 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@foldkit/devtools-mcp@0.17.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))(supports-color@10.2.2)(zod@4.4.3)':
+  '@foldkit/devtools-mcp@0.19.0(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112))(supports-color@10.2.2)(zod@4.4.3)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.30.0(supports-color@10.2.2)(zod@4.4.3)
-      effect: 4.0.0-rc.111
-      foldkit: 0.151.0(effect@4.0.0-rc.111)
+      effect: 4.0.0-rc.112
+      foldkit: 0.153.0(effect@4.0.0-rc.112)
       ws: 8.21.3
     transitivePeerDependencies:
       - '@cfworker/json-schema'
@@ -2609,30 +2612,30 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@foldkit/devtools@0.151.0(@effect/platform-browser@4.0.0-rc.111(effect@4.0.0-rc.111))(@foldkit/ui@0.151.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111)))(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))':
+  '@foldkit/devtools@0.153.0(@effect/platform-browser@4.0.0-rc.112(effect@4.0.0-rc.112))(@foldkit/ui@0.153.0(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112)))(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112))':
     dependencies:
-      '@effect/platform-browser': 4.0.0-rc.111(effect@4.0.0-rc.111)
-      '@foldkit/ui': 0.151.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))
+      '@effect/platform-browser': 4.0.0-rc.112(effect@4.0.0-rc.112)
+      '@foldkit/ui': 0.153.0(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112))
       clsx: 2.1.1
-      effect: 4.0.0-rc.111
-      foldkit: 0.151.0(effect@4.0.0-rc.111)
+      effect: 4.0.0-rc.112
+      foldkit: 0.153.0(effect@4.0.0-rc.112)
 
-  '@foldkit/oxlint-plugin@0.8.0(effect@4.0.0-rc.111)':
+  '@foldkit/oxlint-plugin@0.9.0(effect@4.0.0-rc.112)':
     dependencies:
-      effect-oxlint: 0.3.3(effect@4.0.0-rc.111)
+      effect-oxlint: 0.3.3(effect@4.0.0-rc.112)
     transitivePeerDependencies:
       - effect
 
-  '@foldkit/ui@0.151.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))':
+  '@foldkit/ui@0.153.0(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112))':
     dependencies:
       '@floating-ui/dom': 1.8.0
-      effect: 4.0.0-rc.111
-      foldkit: 0.151.0(effect@4.0.0-rc.111)
+      effect: 4.0.0-rc.112
+      foldkit: 0.153.0(effect@4.0.0-rc.112)
 
-  '@foldkit/vite-plugin@0.17.0(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))':
+  '@foldkit/vite-plugin@0.19.0(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112))(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))':
     dependencies:
-      effect: 4.0.0-rc.111
-      foldkit: 0.151.0(effect@4.0.0-rc.111)
+      effect: 4.0.0-rc.112
+      foldkit: 0.153.0(effect@4.0.0-rc.112)
       magic-string: 0.30.21
       vite: 8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0)
       ws: 8.21.3
@@ -2735,64 +2738,64 @@ snapshots:
 
   '@oxc-project/types@0.144.0': {}
 
-  '@oxlint/binding-android-arm-eabi@1.78.0':
+  '@oxlint/binding-android-arm-eabi@1.80.0':
     optional: true
 
-  '@oxlint/binding-android-arm64@1.78.0':
+  '@oxlint/binding-android-arm64@1.80.0':
     optional: true
 
-  '@oxlint/binding-darwin-arm64@1.78.0':
+  '@oxlint/binding-darwin-arm64@1.80.0':
     optional: true
 
-  '@oxlint/binding-darwin-x64@1.78.0':
+  '@oxlint/binding-darwin-x64@1.80.0':
     optional: true
 
-  '@oxlint/binding-freebsd-x64@1.78.0':
+  '@oxlint/binding-freebsd-x64@1.80.0':
     optional: true
 
-  '@oxlint/binding-linux-arm-gnueabihf@1.78.0':
+  '@oxlint/binding-linux-arm-gnueabihf@1.80.0':
     optional: true
 
-  '@oxlint/binding-linux-arm-musleabihf@1.78.0':
+  '@oxlint/binding-linux-arm-musleabihf@1.80.0':
     optional: true
 
-  '@oxlint/binding-linux-arm64-gnu@1.78.0':
+  '@oxlint/binding-linux-arm64-gnu@1.80.0':
     optional: true
 
-  '@oxlint/binding-linux-arm64-musl@1.78.0':
+  '@oxlint/binding-linux-arm64-musl@1.80.0':
     optional: true
 
-  '@oxlint/binding-linux-ppc64-gnu@1.78.0':
+  '@oxlint/binding-linux-ppc64-gnu@1.80.0':
     optional: true
 
-  '@oxlint/binding-linux-riscv64-gnu@1.78.0':
+  '@oxlint/binding-linux-riscv64-gnu@1.80.0':
     optional: true
 
-  '@oxlint/binding-linux-riscv64-musl@1.78.0':
+  '@oxlint/binding-linux-riscv64-musl@1.80.0':
     optional: true
 
-  '@oxlint/binding-linux-s390x-gnu@1.78.0':
+  '@oxlint/binding-linux-s390x-gnu@1.80.0':
     optional: true
 
-  '@oxlint/binding-linux-x64-gnu@1.78.0':
+  '@oxlint/binding-linux-x64-gnu@1.80.0':
     optional: true
 
-  '@oxlint/binding-linux-x64-musl@1.78.0':
+  '@oxlint/binding-linux-x64-musl@1.80.0':
     optional: true
 
-  '@oxlint/binding-openharmony-arm64@1.78.0':
+  '@oxlint/binding-openharmony-arm64@1.80.0':
     optional: true
 
-  '@oxlint/binding-win32-arm64-msvc@1.78.0':
+  '@oxlint/binding-win32-arm64-msvc@1.80.0':
     optional: true
 
-  '@oxlint/binding-win32-ia32-msvc@1.78.0':
+  '@oxlint/binding-win32-ia32-msvc@1.80.0':
     optional: true
 
-  '@oxlint/binding-win32-x64-msvc@1.78.0':
+  '@oxlint/binding-win32-x64-msvc@1.80.0':
     optional: true
 
-  '@oxlint/plugins@1.78.0': {}
+  '@oxlint/plugins@1.80.0': {}
 
   '@rolldown/binding-android-arm64@1.2.4':
     optional: true
@@ -3284,14 +3287,13 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  effect-oxlint@0.3.3(effect@4.0.0-rc.111):
+  effect-oxlint@0.3.3(effect@4.0.0-rc.112):
     dependencies:
-      '@oxlint/plugins': 1.78.0
-      effect: 4.0.0-rc.111
+      '@oxlint/plugins': 1.80.0
+      effect: 4.0.0-rc.112
 
-  effect@4.0.0-rc.111:
+  effect@4.0.0-rc.112:
     dependencies:
-      '@standard-schema/spec': 1.1.0
       fast-check: 4.9.0
       msgpackr: 2.0.5
 
@@ -3475,9 +3477,9 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 2.3.8
 
-  foldkit@0.151.0(effect@4.0.0-rc.111):
+  foldkit@0.153.0(effect@4.0.0-rc.112):
     dependencies:
-      effect: 4.0.0-rc.111
+      effect: 4.0.0-rc.112
       parse5: 8.0.1
 
   foreground-child@3.3.1:
@@ -4033,27 +4035,27 @@ snapshots:
       is-inside-container: 1.0.0
       wsl-utils: 0.1.0
 
-  oxlint@1.78.0:
+  oxlint@1.80.0:
     optionalDependencies:
-      '@oxlint/binding-android-arm-eabi': 1.78.0
-      '@oxlint/binding-android-arm64': 1.78.0
-      '@oxlint/binding-darwin-arm64': 1.78.0
-      '@oxlint/binding-darwin-x64': 1.78.0
-      '@oxlint/binding-freebsd-x64': 1.78.0
-      '@oxlint/binding-linux-arm-gnueabihf': 1.78.0
-      '@oxlint/binding-linux-arm-musleabihf': 1.78.0
-      '@oxlint/binding-linux-arm64-gnu': 1.78.0
-      '@oxlint/binding-linux-arm64-musl': 1.78.0
-      '@oxlint/binding-linux-ppc64-gnu': 1.78.0
-      '@oxlint/binding-linux-riscv64-gnu': 1.78.0
-      '@oxlint/binding-linux-riscv64-musl': 1.78.0
-      '@oxlint/binding-linux-s390x-gnu': 1.78.0
-      '@oxlint/binding-linux-x64-gnu': 1.78.0
-      '@oxlint/binding-linux-x64-musl': 1.78.0
-      '@oxlint/binding-openharmony-arm64': 1.78.0
-      '@oxlint/binding-win32-arm64-msvc': 1.78.0
-      '@oxlint/binding-win32-ia32-msvc': 1.78.0
-      '@oxlint/binding-win32-x64-msvc': 1.78.0
+      '@oxlint/binding-android-arm-eabi': 1.80.0
+      '@oxlint/binding-android-arm64': 1.80.0
+      '@oxlint/binding-darwin-arm64': 1.80.0
+      '@oxlint/binding-darwin-x64': 1.80.0
+      '@oxlint/binding-freebsd-x64': 1.80.0
+      '@oxlint/binding-linux-arm-gnueabihf': 1.80.0
+      '@oxlint/binding-linux-arm-musleabihf': 1.80.0
+      '@oxlint/binding-linux-arm64-gnu': 1.80.0
+      '@oxlint/binding-linux-arm64-musl': 1.80.0
+      '@oxlint/binding-linux-ppc64-gnu': 1.80.0
+      '@oxlint/binding-linux-riscv64-gnu': 1.80.0
+      '@oxlint/binding-linux-riscv64-musl': 1.80.0
+      '@oxlint/binding-linux-s390x-gnu': 1.80.0
+      '@oxlint/binding-linux-x64-gnu': 1.80.0
+      '@oxlint/binding-linux-x64-musl': 1.80.0
+      '@oxlint/binding-openharmony-arm64': 1.80.0
+      '@oxlint/binding-win32-arm64-msvc': 1.80.0
+      '@oxlint/binding-win32-ia32-msvc': 1.80.0
+      '@oxlint/binding-win32-x64-msvc': 1.80.0
 
   p-finally@2.0.1: {}
 
@@ -4153,10 +4155,10 @@ snapshots:
 
   pure-rand@8.4.2: {}
 
-  purescript-foldkit@file:vendor/purescript-foldkit-0.1.0.tgz(effect@4.0.0-rc.111)(foldkit@0.151.0(effect@4.0.0-rc.111)):
+  purescript-foldkit@file:vendor/purescript-foldkit-0.1.0.tgz(effect@4.0.0-rc.112)(foldkit@0.153.0(effect@4.0.0-rc.112)):
     dependencies:
-      effect: 4.0.0-rc.111
-      foldkit: 0.151.0(effect@4.0.0-rc.111)
+      effect: 4.0.0-rc.112
+      foldkit: 0.153.0(effect@4.0.0-rc.112)
 
   purescript-installer@0.3.5(bluebird@3.7.2)(supports-color@10.2.2):
     dependencies:

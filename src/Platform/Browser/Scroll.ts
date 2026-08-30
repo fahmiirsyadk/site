@@ -1,4 +1,4 @@
-import { Effect, Queue, Stream } from 'effect'
+import { Effect, Queue, Schema as S, Stream } from 'effect'
 import {
   headingScrollTarget,
   progressScrollTarget,
@@ -6,12 +6,13 @@ import {
 } from 'purescript/Runtime.Scroll/index.ts'
 import type { Geometry } from 'purescript/Runtime.Scroll/index.ts'
 
-type TrackHeadingsArgs = Readonly<{
-  scrollRootSelector: string
-  layoutSelector: string
-  contentSelector: string
-  headingSelector: string
-}>
+const TrackHeadingsArgs = S.Struct({
+  scrollRootSelector: S.String,
+  layoutSelector: S.String,
+  contentSelector: S.String,
+  headingSelector: S.String,
+})
+type TrackHeadingsArgs = typeof TrackHeadingsArgs.Type
 
 const resolveElement = (selector: string, scope: ParentNode): HTMLElement | null => {
   const value = scope.querySelector(selector)
@@ -38,11 +39,11 @@ const measureGeometry = (
 
 export const trackReadingStreamImpl = <Message>(
   element: Element,
-  rawArgs: Record<string, unknown>,
+  rawArgs: TrackHeadingsArgs,
   onChanged: (geometry: Geometry) => Message,
   onFailure: (reason: string) => Message,
 ): Stream.Stream<Message> => {
-  const args = rawArgs as TrackHeadingsArgs
+  const args = S.decodeUnknownSync(TrackHeadingsArgs)(rawArgs)
   return Stream.callback(queue =>
     Effect.gen(function* () {
       const layout = element.closest(args.layoutSelector)

@@ -24,9 +24,21 @@ I kept returning to the same requirement. I wanted the application in a function
 
 ## Why I returned to PureScript
 
-TypeScript can express immutable data and functional composition, but it leaves those choices to the programmer. A reducer can mutate its input. A discriminated union can widen to a string. Constructing an object can run an effect. Exhaustiveness depends on how carefully every type and branch was written.
+Two reasons brought me back, and the smaller one is the honest one: I wanted to force myself to write pure functional syntax until it became reflexive instead of reaching for a pipe helper or another utility function. In TypeScript that style stays opt in for as long as the team keeps choosing it. A reducer may still mutate the model it received. A union type may still collapse into a loose string at the first `as` cast. Object construction may still hide work that only shows up when a test fails. Missing cases surface through runtime bugs rather than compiler errors.
 
-PureScript rules out more of those choices. I use algebraic data types to define the states and events the application permits:
+The syntax was the part I wanted to practice, so the mapping between the two languages became the curriculum. The same operation carries a different spelling on each side:
+
+| Operation | Effect v4 in TypeScript | PureScript |
+| ----------------------------- | ---------------------------------- | --------------------------------- |
+| Transform the success value | `pipe(effect, Effect.map(f))` | `f <$> effect`, or `effect <#> f` |
+| Chain a dependent effect | `pipe(effect, Effect.flatMap(f))` | `effect >>= f`, or `do` notation |
+| Wrap a plain value | `Effect.succeed(value)` | `pure value` |
+| Recover from a typed failure | `Effect.catchAll` / match handlers | `catchError`, `try`, `either` |
+| Forward a value through steps | nested calls, or `pipe` | `value # step1 # step2` |
+
+None of the right-hand column is sugar over a helper library. `<$>` is `map` from `Functor`, `>>=` is `bind` from `Bind`, and `do` notation desugars into those binds. That is why `PursTs.Effect` can ship Effect-shaped primitives such as `succeed`, `flatMap`, and `tryPromise` while the source still reads as ordinary PureScript: the backend supplies the vocabulary, and the operators supply the grammar. Building this site became the exercise: take an operation I knew by its Effect name, learn its operator, and let the types prove the two were the same thing.
+
+Beyond syntax, PureScript rules out more of those choices. I use algebraic data types to define the states and events the application permits:
 
 ```purescript
 data Message
@@ -50,25 +62,23 @@ update :: Model -> Message -> FoldkitUpdate.Return Model Message
 It receives the current model and a message, then returns a new model with a list of commands. Record update syntax creates that model without changing the previous record:
 
 ```purescript
-ClickedInternalLink url ->
+ClickedInternalLink { path, hash } ->
   result
     (model { routeMotion = Leaving })
-    [ NavigateInternal url ]
+    [ Command.navigateInternal path ]
 ```
 
-That branch never calls the router. `NavigateInternal` is data, and another function turns it into a Foldkit command backed by an Effect. Keeping the reducer deterministic lets browser runtime tests and Foldkit Scene tests call the same function.
+That branch never calls the router. `Command.navigateInternal` is itself a named Foldkit command definition whose Effect wraps the router call, so keeping the reducer deterministic lets browser runtime tests and Foldkit Scene tests call the same function.
 
 PureScript's function syntax fits how I build components. Functions are curried, partial application is ordinary, and composition appears throughout the application:
 
 ```purescript
-init: Core.init <<< Core.urlPath
+decodeProfile = validate <<< decodeProfileImpl
 
-onSuccess:
-  AppMessage.GotHomeMessage
-    <<< HomeMessage.SucceededLoadGitHub
+fetchProfile username = getJson (profileUrl username) >>= decodeProfile
 ```
 
-`Core.init <<< Core.urlPath` normalizes a URL before initialization. In `onSuccess`, composition maps a child result into an application message without an intermediate callback. When a value reads better on the left, I use the pipe operator:
+`validate <<< decodeProfileImpl` maps the decoder's rejected-error channel into the request error before `>>=` composes the request with its decoder. When a value reads better on the left, I use the pipe operator:
 
 ```purescript
 Document.document
@@ -92,10 +102,10 @@ Typeclasses let different types share syntax without giving up their own semanti
 ```purescript
 NavigateInternal url ->
   FoldkitCommand.named "NavigateInternal" { url } \_ -> do
-    Browser.afterPaint
-    reduceMotion <- Browser.prefersReducedMotion
-    if reduceMotion then pure unit else Fx.sleepMilliseconds 250
-    Browser.pushUrl url
+    Render.afterPaint
+    reduceMotion <- Media.prefersReducedMotion
+    if reduceMotion then pure unit else PE.delay (PE.Milliseconds 250)
+    Fx.as CompletedNavigateInternal (Navigation.pushUrl url)
 ```
 
 Each bind remains inside a typed, lazy Effect value. I can describe the order of the work without `async`, mutable local state, or a Promise chain inside the reducer.
@@ -160,7 +170,7 @@ Hydration had a strict requirement: the first client render had to match the exi
 All three implementations kept typed view construction, but they placed state and browser execution in different places:
 
 | Concern | Luna | Lucid | Foldkit |
-| --- | --- | --- | --- |
+| ------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | View type | `Model -> Luna.Html Action` virtual DOM | Haskell functions returning `Lucid.Html ()` | `Model -> Foldkit.Document Message` with generated typed HTML |
 | Update model | `Action` enters `update`; `Transition` produces the next `Model` | No persistent client model or update loop in Lucid | `Message` enters `update`; `Foldkit.Update.Return` carries the next model and commands |
 | Static output | Node renders the same Luna view used by the client | Slick, Pandoc, and Lucid write complete HTML files | Vite builds the client application; the prerender script currently writes route metadata rather than the body |
@@ -204,8 +214,7 @@ foreign import copyPostLink :: String -> Effect Unit
 ```
 
 ```javascript
-export const copyPostLink = url => () =>
-  navigator.clipboard.writeText(url)
+export const copyPostLink = (url) => () => navigator.clipboard.writeText(url);
 ```
 
 PureScript checks the `.purs` signature and expects the provider to follow its runtime ABI. Nothing on the JavaScript side proves that the exported function matches that declaration.
@@ -215,7 +224,7 @@ In the standard `purescript-effect` ABI, `Effect a` is a zero-argument JavaScrip
 That convention is manageable for a small browser call. It breaks down around TypeScript libraries with their own generic runtime types. Effect v4, for example, uses this type rather than `() => A`:
 
 ```typescript
-Effect.Effect<A, E, R>
+Effect.Effect<A, E, R>;
 ```
 
 Here `A` is the success value, `E` is the typed error, and `R` is the required service environment. Foldkit carries those parameters through commands and mounts. Its HTML API also threads one message type through the builder, properties, children, callbacks, submodels, and documents.
@@ -223,7 +232,7 @@ Here `A` is the success value, `E` is the typed error, and `R` is the required s
 Putting a declaration file beside generated JavaScript cannot change its ABI. I still had to resolve these mismatches:
 
 | PureScript source | Normal JavaScript ABI | Desired TypeScript API |
-| --- | --- | --- |
+| -------------------------------- | ----------------------------- | ---------------------------------------------------- |
 | `a -> b -> c` | `a => b => c` | `(a, b) => c` at exported boundaries |
 | `Effect a` | `() => a` | `Effect.Effect<a, e, r>` |
 | `data Message = ...` | backend-specific constructors | discriminated union with `_tag` |
@@ -327,7 +336,7 @@ Printing a different file extension was the small part. Most of the work went in
 I split the backend work into small acceptance stages. Each one added a runtime or type boundary while keeping the earlier fixtures running.
 
 | Stages | Work completed |
-| --- | --- |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0-5 | Primitive values, records, arrays, TypeScript AST and printer, cross-module imports, ADTs, newtype erasure, parameterized ADTs, and a message-envelope fixture |
 | 6-9 | Native `Effect` thunks, Node FFI, cross-module FFI, and generated adapters between curried raw providers and uncurried TypeScript exports |
 | 10-14 | Effect v4 runtime profile, lazy Promise conversion, typed errors, Effect composition, and a narrow `ExceptT e Effect a` boundary |
@@ -362,6 +371,7 @@ docs.json   ──→ type environment ──→ TypeScript type AST
         │
         ├─ resolve TypeScript FFI providers
         ├─ resolve direct package providers
+        ├─ derive record schemas into each module's `schemas` export
         ├─ generate runtime facade and optional entry.ts
         ▼
 staged output tree ──→ project tsc --noEmit ──→ atomic promotion
@@ -383,10 +393,10 @@ With the site's `taggedRecord` profile, constructors become discriminated TypeSc
 
 ```typescript
 export type Message =
-  | { "_tag": "ClickedInternalLink"; "_1": string }
-  | { "_tag": "ChangedUrl"; "_1": string }
-  | { "_tag": "CompletedMountSeaShader" }
-  | { "_tag": "GotHomeMessage"; "_1": HomeMessage }
+  | { _tag: "ClickedInternalLink"; _1: string }
+  | { _tag: "ChangedUrl"; _1: string }
+  | { _tag: "CompletedMountSeaShader" }
+  | { _tag: "GotHomeMessage"; _1: HomeMessage };
 ```
 
 Generated pattern matches inspect `_tag`; positional constructor fields use `_1`, `_2`, and so on. A constructor with one record argument can flatten its fields beside `_tag`. PureScript modules, TypeScript providers, and Foldkit all receive that same value.
@@ -402,7 +412,80 @@ src/Platform/Browser.ts
 
 During a build, the provider is copied to `output/Platform.Browser/foreign.ts`. Its relative imports are rewritten for the new location, and its named exports are checked against the PureScript declarations. Package bindings can map a module directly to an export such as `purescript-foldkit/runtime`, which avoids generating a local FFI file.
 
-Before TypeScript checks the graph, code generation removes unused `Maybe` aliases, dead namespace imports, unreachable `$internal` bindings, unused lambda arguments, and phantom generics. I also run Oxlint's `no-unused-vars` rule against a non-ignored copy of `output/`.
+Before TypeScript checks the graph, code generation removes unused `Maybe` aliases, dead namespace imports, and unreachable `$internal` bindings. It also marks unused lambda arguments and phantom generics with an underscore, preserving the TypeScript calling shape while keeping the output friendly to Oxlint's `no-unused-vars` rule. I run that rule against a non-ignored copy of `output/`.
+
+### How dead declarations are detected
+
+The important change was moving liveness analysis before rendering. A text search over generated TypeScript cannot tell the difference between a reference and a spelling that happens to occur in a string:
+
+```typescript
+const importedLabel$internal = (_wrapper: Wrapper) => "Link copied";
+```
+
+The word `Link` is not a reference to a type alias. A textual search nevertheless used to keep this declaration alive:
+
+```typescript
+type Link = void;
+```
+
+The backend now lowers the module into a small TypeScript syntax tree and walks that tree directly. String literals, comments, and quoted property names are ignored; identifiers in expressions and names in type positions are counted. This structural walk is shared by generated bindings, imported type aliases, and namespace imports, so one false textual match cannot preserve an entire unused import chain.
+
+The generated `$internal` declarations are treated as a reachability graph. Export statements, data declarations, and re-exports are the roots. The backend follows references from those roots to generated `const` declarations, then follows references from each newly live declaration until the set stops growing:
+
+```text
+exported value
+      │
+      ▼
+  helper$internal
+      │
+      ▼
+  dependency$internal
+```
+
+Anything outside that transitive closure is omitted from the emitted module. This is why `deadBinding$internal` can disappear while a helper used by an exported value remains. The pass only considers generated declarations; public exports and TypeScript FFI boundaries remain intact.
+
+There is a separate distinction for parameters. A value parameter is inspected with a value-only walk, so a name used only in a type annotation or string does not make it look live. An unused parameter is rendered as `_value`. Type parameters are erased at runtime, but deleting one can change generic arity or make an explicit generic call invalid. They are therefore rendered as `_row`, `_childModel`, or `_t0` when their position must be preserved:
+
+```typescript
+type PhantomAlias<_t0, _t1> = void;
+const openRecordValue$internal = <_row>(value: Record<string, unknown>) =>
+  "constant";
+```
+
+The underscore communicates that the name has no runtime or type-level use without changing the public shape. A completely unreachable type alias, such as `Link` above, is safe to remove altogether.
+
+The cleanup also exposed a related generic inference edge case. For a curried foreign function whose model type appears only in a later argument, TypeScript can infer `unknown` if the first call has no explicit type arguments. The backend now supplies all generic arguments on that first call, keeping generated FFI adapters strictly typed after pruning.
+
+The regression fixture checks all of these boundaries: `deadBinding$internal` is absent, `Link` is not retained by `"Link copied"`, unused `row` and `childModel` parameters are marked, and the generated tree passes strict TypeScript checking. The focused check is:
+
+```bash
+npm run test:stage31-ts
+```
+
+### Record schemas generated from declarations
+
+Untrusted payloads need runtime validation, and Effect Schema is that validator on the TypeScript side. Declaring the same shape twice, once as a PureScript record and once as a hand-written `S.Struct`, would reintroduce exactly the drift this backend exists to remove. So `purs-ts` derives the schema from the declaration.
+
+Every compile already produces a per-module `docs.json` with the public type declarations, and the backend decodes those into its type environment. The schema emitter walks each module's zero-parameter type synonyms and renders the ones whose shape is schema-representable: `Int`, `Number`, `String`, `Boolean`, arrays of representable values, nested records, and references to synonyms in the same module. The result is one extra export beside the generated code:
+
+```typescript
+export const schemas = {
+  Activity: $schema.Struct({
+    contributions: $schema.Int,
+    followers: $schema.Int,
+    levels: $schema.Array($schema.Int),
+  }),
+  Contributions: $schema.Struct({
+    total: $schema.Struct({ lastYear: $schema.Int }),
+    contributions: $schema.Array($schema.Struct({ level: $schema.Int })),
+  }),
+  Profile: $schema.Struct({ followers: $schema.Int }),
+};
+```
+
+Three rules keep the feature predictable. Dependency sources under `node_modules` or `.spago` never emit schemas, so library records cannot leak into the output. A module that already exports a `schemas` value wins, and generation skips instead of colliding. A synonym with an unsupported shape (functions, type variables, cross-module references, sum types) omits only itself rather than failing the build. Because the module cache already fingerprints `docs.json`, editing a record regenerates its schema on the next build.
+
+`Domain.GitHub` declares its payload shapes once; `Platform.GitHub.ts` imports `schemas.Profile` and `schemas.Contributions` and feeds them to `Schema.decodeUnknownEffect`. The PureScript record is now the single source of truth for external payload shapes. Sum types, newtypes, and qualified references remain uncovered; they fail closed by omission instead of inventing a weaker schema.
 
 ## Mapping PureScript syntax to Effect v4
 
@@ -446,29 +529,38 @@ Effect.Effect<value, error, requirements>
 
 A foreign import's result type selects its ABI. Standard `Effect.Effect value` follows the legacy thunk contract. `PursTs.Effect error requirements value` requires its TypeScript provider to return a native Effect v4 value. Selection happens during compilation, with no runtime inspection and no per-binding YAML flag.
 
-`PursTs.Effect` exposes `succeed`, `fail`, `sync`, `suspend`, `map`, `flatMap`, `as`, `mapError`, `catchAll`, `match`, `acquireRelease`, sleep, sequential `zip`, and parallel `zipPar`. Its typeclass instances are sequential; parallel execution must be requested with `zipPar`.
+`PursTs.Effect` exposes `succeed`, `fail`, `sync`, `suspend`, `map`, `flatMap`, `as`, `mapError`, `catchAll`, `match`, `acquireRelease`, `scoped`, `bracket`, promise interop through `tryPromise`, sequential `zip`, and parallel `zipPar`. Its typeclass instances are sequential; parallel execution must be requested with `zipPar`.
+
+Host asynchrony enters through opaque `Promise`, `Signal`, and `Rejected` types. `tryPromise` takes an attempt function receiving the fiber's `AbortSignal` plus a recovery function, so a raw provider promise becomes a typed error channel without leaving PureScript:
+
+```purescript
+attempt run = Fx.tryPromise { attempt: run, recover }
+```
+
+The backend lowers it to `Effect.tryPromise({ try: options.attempt, catch: options.recover })`. `bracket acquire release use` composes `Effect.scoped` with `Effect.ensuring`, so the finalizer runs when the use effect succeeds, fails, or is interrupted. A small `Platform.Effect` module spells these operations in PureScript idiom: `delay (Milliseconds n)`, `throwError`, `try`, and `bracket`.
 
 `Effect.succeed(value)` receives a value that has already been evaluated, while PureScript's effect form evaluates its value when the effect runs. To preserve that timing, the backend lowers a pure effect through suspension:
 
 ```typescript
-Effect.suspend(() => Effect.succeed(value))
+Effect.suspend(() => Effect.succeed(value));
 ```
 
 Direct foreign providers follow the same rule. `Platform.Browser.ts` returns a native Effect value:
 
 ```typescript
-export const resetScroll =
-  Effect.try(() => {
-    document.getElementById('content-scroll')?.scrollTo({ top: 0, behavior: 'auto' })
-    window.scrollTo({ top: 0, behavior: 'auto' })
-  })
+export const resetScroll = Effect.try(() => {
+  document
+    .getElementById("content-scroll")
+    ?.scrollTo({ top: 0, behavior: "auto" });
+  window.scrollTo({ top: 0, behavior: "auto" });
+});
 ```
 
 Code generation suspends the call itself:
 
 ```typescript
 export const copyPostLink = (url: string) =>
-  $effectRuntime.suspend(() => $foreign.copyPostLink(url))
+  $effectRuntime.suspend(() => $foreign.copyPostLink(url));
 ```
 
 Constructing this command during `update` cannot start its Promise or throw from provider construction. Foldkit starts it when the command runs. Promise rejections enter Effect's typed error channel, and interruption reaches the `AbortSignal` from `Effect.tryPromise` when the provider supports cancellation.
@@ -501,7 +593,7 @@ Site mounts acquire a browser cleanup callback, register `Browser.release`, and 
 
 After the direct TypeScript output worked, the handwritten Foldkit bridge was the largest inconsistency left in the application. I moved that integration into a package built from Foldkit's own declarations.
 
-`purescript-foldkit` contains the reusable PureScript API, small TypeScript providers, their declarations, and generated package metadata. Its generator reads Foldkit 0.151.0, then hashes the declarations for HTML, commands, mounts, navigation, runtime, and URLs. From that input it writes:
+`purescript-foldkit` contains the reusable PureScript API, small TypeScript providers, their declarations, and generated package metadata. Its generator reads Foldkit 0.153.0, then hashes the declarations for HTML, commands, mounts, navigation, runtime, and URLs. From that input it writes:
 
 - the complete `Foldkit.Html` element module;
 - the complete `Foldkit.Html.Prop` property module;
@@ -548,7 +640,7 @@ Five functions define the application root:
 
 ```purescript
 main = Runtime.run
-  { init: Core.init <<< Core.urlPath
+  { init: Core.initUrl
   , update: Core.update
   , view: View.view
   , onUrlRequest: Core.clickedLink
@@ -558,12 +650,12 @@ main = Runtime.run
 
 `App.Model` contains the route, theme, route transition, home model, and post model. Each page owns its messages, model, commands, and view. At the boundary, `GotHomeMessage` and `GotPostMessage` wrap child messages for the parent. `Foldkit.Submodel` performs that mapping without exposing the HTML builder.
 
-Pages own real Foldkit command definitions next to their updates: `Page.Home.Command.loadGitHub`, and `Page.Post.Command`'s `copyLink`, `resetCopyStatus`, and `scrollToProgress` build named commands whose effects come from Foldkit modules and Platform providers. `Foldkit.Update.mapCommands` lifts child results into the parent, so no intermediate application command type or conversion switch exists. Cross-cutting chrome — navigation, scroll targets, theme persistence, document metadata — is defined in the same style inside `App.Command`, which stays a plain library of named commands rather than an ADT plus interpreter. `Fx.match` or `Fx.catchAll` converts expected failures into application messages.
+Pages own real Foldkit command definitions next to their updates: `Page.Home.Command.loadGitHub`, and `Page.Post.Command`'s `copyLink`, `resetCopyStatus`, and `scrollToProgress` build named commands whose effects come from Foldkit modules and Platform providers. `Foldkit.Update.mapCommands` lifts child results into the parent, so no intermediate application command type or conversion switch exists. Cross-cutting chrome such as navigation, scroll targets, theme persistence, and document metadata is defined in the same style inside `App.Command`, which stays a plain library of named commands rather than an ADT plus interpreter. `Fx.match` or `Fx.catchAll` converts expected failures into application messages.
 
 `App.View` returns a typed `Document Message`, with routes selecting page views through `case`. It creates canvases and associates them with mount actions without calling WebGL itself. Once the required title and body exist, document modifiers add the canonical and Open Graph URLs.
 
 `Platform.Browser.purs` now contains only site capabilities: route-specific
-metadata, scroll behavior, and WebGL resource acquisition. `Platform.GitHub.purs` composes the GitHub requests in PureScript: `Fx.tryPromise` (a `PursTs.Effect` intrinsic over the host promise runtime) drives `fetch` with an abort signal, status checks and Schema validation compose through `bind`, and both requests run concurrently with `Fx.zipPar`. Its TypeScript sibling only mirrors browser and library primitives — `fetch`, response accessors, and the two Schema decoders — without owning any policy.
+metadata, scroll behavior, and WebGL resource acquisition. `Platform.GitHub.purs` composes the GitHub requests in PureScript: `Fx.tryPromise` (a `PursTs.Effect` intrinsic over the host promise runtime) drives `fetch` with an abort signal, status checks and Schema validation compose through `bind`, and both requests run concurrently with `Fx.zipPar`. Its TypeScript sibling only mirrors browser and library primitives such as `fetch`, response accessors, and two Schema decoders without owning any policy. The Effect Schema declarations themselves are generated by `purs-ts` from the record type synonyms declared in `Domain.GitHub` and exposed as that module's `schemas` export, so the PureScript declaration is the single source of truth for external payload shapes.
 Foldkit owns the reusable browser primitives in
 `Foldkit.Navigation`, `Foldkit.Render`, `Foldkit.Media`, `Foldkit.Storage`,
 and `Foldkit.Root`. `App.Command` composes those primitives with the site's
@@ -638,7 +730,7 @@ pnpm dev
 
 `pnpm check` verifies archive metadata and checksums, validates TypeScript FFI providers, compiles through `purs-ts`, checks generated output with strict TypeScript, and runs the Vitest and Foldkit Scene suites. `pnpm build` performs the same PureScript build before Vite bundles the application and prerenders metadata.
 
-Some boundaries remain deliberately narrow. Effect requirements support `NoServices` and `Scope`, but not arbitrary services. Generic PureScript ADTs do not yet generate field-level Effect Schemas for untrusted remote input. Foldkit subscriptions, arbitrary streams, and interruptible commands still need lifecycle work. Cross-machine release testing and npm publication are also pending.
+Some boundaries remain deliberately narrow. Effect requirements support `NoServices` and `Scope`, but not arbitrary services. Record type synonyms derive their Effect Schemas automatically; sum types, newtypes, and cross-module synonym references still do not. Foldkit subscriptions, arbitrary streams, and interruptible commands still need lifecycle work. Cross-machine release testing and npm publication are also pending.
 
 A new PureScript repository needs the two checksummed archives, ordinary Spago dependencies, a strict `tsconfig.json`, and three commands:
 

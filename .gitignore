@@ -15,5 +15,6 @@ output/
 
 # Local agent data
 .claude/
+.agents/
 .pi/*
 AGENTS.md
