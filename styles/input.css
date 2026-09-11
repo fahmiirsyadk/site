@@ -1,0 +1,713 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterVariable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: optional;
+}
+
+@font-face {
+  font-family: 'Instrument Serif';
+  src: url('/fonts/InstrumentSerif-Regular.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+}
+
+@font-face {
+  font-family: 'Instrument Serif';
+  src: url('/fonts/InstrumentSerif-Italic.ttf') format('truetype');
+  font-style: italic;
+  font-weight: 400;
+  font-display: optional;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: optional;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: optional;
+}
+
+@theme {
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+}
+
+/* The shell owns the theme with the `dark` class on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Miso views are written in Haskell, so register them explicitly. */
+@source "../src";
+@source "../app";
+
+@layer base {
+  html {
+    color-scheme: light;
+    line-height: 1.7;
+    scrollbar-gutter: stable;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* The ink the dithered images are drawn in. */
+    --dither-ink: #ff4b26;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    min-height: 100%;
+    overflow-x: clip;
+    background: #f5f5f5;
+    color: #171717;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  html.dark body {
+    background: #0a0a0a;
+    color: #f5f5f5;
+  }
+
+  @media (min-width: 768px) {
+    body {
+      overflow-y: hidden;
+    }
+  }
+}
+
+@utility font-instrument {
+  font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+}
+
+/* ---------------------------------------------------------------------------
+   Route transition.
+
+   The whole mechanism: Site.Model.RouteMotion names a phase, Site.View writes
+   it to data-route-motion, and these three rules decide what each phase looks
+   like. No JavaScript animation, no View Transitions API.
+
+   The leaving duration is duplicated in Site.Config.routeLeaveMs, which is how
+   long the update waits before pushing history. A test asserts the number.
+   --------------------------------------------------------------------------- */
+
+.route-content {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
+  transition:
+    opacity 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.route-content[data-route-motion='leaving'] {
+  opacity: 0;
+  filter: blur(2px);
+  transform: translateY(-3px);
+  pointer-events: none;
+  transition-duration: 250ms;
+}
+
+/* No transition here on purpose: the incoming page must arrive already
+   hidden, then transition once the phase flips to idle. */
+.route-content[data-route-motion='entering'] {
+  opacity: 0;
+  filter: blur(2px);
+  transform: translateY(5px);
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-content {
+    transition-duration: 0.01ms;
+  }
+
+  .dithered-image-source,
+  .dithered-image [data-dithered-canvas] {
+    transition-duration: 0.01ms;
+  }
+}
+
+.footer-theme-toggle {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 150ms ease, transform 150ms ease;
+}
+
+.footer-theme-toggle:hover {
+  color: #c24120;
+  transform: rotate(12deg);
+}
+
+.footer-theme-toggle:focus-visible {
+  color: #c24120;
+  outline: 2px solid #c24120;
+  outline-offset: 3px;
+}
+
+html.dark .footer-theme-toggle:hover {
+  color: #ff6b4a;
+}
+
+html.dark .footer-theme-toggle:focus-visible {
+  color: #ff6b4a;
+  outline-color: #ff6b4a;
+}
+
+/* The header's hollow mark canvas. The widget draws into it; CSS owns the
+   cursor and touch behaviour. */
+
+.hollow-mark {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.hollow-mark[data-dragging='true'] {
+  cursor: grabbing;
+}
+
+/* The scribble around "thinking about". The path starts hidden; the
+   Site.Widgets.Scribble widget stages a variant and draws it with the Web
+   Animations API. */
+
+.thinking-scribble {
+  position: relative;
+  display: inline-grid;
+  margin-inline: 0.08em;
+  vertical-align: baseline;
+}
+
+.thinking-scribble-text {
+  position: relative;
+  z-index: 1;
+  color: inherit;
+  font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 700;
+}
+
+.thinking-scribble-svg {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  width: 6.2em;
+  height: 5em;
+  overflow: visible;
+  color: #ff4b26;
+  opacity: 0.78;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.thinking-scribble-path {
+  fill: none;
+  visibility: hidden;
+}
+
+/* The GitHub preview card. The transform rules own the positioning; the
+   source's hover and focus-within variants slide it down from the link. */
+
+.github-preview-card {
+  transform: translate(-50%, 0.35rem);
+}
+
+.github-preview:hover .github-preview-card,
+.github-preview:focus-within .github-preview-card {
+  transform: translate(-50%, 0);
+}
+
+.github-contribution-grid {
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.github-contribution[data-level='0'] {
+  background: #e5e5e5;
+}
+
+.github-contribution[data-level='1'] {
+  background: #ffd0c5;
+}
+
+.github-contribution[data-level='2'] {
+  background: #ff9b84;
+}
+
+.github-contribution[data-level='3'] {
+  background: #ff6948;
+}
+
+.github-contribution[data-level='4'] {
+  background: #ff4b26;
+}
+
+html.dark .github-contribution[data-level='0'] {
+  background: #262626;
+}
+
+.theme-sun,
+.theme-moon {
+  display: none;
+  line-height: 0;
+}
+
+html:not(.dark) .theme-moon,
+html.dark .theme-sun {
+  display: block;
+}
+
+.theme-icon {
+  display: block;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* The sea footer keeps a floor of vertical space so the shader has a canvas
+   to mount into even when the page content is short; the canvas itself is
+   pinned to the bottom of that area, matching the source site. */
+
+#sea-footer {
+  min-height: clamp(240px, 34vh, 420px);
+}
+
+#sea-canvas {
+  display: block;
+  width: 100%;
+  height: clamp(200px, 26vh, 340px);
+  margin-top: auto;
+}
+
+@media (max-width: 768px) {
+  #sea-canvas {
+    height: clamp(176px, 22vh, 300px);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Post page.
+
+   Ported from the source site: cover, media, prose scale, and the footnote
+   block. The body itself is structured Miso nodes rendered by Site.Prose.
+   --------------------------------------------------------------------------- */
+
+.post-cover {
+  aspect-ratio: 16 / 7;
+  background: transparent;
+}
+
+.post-cover-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The source image is the guaranteed fallback: prerendered and no-JS pages
+   show it plainly, and it stays in flow so the box never collapses. On JS
+   pages it gets a cheap pre-dither treatment -- grayscale plus an ink screen
+   at the bayer cell size -- until the widget's first frame sets
+   `data-dither-ready`, then the canvas crossfades in. The `js` class comes
+   from the pre-paint script, so the treatment applies before first paint. */
+
+.dithered-image-source {
+  transition: opacity 300ms ease, filter 300ms ease;
+}
+
+.dithered-image [data-dithered-canvas] {
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.js .dithered-image:not([data-dither-ready='true']):not([data-dither-fallback='true']) .dithered-image-source {
+  filter: grayscale(1) contrast(1.15);
+}
+
+.js .dithered-image:not([data-dither-ready='true']):not([data-dither-fallback='true'])::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: var(--dither-ink);
+  opacity: 0.22;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cg fill='%23fff'%3E%3Crect width='1' height='1' x='0' y='0' opacity='.1'/%3E%3Crect width='1' height='1' x='1' y='0' opacity='.6'/%3E%3Crect width='1' height='1' x='2' y='0' opacity='.2'/%3E%3Crect width='1' height='1' x='3' y='0' opacity='.7'/%3E%3Crect width='1' height='1' x='0' y='1' opacity='.8'/%3E%3Crect width='1' height='1' x='1' y='1' opacity='.3'/%3E%3Crect width='1' height='1' x='2' y='1' opacity='.9'/%3E%3Crect width='1' height='1' x='3' y='1' opacity='.4'/%3E%3Crect width='1' height='1' x='0' y='2' opacity='.2'/%3E%3Crect width='1' height='1' x='1' y='2' opacity='.8'/%3E%3Crect width='1' height='1' x='2' y='2' opacity='.1'/%3E%3Crect width='1' height='1' x='3' y='2' opacity='.6'/%3E%3Crect width='1' height='1' x='0' y='3' opacity='1'/%3E%3Crect width='1' height='1' x='1' y='3' opacity='.5'/%3E%3Crect width='1' height='1' x='2' y='3' opacity='.9'/%3E%3Crect width='1' height='1' x='3' y='3' opacity='.3'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cg fill='%23fff'%3E%3Crect width='1' height='1' x='0' y='0' opacity='.1'/%3E%3Crect width='1' height='1' x='1' y='0' opacity='.6'/%3E%3Crect width='1' height='1' x='2' y='0' opacity='.2'/%3E%3Crect width='1' height='1' x='3' y='0' opacity='.7'/%3E%3Crect width='1' height='1' x='0' y='1' opacity='.8'/%3E%3Crect width='1' height='1' x='1' y='1' opacity='.3'/%3E%3Crect width='1' height='1' x='2' y='1' opacity='.9'/%3E%3Crect width='1' height='1' x='3' y='1' opacity='.4'/%3E%3Crect width='1' height='1' x='0' y='2' opacity='.2'/%3E%3Crect width='1' height='1' x='1' y='2' opacity='.8'/%3E%3Crect width='1' height='1' x='2' y='2' opacity='.1'/%3E%3Crect width='1' height='1' x='3' y='2' opacity='.6'/%3E%3Crect width='1' height='1' x='0' y='3' opacity='1'/%3E%3Crect width='1' height='1' x='1' y='3' opacity='.5'/%3E%3Crect width='1' height='1' x='2' y='3' opacity='.9'/%3E%3Crect width='1' height='1' x='3' y='3' opacity='.3'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-size: 4px 4px;
+  mask-size: 4px 4px;
+  image-rendering: pixelated;
+}
+
+.dithered-image[data-dither-ready='true'] .dithered-image-source {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dithered-image[data-dither-ready='true'] [data-dithered-canvas] {
+  opacity: 1;
+}
+
+.dithered-image[data-dither-fallback='true'] .dithered-image-source {
+  opacity: 1;
+}
+
+.dithered-image[data-dither-fallback='true'] [data-dithered-canvas] {
+  opacity: 0;
+}
+
+.markdown-image-plain {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  border-radius: 0.5rem;
+}
+
+.markdown-video-plain {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  border-radius: 0.5rem;
+  background: #171717;
+}
+
+.dithered-image-inline {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+.dithered-image-inline .dithered-image-source {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+}
+
+.dithered-image-inline [data-dithered-canvas] {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cover-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  height: 100%;
+  width: 100%;
+  image-rendering: pixelated;
+}
+
+/* The back and copy controls at the end of a post. */
+
+.post-action-bar {
+  display: flex;
+  min-height: 2.5rem;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 3rem;
+  user-select: none;
+}
+
+.post-action-button {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #525252;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 150ms ease-out, transform 150ms ease-out;
+}
+
+.post-action-button:hover {
+  color: #c24120;
+}
+
+.post-action-button:focus-visible {
+  color: #c24120;
+  outline: 2px solid #c24120;
+  outline-offset: 3px;
+}
+
+.post-action-button:active {
+  transform: scale(0.96);
+}
+
+.post-action-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+html.dark .post-action-button {
+  background: transparent;
+  color: #a3a3a3;
+}
+
+html.dark .post-action-button:hover {
+  color: #ff6b4a;
+}
+
+html.dark .post-action-button:focus-visible {
+  color: #ff6b4a;
+  outline-color: #ff6b4a;
+}
+
+.post-prose {
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+.post-prose :where(h1, h2, h3, h4, h5, h6) {
+  text-wrap: balance;
+}
+
+.post-prose :where(p, li, blockquote, figcaption) {
+  text-wrap: pretty;
+}
+
+.post-prose :where(a) {
+  color: #c24120;
+  text-decoration-line: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.2em;
+}
+
+.post-prose :where(a:hover) {
+  text-decoration-thickness: 0.12em;
+}
+
+html.dark .post-prose :where(a) {
+  color: #ff6b4a;
+}
+
+.post-prose :where(code) {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  font-weight: 400;
+  border-radius: 0.25rem;
+  background: #f0f0f0;
+  padding: 0.08em 0.35em;
+}
+
+.post-prose :where(code)::before,
+.post-prose :where(code)::after {
+  content: none;
+}
+
+.post-prose :where(pre) {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  tab-size: 2;
+}
+
+.post-prose :where(pre code) {
+  font-size: inherit;
+  font-weight: 400;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.post-prose :where(table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.post-prose pre {
+  border: 1px solid #e5e5e5;
+  background: #fafafa;
+  color: #404040;
+}
+
+html.dark .post-prose pre {
+  border-color: #404040;
+  background: #0f0f0f;
+  color: #d4d4d4;
+}
+
+.post-prose .markdown-image-plain,
+.post-prose .markdown-video-plain,
+.post-prose .dithered-image-inline {
+  outline: 1px solid oklch(0 0 0 / 0.1);
+  outline-offset: -1px;
+}
+
+html.dark .post-prose .markdown-image-plain,
+html.dark .post-prose .markdown-video-plain,
+html.dark .post-prose .dithered-image-inline {
+  outline-color: oklch(1 0 0 / 0.1);
+}
+
+html.dark .post-prose :where(code) {
+  background: #262626;
+}
+
+html.dark .post-prose :where(pre code) {
+  background: transparent;
+}
+
+.post-prose .footnotes {
+  margin-top: 2.5rem;
+  border-top: 1px solid #e5e5e5;
+  padding-top: 1rem;
+  font-size: 0.85em;
+}
+
+html.dark .post-prose .footnotes {
+  border-top-color: #262626;
+}
+
+/* highlight.js token colors: a github-flavored palette that reads on the
+   light and dark code backgrounds above. */
+.hljs-comment,
+.hljs-quote {
+  color: #6a737d;
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst,
+.hljs-doctag {
+  color: #d73a49;
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-addition {
+  color: #032f62;
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-selector-id,
+.hljs-class .hljs-title {
+  color: #6f42c1;
+}
+
+.hljs-type,
+.hljs-built_in,
+.hljs-builtin-name {
+  color: #6f42c1;
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attribute,
+.hljs-meta,
+.hljs-symbol,
+.hljs-bullet {
+  color: #005cc5;
+}
+
+.hljs-name,
+.hljs-tag,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: #22863a;
+}
+
+.hljs-deletion {
+  color: #b31d28;
+  background: #ffeef0;
+}
+
+html.dark .hljs-comment,
+html.dark .hljs-quote {
+  color: #8b949e;
+}
+
+html.dark .hljs-keyword,
+html.dark .hljs-selector-tag,
+html.dark .hljs-subst,
+html.dark .hljs-doctag {
+  color: #ff7b72;
+}
+
+html.dark .hljs-string,
+html.dark .hljs-regexp,
+html.dark .hljs-addition {
+  color: #a5d6ff;
+}
+
+html.dark .hljs-title,
+html.dark .hljs-section,
+html.dark .hljs-selector-id,
+html.dark .hljs-class .hljs-title {
+  color: #d2a8ff;
+}
+
+html.dark .hljs-type,
+html.dark .hljs-built_in,
+html.dark .hljs-builtin-name {
+  color: #d2a8ff;
+}
+
+html.dark .hljs-number,
+html.dark .hljs-literal,
+html.dark .hljs-attr,
+html.dark .hljs-variable,
+html.dark .hljs-template-variable,
+html.dark .hljs-attribute,
+html.dark .hljs-meta,
+html.dark .hljs-symbol,
+html.dark .hljs-bullet {
+  color: #79c0ff;
+}
+
+html.dark .hljs-name,
+html.dark .hljs-tag,
+html.dark .hljs-selector-class,
+html.dark .hljs-selector-attr,
+html.dark .hljs-selector-pseudo {
+  color: #7ee787;
+}
+
+html.dark .hljs-deletion {
+  color: #ffdcd7;
+  background: #67060c;
+}

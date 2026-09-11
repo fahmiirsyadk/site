@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Faah</title>
+    <link rel="preload" href="/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/InstrumentSerif-Regular.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="/fonts/InstrumentSerif-Italic.ttf" as="font" type="font/ttf" crossorigin>
+    <link href="/styles.css" rel="stylesheet">
+    <script>
+      // Applies the theme before first paint, so a dark reader never sees a
+      // white flash while the WASM module loads. Site.Platform reads and
+      // writes the same key and the same class; keep the three in step. The
+      // `js` class gates the pre-dither placeholder in styles/input.css.
+      (function () {
+        document.documentElement.classList.add('js')
+        var systemDark = false
+        try {
+          systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        } catch (_) {}
+        var stored = null
+        try { stored = localStorage.getItem('theme') } catch (_) {}
+        var dark = stored === 'dark' || (stored !== 'light' && systemDark)
+        document.documentElement.classList.toggle('dark', dark)
+      })()
+    </script>
+  </head>
+  <body>
+    <script src="/index.js" type="module"></script>
+  </body>
+</html>

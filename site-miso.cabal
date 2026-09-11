@@ -1,0 +1,144 @@
+cabal-version:      3.0
+name:               site-miso
+version:            0.1.0.0
+synopsis:           faah.me, written in Miso
+description:        Personal site built on Miso, targeting WASM in the browser.
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             site-miso
+maintainer:         site-miso
+copyright:          site-miso @ 2026
+category:           Web
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+
+flag interactive
+  default:
+    False
+  manual:
+    True
+
+common warnings
+  ghc-options:
+    -funbox-strict-fields -O2 -ferror-spans -fspecialise-aggressively -Wall
+
+-- CPP only. Link flags belong to the executable; a library must not carry
+-- them. `miso` derives -DVANILLA / -DWASM / -DGHCJS_NEW from the target
+-- architecture on its own, so a native `cabal build` needs no extra flag.
+common platform
+  if arch(wasm32)
+    cpp-options:
+      -DWASM
+    if flag (interactive)
+      cpp-options:
+        -DINTERACTIVE
+
+common options
+  if arch(wasm32)
+    ghc-options:
+      -no-hs-main -optl-mexec-model=reactor "-optl-Wl,--export=hs_start"
+
+  if arch(javascript)
+     ld-options:
+       -sEXPORTED_RUNTIME_METHODS=HEAP8
+
+-- The shell lives in a library so that two other consumers can reach it: the
+-- native test-suite below and the native prerender generator. Both compile
+-- this same source under the native/SSR configuration.
+library
+  import:
+    warnings, platform
+  hs-source-dirs:
+    src
+    generated
+  exposed-modules:
+    Site.Action
+    Site.App
+    Site.Config
+    Site.Canvas
+    Site.Content
+    Site.Content.Types
+    Site.Document
+    Site.Dither
+    Site.GitHub
+    Site.Hollow
+    Site.HollowGeometry
+    Site.Meta
+    Site.Model
+    Site.Platform
+    Site.Prose
+    Site.Route
+    Site.Scroll
+    Site.Scribble
+    Site.Sea
+    Site.Theme
+    Site.Update
+    Site.View
+    Site.View.Home
+    Site.View.Icons
+    Site.View.Link
+    Site.View.Post
+    Site.View.Section
+  other-modules:
+    Site.Content.Generated
+    Site.Widgets.Dither
+    Site.Widgets.Gl
+    Site.Widgets.Hollow
+    Site.Widgets.HollowGeometry
+    Site.Widgets.Scribble
+    Site.Widgets.Scroll
+    Site.Widgets.Sea
+    Site.Widgets.Shaders
+  build-depends:
+    base < 5,
+    containers,
+    miso >= 1.13,
+    text
+  default-language:
+    Haskell2010
+
+executable app
+  import:
+    options, warnings, platform
+  main-is:
+    Main.hs
+  build-depends:
+    base < 5, miso >= 1.13, site-miso
+  hs-source-dirs:
+    app
+  default-language:
+    Haskell2010
+
+-- Native only. Renders every route in 'Site.Meta.prerenderRoutes' to
+-- public/<path>/index.html with Miso's ssr flag, then writes sitemap.xml,
+-- robots.txt and 404.html. Run after `make build`, which replaces public/.
+executable prerender
+  import:
+    warnings
+  if arch(wasm32) || arch(javascript)
+    buildable:
+      False
+  main-is:
+    Main.hs
+  hs-source-dirs:
+    prerender
+  build-depends:
+    base < 5, bytestring, directory, filepath, miso >= 1.13, site-miso
+  default-language:
+    Haskell2010
+
+-- Native only. Runs `update` through `runEffect` and the route table through
+-- an exhaustive corpus; no browser, no dependencies beyond the library.
+test-suite spec
+  type:
+    exitcode-stdio-1.0
+  main-is:
+    Spec.hs
+  hs-source-dirs:
+    test
+  build-depends:
+    base < 5, miso >= 1.13, site-miso
+  ghc-options:
+    -Wall
+  default-language:
+    Haskell2010

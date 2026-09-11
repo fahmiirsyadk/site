@@ -1,0 +1,19 @@
+packages:
+  .
+
+allow-newer:
+  all:base
+
+source-repository-package
+  type: git
+  location: https://github.com/dmjio/miso
+  tag: 1.13.0
+
+flags: +template-haskell
+
+-- The prerender executable (vanilla GHC) needs miso's server-side rendering
+-- flag so `text` HTML-encodes and `hydrateModel` is honoured. The WASM and
+-- JavaScript back-ends must not get it: they build real DOM nodes instead.
+if !arch(wasm32) && !arch(javascript)
+  package miso
+    flags: +ssr
