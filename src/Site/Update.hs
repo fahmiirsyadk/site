@@ -1,5 +1,6 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 -----------------------------------------------------------------------------
 -- | The transition function.
 --
@@ -28,53 +29,50 @@ import           Miso.Lens (use, (.=))
 import           Miso.Navigator (copyClipboard)
 import           Miso.String (MisoString)
 -----------------------------------------------------------------------------
-import           Site.Action (Action (..))
+import           Site.Action (Action (..), Element (..))
 import qualified Site.Config as Config
 import qualified Site.GitHub as GitHub
 import           Site.Model
                  ( CopyStatus (..)
                  , Model
-                 , RouteMotion (..)
-                 , copyStatus
+                  , Navigation (..)
+                  , Page (..)
+                  , PostState (..)
+                  , PostRequest (..)
                  , gitHubContributions
                  , gitHubFailed
                  , gitHubProfile
                  , labHover
-                 , motion
+                  , navigation
                  , navigationVersion
                  , page
-                 , pendingNavigation
-                 , reading
                  , theme
                  )
 import qualified Site.Model as Model
 import qualified Site.Platform as Platform
 import qualified Site.Route as Route
+import qualified Site.Section as Section
 import qualified Site.Scroll as Scroll
-import           Site.Scroll (ReadingProgress (..), emptyReadingProgress)
+import           Site.Scroll (ReadingProgress (..))
 import qualified Site.Theme as Theme
 import qualified Site.Widgets.Dither as Dither
-import qualified Site.Widgets.Hollow as Hollow
-import qualified Site.Widgets.Scribble as Scribble
+import qualified Site.Widgets.Browser as Browser
+import qualified Site.Widgets.Runtime as Widgets
 import qualified Site.Widgets.Scroll as ScrollWidget
-import qualified Site.Widgets.Sea as Sea
 -----------------------------------------------------------------------------
-updateModel :: Action -> Effect context props Model Action
-updateModel = \case
+updateModel :: Widgets.Runtime -> Action -> Effect context props Model Action
+updateModel widgets = \case
 
   FollowedLink target -> do
     current <- Model.routeForPage <$> use page
-    currentMotion <- use motion
-    pending <- use pendingNavigation
-    unless (target == current && pending == Nothing && currentMotion == Idle) $ do
+    currentNavigation <- use navigation
+    unless (target == current && currentNavigation == Settled) $ do
       version <- (+ 1) <$> use navigationVersion
       navigationVersion .= version
-      pendingNavigation .= Nothing
       if target == current
-        then motion .= Idle
+        then navigation .= Settled
         else do
-          pendingNavigation .= Just target
-          motion .= Leaving
+          navigation .= LeavingFor target
           io $ do
             reduced <- Platform.prefersReducedMotion
             unless reduced (Platform.delayMs Config.routeLeaveMs)
@@ -85,29 +83,25 @@ updateModel = \case
 
   NavigationReady version target -> do
     current <- Model.routeForPage <$> use page
-    pending <- use pendingNavigation
+    currentNavigation <- use navigation
     currentVersion <- use navigationVersion
-    when (pending == Just target && version == currentVersion && target /= current) $ do
-      pendingNavigation .= Nothing
+    when (currentNavigation == LeavingFor target && version == currentVersion && target /= current) $ do
+      navigation .= AwaitingURI target
       sync_ (pushURI (Route.routeURI target))
 
   ChangedURI uri -> do
     let target = Route.uriToRoute uri
     current <- Model.routeForPage <$> use page
-    currentMotion <- use motion
-    pending <- use pendingNavigation
-    unless (target == current && pending == Nothing && currentMotion == Idle) $ do
+    currentNavigation <- use navigation
+    unless (target == current && currentNavigation == Settled) $ do
       version <- (+ 1) <$> use navigationVersion
       navigationVersion .= version
-      pendingNavigation .= Nothing
       if target == current
-        then motion .= Idle
+        then navigation .= Settled
         else do
-          page .= Model.pageForRoute target
-          motion .= Entering
+          page .= Model.pageForRoute version target
+          navigation .= EnteringPage
           labHover .= False
-          reading .= emptyReadingProgress
-          copyStatus .= NotCopied
           io $ do
             Platform.resetContentScroll
             Platform.delayMs Config.routeEntryMs
@@ -115,9 +109,9 @@ updateModel = \case
 
   EnteredRoute version -> do
     currentVersion <- use navigationVersion
-    pending <- use pendingNavigation
-    when (version == currentVersion && pending == Nothing) $ do
-      motion .= Idle
+    currentNavigation <- use navigation
+    when (version == currentVersion && currentNavigation == EnteringPage) $ do
+      navigation .= Settled
       measureIfPost
 
   ToggledTheme -> do
@@ -140,11 +134,15 @@ updateModel = \case
     -- The canvas @onCreated@ hook also mounts the shader; this second entry
     -- point runs once the component is mounted for certain and covers a
     -- hydration walk that did not dispatch the element hook. Idempotent.
-    io_ Sea.attach
+    io_ $ do
+      Browser.mountSelector (Widgets.sea widgets) ("#" <> Config.seaCanvasId)
+      Browser.mountSelector (Widgets.hollow widgets) Config.hollowMarkSelector
+      Browser.mountSelector (Widgets.scribble widgets) Config.scribbleSelector
     -- Dithered images have no element hook: the widget watches the body for
     -- roots appearing and leaving as Miso patches page content, so one
     -- attach per app lifetime is enough.
-    io_ Dither.attach
+    io_ (Dither.attach (Widgets.dither widgets))
+    measureIfPost
     -- The home card's data loads once per app lifetime, like the source's
     -- init command. A failed start is not retried.
     profile <- use gitHubProfile
@@ -157,13 +155,16 @@ updateModel = \case
   AdoptedTheme chosen ->
     theme .= chosen
 
+  AppDisposed ->
+    io_ (Widgets.disposeRuntime widgets)
+
   -- The canvas hooks. Mounting during hydration is deliberate: the
   -- prerendered page boots the shader as soon as the WASM module adopts it.
-  SeaMounted ->
-    io_ Sea.attach
+  SeaMounted (Element element) ->
+    io_ (Browser.mountElement (Widgets.sea widgets) element)
 
-  SeaDisposed ->
-    io_ Sea.dispose
+  SeaDisposed (Element element) ->
+    io_ (Browser.disposeElement (Widgets.sea widgets) element)
 
   HoveredLab ->
     labHover .= True
@@ -183,58 +184,80 @@ updateModel = \case
   ScrolledContent ->
     measureIfPost
 
-  MeasuredReadingProgress progress -> do
-    current <- use reading
-    when (progress /= current) (reading .= progress)
+  MeasuredReadingProgress generation progress ->
+    withPost $ \section slug state ->
+      when (generation == postGeneration state && progress /= postReading state) $
+        page .= PostPage section slug state { postReading = progress }
 
   SelectedReadingProgress percent ->
-    io_ (ScrollWidget.scrollToProgress (Scroll.clampProgress percent))
+    withPost $ \_ _ _ ->
+      io_ (ScrollWidget.scrollToProgress (Scroll.clampProgress percent))
 
-  AdjustedReadingProgress delta -> do
-    current <- use reading
-    io_ (ScrollWidget.scrollToProgress (Scroll.clampProgress (readingPercent current + delta)))
+  AdjustedReadingProgress delta ->
+    withPost $ \_ _ state ->
+      io_ (ScrollWidget.scrollToProgress (Scroll.clampProgress (readingPercent (postReading state) + delta)))
 
   ClickedCopyLink url ->
-    copyClipboard url CopiedLink (const FailedCopyLink)
+    withPost $ \section slug state -> do
+      let version = postCopyVersion state + 1
+          request = PostRequest (postGeneration state) version
+      page .= PostPage section slug state { postCopyVersion = version }
+      copyClipboard url (CopiedLink request) (const (FailedCopyLink request))
 
-  CopiedLink -> do
-    copyStatus .= Copied
-    io $ do
-      Platform.delayMs 2000
-      pure CopyStatusExpired
+  CopiedLink request ->
+    withCopyRequest request $ \section slug state -> do
+      page .= PostPage section slug state { postCopyStatus = Copied }
+      io $ do
+        Platform.delayMs 2000
+        pure (CopyStatusExpired request)
 
-  FailedCopyLink ->
+  FailedCopyLink _ ->
     pure ()
 
-  CopyStatusExpired ->
-    copyStatus .= NotCopied
+  CopyStatusExpired request ->
+    withCopyRequest request $ \section slug state ->
+      page .= PostPage section slug state { postCopyStatus = NotCopied }
 
   IgnoredKey ->
     pure ()
 
-  ScribbleMounted ->
-    io_ Scribble.attach
+  ScribbleMounted (Element element) ->
+    io_ (Browser.mountElement (Widgets.scribble widgets) element)
 
-  ScribbleDisposed ->
-    io_ Scribble.dispose
+  ScribbleDisposed (Element element) ->
+    io_ (Browser.disposeElement (Widgets.scribble widgets) element)
 
-  HollowMounted ->
-    io_ Hollow.attach
+  HollowMounted (Element element) ->
+    io_ (Browser.mountElement (Widgets.hollow widgets) element)
 
-  HollowDisposed ->
-    io_ Hollow.dispose
+  HollowDisposed (Element element) ->
+    io_ (Browser.disposeElement (Widgets.hollow widgets) element)
 -----------------------------------------------------------------------------
 -- | A reading measurement only makes sense while a post is the mounted page,
 -- and only after the post's DOM has been drawn: 'EnteredRoute' fires after
 -- the entry delay, and every captured scroll event fires after a paint.
 measureIfPost :: Effect context props Model Action
 measureIfPost = do
-  target <- Model.routeForPage <$> use page
-  case target of
-    Route.Post _ _ ->
-      io (MeasuredReadingProgress <$> ScrollWidget.measureReadingProgress)
-    _ ->
-      pure ()
+   withPost $ \_ _ state ->
+     io (MeasuredReadingProgress (postGeneration state) <$> ScrollWidget.measureReadingProgress)
+
+withPost
+  :: (Section.Section -> MisoString -> PostState -> Effect context props Model Action)
+  -> Effect context props Model Action
+withPost action = do
+  current <- use page
+  case current of
+    PostPage section slug state -> action section slug state
+    _ -> pure ()
+
+withCopyRequest
+  :: PostRequest
+  -> (Section.Section -> MisoString -> PostState -> Effect context props Model Action)
+  -> Effect context props Model Action
+withCopyRequest request action =
+  withPost $ \section slug state ->
+    when (request == PostRequest (postGeneration state) (postCopyVersion state)) $
+      action section slug state
 
 -- | The error callback's payload is unused; naming its type pins
 -- @FromJSVal@ to 'MisoString'.

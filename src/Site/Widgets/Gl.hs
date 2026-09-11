@@ -22,14 +22,16 @@ module Site.Widgets.Gl
     -- * Contexts
   , releaseContext
   , isContextLost
-  , mountWithRetry
     -- * JavaScript values
   , isAbsent
   , number
   , int
   , performanceNow
-    -- * Sequencing
-  , (>>>=)
+    -- * Scoped acquisition
+  , acquire
+  , optionalObject
+  , uniformLocation
+  , attribLocation
     -- * Parameters and logging
   , getParameterBool
   , getParameterInt
@@ -74,13 +76,13 @@ module Site.Widgets.Gl
   ) where
 -----------------------------------------------------------------------------
 import           Control.Monad (unless, void, when)
-import           Data.IORef (IORef, readIORef, writeIORef)
+import           Control.Monad.Trans.Class (lift)
+import           Control.Monad.Trans.Maybe (MaybeT (..))
 import           Miso.DSL
   ( JSVal
   , fromJSValUnchecked
   , jsg
   , jsNull
-  , syncCallback1
   , toJSVal
   , (!)
   , (#)
@@ -88,6 +90,7 @@ import           Miso.DSL
 import           Miso.String (MisoString)
 -----------------------------------------------------------------------------
 import           Site.Platform (isAbsent)
+import qualified Site.Widgets.Browser as Browser
 -----------------------------------------------------------------------------
 data GlProgram = GlProgram
   { glProgram  :: JSVal
@@ -240,35 +243,25 @@ performanceNow = do
   value <- performance # "now" $ ()
   fromJSValUnchecked value
 -----------------------------------------------------------------------------
--- | Chain an action that may have produced nothing into the next one. Used
--- by the stepwise WebGL builds, where one failed step aborts the mount.
-(>>>=) :: IO (Maybe a) -> (a -> IO (Maybe b)) -> IO (Maybe b)
-action >>>= next = action >>= maybe (pure Nothing) next
-infixl 1 >>>=
------------------------------------------------------------------------------
--- | Attempt @retry@ after 'mountRetryDelayMs' when the context was not
--- available, up to 'mountRetryAttempts' times. @isMounted@ is re-read on each
--- wake-up so a mount that landed in the meantime is not duplicated.
---
--- Chromium evicts the oldest WebGL context when a page holds too many, and
--- frees them asynchronously, so the window can be several seconds wide on a
--- loaded machine.
-mountWithRetry :: IORef Int -> IO Bool -> IO () -> IO ()
-mountWithRetry attemptsRef isMounted retry = do
-  attempts <- readIORef attemptsRef
-  when (attempts < mountRetryAttempts) $ do
-    writeIORef attemptsRef (attempts + 1)
-    window <- jsg "window"
-    callback <- syncCallback1 $ \_ -> do
-      mounted <- isMounted
-      unless mounted retry
-    void $ window # "setTimeout" $ (callback, mountRetryDelayMs :: Int)
------------------------------------------------------------------------------
-mountRetryAttempts :: Int
-mountRetryAttempts = 40
------------------------------------------------------------------------------
-mountRetryDelayMs :: Int
-mountRetryDelayMs = 500
+-- | Own each successful acquisition before attempting the next. MaybeT
+-- handles ordinary failure; the enclosing scope handles rollback and teardown.
+acquire :: Browser.Scope -> IO (Maybe a) -> (a -> IO ()) -> MaybeT IO a
+acquire scope createResource release = do
+  resource <- MaybeT createResource
+  lift (Browser.own scope (release resource))
+  pure resource
+
+optionalObject :: IO JSVal -> IO (Maybe JSVal)
+optionalObject action = do
+  value <- action
+  absent <- isAbsent value
+  pure (if absent then Nothing else Just value)
+
+uniformLocation :: JSVal -> GlProgram -> MisoString -> IO JSVal
+uniformLocation gl program name = gl # "getUniformLocation" $ (glProgram program, name)
+
+attribLocation :: JSVal -> GlProgram -> MisoString -> IO Int
+attribLocation gl program name = fromJSValUnchecked =<< (gl # "getAttribLocation" $ (glProgram program, name))
 -----------------------------------------------------------------------------
 logError :: MisoString -> MisoString -> IO ()
 logError label detail = do

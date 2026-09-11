@@ -29,6 +29,7 @@ import qualified Site.Route as Route
 import           Site.Theme (Theme (..))
 import           Site.Update (updateModel)
 import           Site.View (viewModel)
+import qualified Site.Widgets.Runtime as Widgets
 -----------------------------------------------------------------------------
 -- | Delegated events the shell listens for.
 --
@@ -76,9 +77,10 @@ staticBootModel = do
 -- Taking the model as an argument rather than reading the URL inside keeps
 -- the value pure, which is what the prerender generator needs: it supplies a
 -- model per route and never touches 'bootModel'.
-app :: Model -> App Model Action
-app initial = (component initial updateModel viewModel)
+app :: Widgets.Runtime -> Model -> App Model Action
+app widgets initial = (component initial (updateModel widgets) viewModel)
   { subs = [ uriSub ChangedURI ]
   , hydrateModel = Just staticBootModel
   , mount = Just AppMounted
+  , unmount = Just AppDisposed
   }

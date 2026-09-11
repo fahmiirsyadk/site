@@ -22,8 +22,8 @@ import           Miso.Event
   ( Phase (CAPTURE)
   , defaultOptions
   , emptyDecoder
-  , onBeforeDestroyed
-  , onCreated
+  , onBeforeDestroyedWith
+  , onCreatedWith
   , onWithOptions
   )
 import           Miso.Html.Element as H
@@ -32,14 +32,15 @@ import           Miso.Html.Property as P
 import           Miso.Property (textProp)
 import           Miso.String (MisoString)
 -----------------------------------------------------------------------------
-import           Site.Action (Action (..))
+import           Site.Action (Action (..), Element (..))
 import qualified Site.Config as Config
 import qualified Site.Content as Content
 import qualified Site.GitHub as GitHub
-import           Site.Model (Model (..), Page (..))
+import           Site.Model (Model (..), Page (..), PostState (..))
 import qualified Site.Model as Model
 import           Site.Route (Route (..))
 import qualified Site.Route as Route
+import qualified Site.Section as Section
 import           Site.Theme (Theme (..))
 import qualified Site.Theme as Theme
 import           Site.View.Home (homeView)
@@ -57,7 +58,7 @@ applicationBody :: Model -> Node context
 applicationBody model =
   case _page model of
     NotFoundPage path -> notFoundBody path
-    PostPage section slug -> case Content.findPost section slug of
+    PostPage section slug _ -> case Content.findPost section slug of
       Nothing -> notFoundBody (Route.routePath (Post section slug))
       Just _  -> standardBody model
     _ -> standardBody model
@@ -65,11 +66,11 @@ applicationBody model =
 standardBody :: Model -> Node context
 standardBody model =
   H.div_
-    [ P.class_ "min-h-screen bg-[#F5F5F5] text-[#171717] antialiased dark:bg-neutral-950 dark:text-neutral-100" ]
+    [ P.class_ "min-h-screen bg-paper text-ink antialiased dark:bg-neutral-950 dark:text-neutral-100" ]
     [ H.div_
         [ P.class_ "flex min-h-screen w-full flex-col md:h-screen md:max-h-screen md:flex-row md:overflow-hidden" ]
         [ H.main_
-            [ P.class_ "flex h-full min-h-0 min-w-0 flex-1 flex-col border-t border-[#E5E5E5] bg-white dark:border-neutral-800 dark:bg-neutral-900 md:border-t-0" ]
+            [ P.class_ "flex h-full min-h-0 min-w-0 flex-1 flex-col border-t border-hairline bg-white dark:border-neutral-800 dark:bg-neutral-900 md:border-t-0" ]
             [ H.div_
                 [ P.id_ Config.contentScrollId
                 , P.class_ "flex h-full min-h-0 w-full flex-1 flex-col items-center justify-start overflow-y-auto bg-white px-8 pb-0 pt-4 dark:bg-neutral-900 md:pt-14"
@@ -92,11 +93,11 @@ standardBody model =
 notFoundBody :: MisoString -> Node context
 notFoundBody path =
   H.div_
-    [ P.class_ "flex min-h-screen w-full flex-col items-center justify-center bg-[#F5F5F5] px-8 text-[#171717] antialiased dark:bg-neutral-950 dark:text-neutral-100" ]
+    [ P.class_ "flex min-h-screen w-full flex-col items-center justify-center bg-paper px-8 text-ink antialiased dark:bg-neutral-950 dark:text-neutral-100" ]
     [ H.h1_ [ P.class_ "text-2xl font-semibold tracking-tight" ] [ text "Not found" ]
     , H.p_ [ P.class_ "mt-2 text-sm text-neutral-500 dark:text-neutral-400" ] [ text path ]
     , internalLink Home
-        [ P.class_ "mt-6 text-xs uppercase tracking-[0.2em] text-neutral-500 transition-colors hover:text-[#FF4B26] dark:text-neutral-400 dark:hover:text-[#FF6B4A]" ]
+        [ P.class_ "mt-6 text-xs uppercase tracking-[0.2em] text-neutral-500 transition-colors hover:text-coral dark:text-neutral-400 dark:hover:text-coral-bright" ]
         [ text "Back to the start" ]
     ]
 -----------------------------------------------------------------------------
@@ -106,7 +107,7 @@ routeContent :: Model -> Node context
 routeContent model =
   H.div_
     [ P.id_ Config.pageViewId
-    , P.data_ Config.routeMotionKey (Model.motionName (_motion model))
+     , P.data_ Config.routeMotionKey (Model.motionName (Model.navigationMotion (_navigation model)))
     , P.class_ "route-content mt-7"
     ]
     [ pageContent model ]
@@ -114,7 +115,7 @@ routeContent model =
 siteHeader :: Model -> Node context
 siteHeader model =
   H.header_
-    [ P.class_ "[&_a:focus-visible]:text-[#C24120] [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-[#C24120] dark:[&_a:focus-visible]:text-[#FF6B4A] dark:[&_a:focus-visible]:outline-[#FF6B4A]" ]
+    [ P.class_ "[&_a:focus-visible]:text-coral-deep [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-coral-deep dark:[&_a:focus-visible]:text-coral-bright dark:[&_a:focus-visible]:outline-coral-bright" ]
     [ H.div_
         [ P.class_ "w-16" ]
         -- The hollow mark is a WebGL canvas; the widget mounts from these
@@ -124,21 +125,21 @@ siteHeader model =
             , P.data_ Config.labInteractionKey (Model.labInteractionName model)
             , P.role_ "img"
             , textProp "aria-label" "Faah hollow mark"
-            , onCreated HollowMounted
-            , onBeforeDestroyed HollowDisposed
+            , onCreatedWith (HollowMounted . Element)
+            , onBeforeDestroyedWith (HollowDisposed . Element)
             ]
             []
         ]
     , H.div_
         [ P.class_ "mt-10 flex flex-wrap items-baseline gap-x-5 gap-y-2" ]
         [ internalLink Home
-            [ P.class_ "font-instrument text-[18px] font-semibold tracking-tight text-[#171717] no-underline transition-colors hover:text-[#FF4B26] dark:text-neutral-100 dark:hover:text-[#FF6B4A]" ]
+            [ P.class_ "font-instrument text-[18px] font-semibold tracking-tight text-ink no-underline transition-colors hover:text-coral dark:text-neutral-100 dark:hover:text-coral-bright" ]
             [ text Config.brandMark ]
         , H.nav_
             [ textProp "aria-label" "Primary navigation"
             , P.class_ "flex items-center gap-4 text-xs leading-none"
             ]
-            [ navigationLink active (Section Config.thoughtSection) Config.thoughtSection Config.thoughtSection
+             [ navigationLink active (Section Config.thoughtSection) Config.thoughtSection (Section.sectionName Config.thoughtSection)
             , labLink active
             , themeToggle (_theme model)
             ]
@@ -147,7 +148,7 @@ siteHeader model =
   where
     active = Route.activeSection (Model.currentRoute model)
 -----------------------------------------------------------------------------
-navigationLink :: MisoString -> Route -> MisoString -> MisoString -> Node context
+navigationLink :: Maybe Section.Section -> Route -> Section.Section -> MisoString -> Node context
 navigationLink active target section label =
   internalLink target
     [ textProp "aria-current" (if current then "page" else "false")
@@ -155,11 +156,11 @@ navigationLink active target section label =
     ]
     [ text label ]
   where
-    current = active == section
+     current = active == Just section
 -----------------------------------------------------------------------------
 -- | The lab link is the sea's hover source: enter and focus raise the
 -- interaction, leave and blur lower it.
-labLink :: MisoString -> Node context
+labLink :: Maybe Section.Section -> Node context
 labLink active =
   internalLink (Section Config.labSection)
     [ textProp "aria-current" (if current then "page" else "false")
@@ -170,14 +171,14 @@ labLink active =
     , E.onBlur LeftLab
     , P.class_ (linkClass current)
     ]
-    [ text Config.labSection ]
+     [ text (Section.sectionName Config.labSection) ]
   where
-    current = active == Config.labSection
+     current = active == Just Config.labSection
 -----------------------------------------------------------------------------
 linkClass :: Bool -> MisoString
 linkClass = \case
-  True  -> "text-[#FF4B26] transition-colors dark:text-[#FF6B4A]"
-  False -> "text-neutral-500 transition-colors hover:text-[#FF4B26] dark:text-neutral-400 dark:hover:text-[#FF6B4A]"
+  True  -> "text-coral transition-colors dark:text-coral-bright"
+  False -> "text-neutral-500 transition-colors hover:text-coral dark:text-neutral-400 dark:hover:text-coral-bright"
 -----------------------------------------------------------------------------
 themeToggle :: Theme -> Node context
 themeToggle current =
@@ -200,16 +201,16 @@ seaFooter model =
     [ P.class_ "flex w-full min-h-0 flex-1 flex-col self-stretch mt-14" ]
     [ H.div_
         [ P.id_ Config.seaFooterId
-        , P.data_ "lab-interaction" (Model.labInteractionName model)
-        , P.class_ "relative mt-10 flex min-h-0 w-[calc(100%+4rem)] -mx-8 max-w-none flex-1 overflow-hidden rounded-lg bg-transparent dark:bg-[#171717]"
+         , P.data_ Config.labInteractionKey (Model.labInteractionName model)
+        , P.class_ "relative mt-10 flex min-h-0 w-[calc(100%+4rem)] -mx-8 max-w-none flex-1 overflow-hidden rounded-lg bg-transparent dark:bg-ink"
         ]
         -- The shader canvas. The mount point is the element itself; the
         -- effect lives in Site.Widgets.Sea and runs from these hooks.
         [ H.canvas_
             [ P.id_ Config.seaCanvasId
             , P.class_ "block w-full touch-none bg-transparent"
-            , onCreated SeaMounted
-            , onBeforeDestroyed SeaDisposed
+            , onCreatedWith (SeaMounted . Element)
+            , onBeforeDestroyedWith (SeaDisposed . Element)
             ]
             []
         ]
@@ -227,9 +228,9 @@ pageContent model =
           (_gitHubFailed model))
     SectionPage section ->
       sectionView section
-    PostPage section slug ->
+    PostPage section slug state ->
       case Content.findPost section slug of
         Nothing   -> notFoundBody (Route.routePath (Post section slug))
-        Just post -> postView post (_copyStatus model) (_reading model)
+        Just post -> postView post (postCopyStatus state) (postReading state)
     NotFoundPage path ->
       notFoundBody path

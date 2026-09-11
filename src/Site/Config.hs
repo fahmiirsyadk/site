@@ -66,6 +66,7 @@ module Site.Config
   ) where
 -----------------------------------------------------------------------------
 import    Miso.String (MisoString)
+import    Site.Section (Section (..), allSections)
 -----------------------------------------------------------------------------
 siteName :: MisoString
 siteName = "Faah"
@@ -107,16 +108,16 @@ githubDisplayName = "fa-h"
 githubLocation :: MisoString
 githubLocation = "Indonesia"
 -----------------------------------------------------------------------------
-thoughtSection :: MisoString
-thoughtSection = "thought"
+thoughtSection :: Section
+thoughtSection = Thought
 -----------------------------------------------------------------------------
-labSection :: MisoString
-labSection = "lab"
+labSection :: Section
+labSection = Lab
 -----------------------------------------------------------------------------
 -- | The only path segments that name a content section. A single-segment path
 -- outside this list is a 404, not an empty section.
-contentSections :: [MisoString]
-contentSections = [ thoughtSection, labSection ]
+contentSections :: [Section]
+contentSections = allSections
 -----------------------------------------------------------------------------
 -- $domcontract
 -- These ids are shared with the Haskell widget mounts and with @styles.css@.

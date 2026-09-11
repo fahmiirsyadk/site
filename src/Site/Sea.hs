@@ -253,7 +253,6 @@ data SeaUniforms = SeaUniforms
 data SeaInput = SeaInput
   { inputTimestamp      :: Double
   , inputStartedAt      :: Double
-  , inputDragging       :: Bool
   , inputLabHoverTarget :: Double
   , inputCanvasWidth    :: Int
   , inputCanvasHeight   :: Int
@@ -275,7 +274,7 @@ seaFrame input state = (stepped, uniforms)
       }
     motion' = stepSeaMotion
       (SeaFrame
-        { frameDragging = inputDragging input
+         { frameDragging = stateDragging state
         , frameDuration = timingDuration timing
         , frameLabHoverTarget = inputLabHoverTarget input
         })

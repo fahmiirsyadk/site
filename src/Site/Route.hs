@@ -34,15 +34,15 @@ import           Miso (URI (..), emptyURI)
 import           Miso.String (MisoString)
 import qualified Miso.String as MS
 -----------------------------------------------------------------------------
-import qualified Site.Config as Config
+import qualified Site.Section as Section
 -----------------------------------------------------------------------------
 data Route
   = Home
   -- ^ @/@
-  | Section MisoString
+   | Section Section.Section
   -- ^ @/thought/@, @/lab/@ -- the argument is always in
   -- 'Site.Config.contentSections'.
-  | Post MisoString MisoString
+   | Post Section.Section MisoString
   -- ^ @/thought/{slug}/@ -- section then slug.
   | NotFound MisoString
   -- ^ Anything else. The argument is the /normalised/ path, so that
@@ -61,7 +61,7 @@ splitOn c s =
     (chunk, _ : rest) -> chunk : splitOn c rest
 -----------------------------------------------------------------------------
 isContentSection :: MisoString -> Bool
-isContentSection section = section `elem` Config.contentSections
+isContentSection = maybe False (const True) . Section.parseSection
 -----------------------------------------------------------------------------
 -- | Total. Unrecognised shapes become 'NotFound' carrying their normalised
 -- form, never an error.
@@ -69,8 +69,8 @@ urlToRoute :: MisoString -> Route
 urlToRoute raw =
   case normalizePath raw of
     []                                            -> Home
-    [section]       | isContentSection section    -> Section section
-    [section, slug] | isContentSection section    -> Post section slug
+    [rawSection] | Just section <- Section.parseSection rawSection -> Section section
+    [rawSection, slug] | Just section <- Section.parseSection rawSection -> Post section slug
     parts                                         -> NotFound (rejoin parts)
   where
     rejoin = MS.pack . ("/" <>) . intercalate "/" . map MS.unpack
@@ -80,8 +80,8 @@ urlToRoute raw =
 routePath :: Route -> MisoString
 routePath = \case
   Home              -> "/"
-  Section section   -> "/" <> section <> "/"
-  Post section slug -> "/" <> section <> "/" <> slug <> "/"
+  Section section   -> "/" <> Section.sectionName section <> "/"
+  Post section slug -> "/" <> Section.sectionName section <> "/" <> slug <> "/"
   NotFound path     -> path
 -----------------------------------------------------------------------------
 -- | Only the path is read. Query and fragment are carried by the 'URI' but do
@@ -97,10 +97,10 @@ routeURI target = emptyURI
   }
 -----------------------------------------------------------------------------
 -- | Which navigation item is current. Empty for routes with no nav entry.
-activeSection :: Route -> MisoString
+activeSection :: Route -> Maybe Section.Section
 activeSection = \case
-  Section section -> section
-  Post section _  -> section
-  Home            -> ""
-  NotFound _      -> ""
+   Section section -> Just section
+   Post section _  -> Just section
+   Home            -> Nothing
+   NotFound _      -> Nothing
 -----------------------------------------------------------------------------

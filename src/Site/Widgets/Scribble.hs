@@ -1,5 +1,6 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecursiveDo #-}
 -----------------------------------------------------------------------------
 -- | The random scribble, ported from the source's @RandomScribble.purs@ and
 -- @RandomScribble.ts@. The variant choice and the play loop live here in
@@ -9,8 +10,7 @@
 -- measure it, animate it, and on finish stage the next. Reduced motion
 -- stages a single static variant instead.
 module Site.Widgets.Scribble
-  ( attach
-  , dispose
+  ( mount
   ) where
 -----------------------------------------------------------------------------
 import           Control.Monad (unless, void)
@@ -22,6 +22,8 @@ import           Data.IORef
   )
 import           Miso.DSL
   ( JSVal
+  , Function (..)
+  , freeFunction
   , create
   , fromJSValUnchecked
   , jsg
@@ -33,12 +35,12 @@ import           Miso.DSL
   , (#)
   )
 import           Miso.String (MisoString, ms)
-import           System.IO.Unsafe (unsafePerformIO)
 -----------------------------------------------------------------------------
 import qualified Site.Config as Config
 import           Site.Platform (prefersReducedMotion)
 import           Site.Scribble
 import           Site.Widgets.Gl (isAbsent)
+import qualified Site.Widgets.Browser as Browser
 -----------------------------------------------------------------------------
 data Live = Live
   { livePath         :: JSVal
@@ -46,58 +48,48 @@ data Live = Live
   , liveDisposed     :: IORef Bool
   , liveAnimation    :: IORef JSVal
   , liveReduceMotion :: Bool
+  , liveOnFinish     :: JSVal
   }
 -----------------------------------------------------------------------------
-scribbleRef :: IORef (Maybe Live)
-scribbleRef = unsafePerformIO (newIORef Nothing)
-{-# NOINLINE scribbleRef #-}
------------------------------------------------------------------------------
--- | Mount the scribble if its span is in the document. Idempotent.
-attach :: IO ()
-attach = do
-  current <- readIORef scribbleRef
-  case current of
-    Just _  -> pure ()
-    Nothing -> do
-      document <- jsg "document"
-      container <- document # "querySelector" $ Config.scribbleSelector
-      containerAbsent <- isAbsent container
-      unless containerAbsent $ do
-        path <- container # "querySelector" $ Config.scribblePathSelector
-        pathAbsent <- isAbsent path
-        unless pathAbsent (mount path)
------------------------------------------------------------------------------
-mount :: JSVal -> IO ()
-mount path = do
+mount :: Browser.Scope -> JSVal -> IO Bool
+mount scope container = do
+  path <- container # "querySelector" $ Config.scribblePathSelector
+  absent <- isAbsent path
+  unless absent (mountPath scope path)
+  pure True
+
+mountPath :: Browser.Scope -> JSVal -> IO ()
+mountPath scope path = mdo
   reduceMotion <- prefersReducedMotion
   previous <- newIORef (-1)
   disposed <- newIORef False
   animation <- newIORef jsNull
+  callback <- syncCallback1 (\_ -> playNext live)
   let live = Live
         { livePath = path
         , livePrevious = previous
         , liveDisposed = disposed
         , liveAnimation = animation
         , liveReduceMotion = reduceMotion
+        , liveOnFinish = callback
         }
   hidePath path
-  writeIORef scribbleRef (Just live)
+  Browser.own scope $ do
+    dispose live
+    freeFunction (Function callback)
   if reduceMotion
     then void (stageVariant live)
     else playNext live
 -----------------------------------------------------------------------------
 -- | Cancel the running cycle and stop the chain from staging another.
-dispose :: IO ()
-dispose = do
-  current <- readIORef scribbleRef
-  case current of
-    Nothing   -> pure ()
-    Just live -> do
-      writeIORef (liveDisposed live) True
-      animation <- readIORef (liveAnimation live)
-      absent <- isAbsent animation
-      unless absent $ void $ animation # "cancel" $ ()
-      writeIORef scribbleRef Nothing
+dispose :: Live -> IO ()
+dispose live = do
+  writeIORef (liveDisposed live) True
+  animation <- readIORef (liveAnimation live)
+  absent <- isAbsent animation
+  unless absent $ do
+    setField animation "onfinish" jsNull
+    void $ animation # "cancel" $ ()
 -----------------------------------------------------------------------------
 hidePath :: JSVal -> IO ()
 hidePath path = do
@@ -142,8 +134,7 @@ animate live pathLength = do
   setField options "easing" (animationEasing plan)
   setField options "fill" (animationFill plan)
   animation <- livePath live # "animate" $ (framesValue, options)
-  callback <- syncCallback1 $ \_ -> playNext live
-  setField animation "onfinish" callback
+  setField animation "onfinish" (liveOnFinish live)
   pure animation
   where
     plan = scribbleAnimation pathLength

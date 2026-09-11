@@ -1,5 +1,6 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecursiveDo      #-}
 {-# LANGUAGE RecordWildCards   #-}
 -----------------------------------------------------------------------------
 -- | The dithered image widget, ported from the source's @DitheredImage.purs@
@@ -8,18 +9,22 @@
 --
 -- Unlike the sea and the hollow mark there can be many instances at once --
 -- a post cover and every inline image in its body -- so this module keeps a
--- registry keyed by root element. 'attach' observes @document.body@ for
+-- 'Registry' keyed by root element. 'attach' observes @document.body@ for
 -- subtree child-list changes: Miso patches page content in place, so the
 -- observer is what mounts roots on navigation and disposes them when their
--- page leaves the DOM. Roots carry a @data-dither-initialized@ marker so a
--- still-connected root is never mounted twice, and a root disposed while it
--- was removed is mounted again if it comes back.
+-- page leaves the DOM. Each live root owns a 'Site.Widgets.Browser.Scope'
+-- for its loop, listeners, observers, and GL resources. Roots carry a
+-- @data-dither-initialized@ marker so a still-connected root is never
+-- mounted twice, and a root disposed while it was removed is mounted again
+-- if it comes back.
 --
 -- Like the other widget modules this is written against "Miso.DSL" and
 -- carries no @foreign import javascript@, so it compiles for the native test
 -- and prerender targets, where the effects are simply never run.
 module Site.Widgets.Dither
-  ( attach
+  ( Registry
+  , newRegistry
+  , attach
   , dispose
   ) where
 -----------------------------------------------------------------------------
@@ -38,34 +43,25 @@ import           Miso.DSL
   , create
   , fromJSValUnchecked
   , jsg
-  , jsNull
   , new
   , setField
-  , syncCallback1
   , toJSVal
   , (!)
   , (#)
   , (!!)
   )
 import           Miso.String (MisoString, ms)
-import           System.IO.Unsafe (unsafePerformIO)
 -----------------------------------------------------------------------------
 import qualified Site.Config as Config
 import           Site.Dither
 import           Site.Platform (prefersReducedMotion)
 import           Site.Widgets.Gl
+import qualified Site.FrameLoop as Frame
+import qualified Site.Widgets.Browser as Browser
 import           Site.Widgets.Shaders
   ( ditheredImageFragment
   , ditheredImageVertex
   )
------------------------------------------------------------------------------
--- | One registered listener, kept so disposal can remove it.
-data Listener = Listener
-  { listenerTarget   :: JSVal
-  , listenerType     :: MisoString
-  , listenerCallback :: JSVal
-  , listenerCapture  :: Bool
-  }
 -----------------------------------------------------------------------------
 -- | The per-instance GL objects and uniform locations.
 data Resources = Resources
@@ -107,21 +103,25 @@ data Live = Live
   , liveReduceMotion :: Bool
   , liveState        :: IORef DitherState
   , liveInk          :: IORef Rgb
-  , liveRafCallback  :: IORef JSVal
-  , liveRafHandle    :: IORef (Maybe Int)
-  , liveListeners    :: IORef [Listener]
-  , liveObservers    :: IORef [JSVal]
+  , liveScope        :: Browser.Scope
+  , liveLoop         :: Frame.FrameLoop
   }
 -----------------------------------------------------------------------------
--- The live roots and the one body observer. Top-level refs because the
--- effects are imperative on both sides of the boundary.
-registryRef :: IORef [Entry]
-registryRef = unsafePerformIO (newIORef [])
-{-# NOINLINE registryRef #-}
------------------------------------------------------------------------------
-observerRef :: IORef (Maybe JSVal)
-observerRef = unsafePerformIO (newIORef Nothing)
-{-# NOINLINE observerRef #-}
+-- The live roots and the one body observer. The registry is owned by the
+-- runtime; each live root owns its own scope.
+data Registry = Registry
+  { registryRef :: IORef [Entry]
+  , registryScope :: Browser.Scope
+  , visibilityObserverRef :: IORef (Maybe JSVal)
+  , pendingRef :: IORef [JSVal]
+  , attachedRef :: IORef Bool
+  }
+
+newRegistry :: IO Registry
+newRegistry = do
+  scope <- Browser.newScope
+  Registry <$> newIORef [] <*> pure scope
+    <*> newIORef Nothing <*> newIORef [] <*> newIORef False
 
 -- A root below the fold is kept as an ordinary image until it is close to
 -- the viewport. This avoids compiling a shader and allocating a WebGL context
@@ -131,63 +131,46 @@ observerRef = unsafePerformIO (newIORef Nothing)
 -- container clips its content, so neither the viewport root nor the container
 -- root can use a margin to see further down. 'mountNearby' is what mounts a
 -- root one screen before it could be seen.
-visibilityObserverRef :: IORef (Maybe JSVal)
-visibilityObserverRef = unsafePerformIO (newIORef Nothing)
-{-# NOINLINE visibilityObserverRef #-}
 
 -- The capture-phase scroll listener that feeds 'mountNearby'.
-scrollListenerRef :: IORef (Maybe (JSVal, JSVal))
-scrollListenerRef = unsafePerformIO (newIORef Nothing)
-{-# NOINLINE scrollListenerRef #-}
 
 -- IntersectionObserver retains every target passed to 'observe'. A target is
 -- pending until its callback promotes it into 'registryRef'; keep that set
 -- explicitly so a route swap can unobserve roots that never became live.
-pendingRef :: IORef [JSVal]
-pendingRef = unsafePerformIO (newIORef [])
-{-# NOINLINE pendingRef #-}
 -----------------------------------------------------------------------------
 -- | Discover uninitialized roots and set up the body observer that keeps the
 -- registry in step with client-side navigation. Roots near the viewport are
 -- mounted immediately; below-fold roots remain pending. Idempotent.
-attach :: IO ()
-attach = do
-  existing <- readIORef observerRef
-  case existing of
-    Just _  -> syncRegistry
-    Nothing -> do
+attach :: Registry -> IO ()
+attach registry@Registry {..} = do
+  attached <- readIORef attachedRef
+  if attached
+    then syncRegistry registry
+    else do
       document <- jsg "document"
       body <- document ! "body"
-      callback <- syncCallback1 $ \_ -> syncRegistry
       options <- create
       setField options "childList" True
       setField options "subtree" True
-      observerClass <- jsg "MutationObserver"
-      observer <- new observerClass callback
-      void $ observer # "observe" $ (body, options)
-      writeIORef observerRef (Just observer)
-      ensureVisibilityObserver
-      registerScrollMount
-      syncRegistry
+      void $ Browser.observe registryScope "MutationObserver" (Just body) options
+        (\_ -> syncRegistry registry)
+      void $ Browser.listen registryScope document "scroll" True
+        (\_ -> mountNearby registry)
+      writeIORef attachedRef True
+      ensureVisibilityObserver registry
+      syncRegistry registry
 -----------------------------------------------------------------------------
 -- | Release every root and stop observing. A remount starts clean.
-dispose :: IO ()
-dispose = do
-  observer <- readIORef observerRef
-  forM_ observer $ \value -> void $ value # "disconnect" $ ()
-  writeIORef observerRef Nothing
-  listener <- readIORef scrollListenerRef
-  forM_ listener $ \(target, callback) ->
-    void $ target # "removeEventListener" $
-      ("scroll" :: MisoString, callback, True)
-  writeIORef scrollListenerRef Nothing
-  visibilityObserver <- readIORef visibilityObserverRef
+dispose :: Registry -> IO ()
+dispose Registry {..} = do
+  Browser.disposeScope registryScope
   pending <- readIORef pendingRef
   writeIORef pendingRef []
-  forM_ visibilityObserver $ \value -> do
+  visibilityObserver <- readIORef visibilityObserverRef
+  forM_ visibilityObserver $ \value ->
     forM_ pending $ \root -> void $ value # "unobserve" $ [root]
-    void $ value # "disconnect" $ ()
   writeIORef visibilityObserverRef Nothing
+  writeIORef attachedRef False
   entries <- readIORef registryRef
   writeIORef registryRef []
   forM_ entries disposeEntry
@@ -195,9 +178,9 @@ dispose = do
 -- | Dispose roots that left the DOM, then mount roots that appeared. The
 -- removals run first so a content swap releases its GL contexts before the
 -- incoming images acquire theirs.
-syncRegistry :: IO ()
-syncRegistry = do
-  ensureVisibilityObserver
+syncRegistry :: Registry -> IO ()
+syncRegistry registry@Registry {..} = do
+  ensureVisibilityObserver registry
   entries <- readIORef registryRef
   current <- mapM (isDitherRoot . entryRoot) entries
   let kept = [ entry | (entry, True) <- zip entries current ]
@@ -206,8 +189,8 @@ syncRegistry = do
   forM_ departed disposeEntry
   visibilityObserver <- readIORef visibilityObserverRef
   forM_ visibilityObserver $ \observer -> do
-    forM_ departed $ \entry -> unobservePending observer (entryRoot entry)
-    reconcilePending observer
+    forM_ departed $ \entry -> unobservePending registry observer (entryRoot entry)
+    reconcilePending registry observer
   document <- jsg "document"
   roots <- document # "querySelectorAll" $ Config.ditheredImageSelector
   count <- int roots "length"
@@ -221,41 +204,26 @@ syncRegistry = do
             -- Keep live roots observed. A recreated observer has to learn
             -- about roots that were already mounted.
             observeRoot observer root
-            forgetPending root
-          else trackPending observer root
+            forgetPending registry root
+          else trackPending registry observer root
     Nothing ->
       -- Older browsers without IntersectionObserver still get the original
       -- eager behavior; keeping the source image visible makes this safe.
       forM_ [0 .. count - 1] $ \index -> do
         root <- roots !! index
         initialized <- readInitialized root
-        unless initialized (mountOne root)
-  mountNearby
-
--- | Capture-phase scroll listener: scroll does not bubble, but a listener on
--- the document still sees the container's events on the way down. Mounting
--- itself runs from the scroll callback so a root is ready a screen before it
--- can be seen.
-registerScrollMount :: IO ()
-registerScrollMount = do
-  existing <- readIORef scrollListenerRef
-  case existing of
-    Just _  -> pure ()
-    Nothing -> do
-      document <- jsg "document"
-      callback <- syncCallback1 $ \_ -> mountNearby
-      void $ document # "addEventListener" $ ("scroll" :: MisoString, callback, True)
-      writeIORef scrollListenerRef (Just (document, callback))
+        unless initialized (mountOne registry root)
+  mountNearby registry
 
 -- Pending roots are not in the registry until their intersection callback
 -- mounts them. Reconcile that separate set as well: a route patch can remove
 -- a below-fold root without ever producing a registry entry for it.
-reconcilePending :: JSVal -> IO ()
-reconcilePending observer = do
+reconcilePending :: Registry -> JSVal -> IO ()
+reconcilePending registry@Registry {..} observer = do
   pending <- readIORef pendingRef
   current <- mapM isDitherRoot pending
   forM_ [ root | (root, False) <- zip pending current ] $
-    unobservePending observer
+    unobservePending registry observer
 
 -- | Reconcile targets that have been observed but have not crossed the
 -- viewport threshold. 'isConnected' alone is insufficient: a Miso patch can
@@ -266,33 +234,30 @@ isDitherRoot root = do
   matches <- fromJSValUnchecked =<< (root # "matches" $ Config.ditheredImageSelector)
   pure (connected && matches)
 
-sameNode :: JSVal -> JSVal -> IO Bool
-sameNode left right = fromJSValUnchecked =<< (left # "isSameNode" $ [right])
-
-pendingMember :: JSVal -> IO Bool
-pendingMember root = do
+pendingMember :: Registry -> JSVal -> IO Bool
+pendingMember Registry {..} root = do
   pending <- readIORef pendingRef
-  or <$> mapM (sameNode root) pending
+  or <$> mapM (Browser.sameNode root) pending
 
-trackPending :: JSVal -> JSVal -> IO ()
-trackPending observer root = do
+trackPending :: Registry -> JSVal -> JSVal -> IO ()
+trackPending registry@Registry {..} observer root = do
   initialized <- readInitialized root
-  alreadyPending <- pendingMember root
+  alreadyPending <- pendingMember registry root
   unless (initialized || alreadyPending) $ do
     void $ observer # "observe" $ [root]
     modifyIORef' pendingRef (root :)
 
-unobservePending :: JSVal -> JSVal -> IO ()
-unobservePending observer root = do
+unobservePending :: Registry -> JSVal -> JSVal -> IO ()
+unobservePending registry observer root = do
   void $ observer # "unobserve" $ [root]
-  forgetPending root
+  forgetPending registry root
 
 -- | Drop a target from the pending set without unobserving it. Mounted roots
 -- stay observed: the same observer now drives the visible/invisible pause.
-forgetPending :: JSVal -> IO ()
-forgetPending root = do
+forgetPending :: Registry -> JSVal -> IO ()
+forgetPending Registry {..} root = do
   pending <- readIORef pendingRef
-  remaining <- filterM (fmap not . sameNode root) pending
+  remaining <- filterM (fmap not . Browser.sameNode root) pending
   writeIORef pendingRef remaining
 
 -- | Re-observing an already observed target is a no-op, so this is safe to
@@ -301,34 +266,32 @@ observeRoot :: JSVal -> JSVal -> IO ()
 observeRoot observer root = void $ observer # "observe" $ [root]
 
 -- | The registry entry owning a root, if it is mounted.
-entryForRoot :: JSVal -> IO (Maybe Entry)
-entryForRoot root = do
+entryForRoot :: Registry -> JSVal -> IO (Maybe Entry)
+entryForRoot Registry {..} root = do
   entries <- readIORef registryRef
-  listToMaybe <$> filterM (\entry -> sameNode root (entryRoot entry)) entries
+  listToMaybe <$> filterM (\entry -> Browser.sameNode root (entryRoot entry)) entries
 
 -- | Pause the ~20fps loop while a root is off screen and resume it on the way
 -- back. Rendering the first frame here also raises @data-dither-ready@ before
 -- the image is visible, because the observer margin is a full viewport.
-setVisible :: JSVal -> Bool -> IO ()
-setVisible root visible = do
-  entry <- entryForRoot root
+setVisible :: Registry -> JSVal -> Bool -> IO ()
+setVisible registry root visible = do
+  entry <- entryForRoot registry root
   forM_ entry $ \Entry {..} ->
     forM_ entryLive $ \live -> do
       state <- readIORef (liveState live)
       when (dsVisible state /= visible) $ do
         writeIORef (liveState live) state { dsVisible = visible }
-        if visible
-          then do
-            redrawNow live
-            unless (liveReduceMotion live) (startLoop live)
-          else stopLoop live
+        Frame.setVisible (liveLoop live) visible
+        when visible (redrawNow live)
 
 -- | One observer for all dither roots. Its intersection callback drives the
--- visible/invisible pause; mounting happens in 'mountNearby' because the
--- scroll container clips everything outside its box and a root margin has
--- nothing to expand.
-ensureVisibilityObserver :: IO ()
-ensureVisibilityObserver = do
+-- visible/invisible pause and its margin raises @data-dither-ready@ before a
+-- root can be seen; mounting happens in 'mountNearby' because the scroll
+-- container clips everything outside its box and a root margin has nothing to
+-- expand.
+ensureVisibilityObserver :: Registry -> IO ()
+ensureVisibilityObserver registry@Registry {..} = do
   existing <- readIORef visibilityObserverRef
   case existing of
     Just _  -> pure ()
@@ -336,35 +299,37 @@ ensureVisibilityObserver = do
       observerClass <- jsg "IntersectionObserver"
       unsupported <- isAbsent observerClass
       unless unsupported $ do
-        callback <- syncCallback1 $ \entries -> do
+        options <- create
+        observer <- Browser.observe registryScope "IntersectionObserver" Nothing options $ \entries -> do
           count <- int entries "length"
           forM_ [0 .. count - 1] $ \index -> do
             entry <- entries !! index
             target <- entry ! "target"
             intersecting <- fromJSValUnchecked =<< entry ! "isIntersecting"
             current <- isDitherRoot target
-            when current (setVisible target intersecting)
-        options <- create
-        observer <- new observerClass (callback, options)
-        writeIORef visibilityObserverRef (Just observer)
+            when current (setVisible registry target intersecting)
+        -- A closed scope yields null; leaving the ref empty keeps the
+        -- registry on the eager-mount fallback instead of observing via null.
+        absent <- isAbsent observer
+        unless absent (writeIORef visibilityObserverRef (Just observer))
 
 -- | Mount every pending root within one screen of the scroll container, and
 -- do it again on every scroll event. This is the only way to prepare a root
 -- that the container is still clipping.
-mountNearby :: IO ()
-mountNearby = do
+mountNearby :: Registry -> IO ()
+mountNearby registry@Registry {..} = do
   pending <- readIORef pendingRef
   forM_ pending $ \root -> do
     reachable <- withinReach root
     when reachable $ do
       current <- isDitherRoot root
       when current $ do
-        forgetPending root
-        mountOne root
+        forgetPending registry root
+        mountOne registry root
         -- The observer only reports changes. A root mounted while it is
         -- already off screen would otherwise never receive a pause.
         onScreen <- isOnScreen root
-        setVisible root onScreen
+        setVisible registry root onScreen
 
 -- | Whether the root is within the visible box plus one box of slack, in the
 -- page's scroll container (or the viewport when the page has none).
@@ -406,8 +371,8 @@ visibleBox = do
 -- | Mark a root and attempt the mount. The marker is written first so a
 -- concurrent sync cannot double-mount; a failed preparation leaves it in
 -- place with the fallback image visible.
-mountOne :: JSVal -> IO ()
-mountOne root = do
+mountOne :: Registry -> JSVal -> IO ()
+mountOne Registry {..} root = do
   void $ root # "setAttribute" $ ("data-" <> Config.ditherInitializedKey, "true" :: MisoString)
   image <- root # "querySelector" $ Config.ditheredSourceSelector
   canvas <- root # "querySelector" $ Config.ditheredCanvasSelector
@@ -527,15 +492,13 @@ setupState gl program position texCoord imageTexture bayerTexture positionBuffer
   uniform1i gl program "u_image" 0
 -----------------------------------------------------------------------------
 createLive :: JSVal -> JSVal -> JSVal -> Resources -> IO Live
-createLive root image canvas resources = do
+createLive root image canvas resources = mdo
   reduceMotion <- prefersReducedMotion
   state <- newIORef (DitherState 0.0 False False False True False)
   resourcesRef <- newIORef (Just resources)
   ink <- newIORef fallbackColor
-  rafCallback <- newIORef jsNull
-  rafHandle <- newIORef Nothing
-  listeners <- newIORef []
-  observers <- newIORef []
+  scope <- Browser.newScope
+  loop <- Browser.frameLoop scope reduceMotion (renderAt live)
   let live = Live
         { liveRoot = root
         , liveImage = image
@@ -544,13 +507,13 @@ createLive root image canvas resources = do
         , liveReduceMotion = reduceMotion
         , liveState = state
         , liveInk = ink
-        , liveRafCallback = rafCallback
-        , liveRafHandle = rafHandle
-        , liveListeners = listeners
-        , liveObservers = observers
+        , liveScope = scope
+        , liveLoop = loop
         }
-  callback <- syncCallback1 $ \timestamp -> tick live timestamp
-  writeIORef rafCallback callback
+  Browser.own scope $ do
+    current <- readIORef state
+    writeIORef state current { dsDisposed = True }
+    deleteResources resources
   registerResize live
   registerTheme live
   registerImageLoad live
@@ -559,6 +522,17 @@ createLive root image canvas resources = do
   complete <- imageComplete image
   when complete (loadImage live)
   pure live
+
+-- | Delete the GL objects of one acquisition. Separate from the context,
+-- which the owning scope releases after this runs.
+deleteResources :: Resources -> IO ()
+deleteResources Resources {..} = do
+  void $ resGl # "deleteTexture" $ [resImageTexture]
+  void $ resGl # "deleteTexture" $ [resBayerTexture]
+  void $ resGl # "deleteBuffer" $ [resPositionBuffer]
+  void $ resGl # "deleteBuffer" $ [resTextureBuffer]
+  deleteProgram resGl resProgram
+  releaseContext resGl
 -----------------------------------------------------------------------------
 -- | The ink color only changes with the theme, so it is read once here and
 -- refreshed when the theme observer fires -- the original mount forced a
@@ -570,46 +544,35 @@ refreshInk live = do
 -----------------------------------------------------------------------------
 registerResize :: Live -> IO ()
 registerResize live = do
-  callback <- syncCallback1 $ \_ -> do
+  options <- create
+  void $ Browser.observe (liveScope live) "ResizeObserver" (Just (liveRoot live)) options $ \_ -> do
     resizeCanvas live
     redrawNow live
-  observer <- new (jsg "ResizeObserver") callback
-  void $ observer # "observe" $ [liveRoot live]
-  modifyIORef' (liveObservers live) (observer :)
 -----------------------------------------------------------------------------
 registerTheme :: Live -> IO ()
 registerTheme live = do
   document <- jsg "document"
   element <- document ! "documentElement"
-  callback <- syncCallback1 $ \_ -> do
+  options <- create
+  setField options "attributes" True
+  void $ Browser.observe (liveScope live) "MutationObserver" (Just element) options $ \_ -> do
     refreshInk live
     timestamp <- performanceNow
     renderAt live timestamp
-  options <- create
-  setField options "attributes" True
-  observer <- new (jsg "MutationObserver") callback
-  void $ observer # "observe" $ (element, options)
-  modifyIORef' (liveObservers live) (observer :)
 -----------------------------------------------------------------------------
 registerImageLoad :: Live -> IO ()
-registerImageLoad live = do
-  callback <- syncCallback1 $ \_ -> loadImage live
-  void $ liveImage live # "addEventListener" $ ("load" :: MisoString, callback)
-  modifyIORef' (liveListeners live)
-    (Listener (liveImage live) "load" callback False :)
+registerImageLoad live =
+  Browser.listen (liveScope live) (liveImage live) "load" False
+    (\_ -> loadImage live)
 -----------------------------------------------------------------------------
 -- | Other canvases hold contexts too, and browsers cap how many can be live.
 -- If this one is dropped, show the plain image rather than an empty box.
 registerContextLost :: Live -> IO ()
 registerContextLost live = do
-  lostCallback <- syncCallback1 $ \event -> handleContextLost live event
-  void $ liveCanvas live # "addEventListener" $ ("webglcontextlost" :: MisoString, lostCallback)
-  modifyIORef' (liveListeners live)
-    (Listener (liveCanvas live) "webglcontextlost" lostCallback False :)
-  restoredCallback <- syncCallback1 $ \_ -> handleContextRestored live
-  void $ liveCanvas live # "addEventListener" $ ("webglcontextrestored" :: MisoString, restoredCallback)
-  modifyIORef' (liveListeners live)
-    (Listener (liveCanvas live) "webglcontextrestored" restoredCallback False :)
+  Browser.listen (liveScope live) (liveCanvas live) "webglcontextlost" False
+    (handleContextLost live)
+  Browser.listen (liveScope live) (liveCanvas live) "webglcontextrestored" False
+    (\_ -> handleContextRestored live)
 -----------------------------------------------------------------------------
 handleContextLost :: Live -> JSVal -> IO ()
 handleContextLost live event = do
@@ -624,7 +587,7 @@ handleContextLost live event = do
       , dsUploaded = False
       , dsReady = False
       }
-    stopLoop live
+    Frame.cancel (liveLoop live)
     void $ liveRoot live # "removeAttribute" $ ("data-" <> Config.ditherReadyKey)
     void $ liveRoot live # "setAttribute" $
       ("data-" <> Config.ditherFallbackKey, "true" :: MisoString)
@@ -640,6 +603,7 @@ handleContextRestored live = do
     case prepared of
       Nothing -> pure ()
       Just resources -> do
+        Browser.own (liveScope live) (deleteResources resources)
         writeIORef (liveResources live) (Just resources)
         writeIORef (liveState live) state
           { dsLastFrame = 0.0
@@ -760,23 +724,8 @@ redrawNow live = do
         void $ liveRoot live # "setAttribute" $
           ("data-" <> Config.ditherReadyKey, "true" :: MisoString)
 -----------------------------------------------------------------------------
--- | Drawing is gated to ~20fps; the loop keeps scheduling in between. With
--- reduced motion one frame is enough, so the tick stops itself.
-tick :: Live -> JSVal -> IO ()
-tick live rawTimestamp = do
-  timestamp <- fromJSValUnchecked rawTimestamp
-  state <- readIORef (liveState live)
-  (sourceWidth, _) <- imageNaturalSize (liveImage live)
-  unless
-    ( dsDisposed state
-      || dsLost state
-      || not (dsUploaded state)
-      || not (dsVisible state)
-      || sourceWidth == 0
-    ) $ do
-    renderAt live timestamp
-    unless (liveReduceMotion live) (scheduleFrame live)
------------------------------------------------------------------------------
+-- | The loop callback. Drawing is gated to ~20fps; under reduced motion the
+-- loop is on-demand, so each invalidation draws exactly one frame.
 renderAt :: Live -> Double -> IO ()
 renderAt live timestamp = do
   state <- readIORef (liveState live)
@@ -796,59 +745,14 @@ drawFrame Resources {..} time ink = do
   void $ resGl # "drawArrays" $ (glTriangleStrip, 0 :: Int, 4 :: Int)
 -----------------------------------------------------------------------------
 startLoop :: Live -> IO ()
-startLoop live = do
-  state <- readIORef (liveState live)
-  when (dsVisible state) $ do
-    stopLoop live
-    scheduleFrame live
+startLoop = Frame.invalidate . liveLoop
 -----------------------------------------------------------------------------
-stopLoop :: Live -> IO ()
-stopLoop live = do
-  handle <- readIORef (liveRafHandle live)
-  forM_ handle $ \value -> do
-    window <- jsg "window"
-    void $ window # "cancelAnimationFrame" $ [value]
-  writeIORef (liveRafHandle live) Nothing
------------------------------------------------------------------------------
-scheduleFrame :: Live -> IO ()
-scheduleFrame live = do
-  callback <- readIORef (liveRafCallback live)
-  window <- jsg "window"
-  raw <- window # "requestAnimationFrame" $ [callback]
-  handle <- fromJSValUnchecked raw
-  writeIORef (liveRafHandle live) (Just handle)
------------------------------------------------------------------------------
--- | Release one instance: mark it disposed, stop the loop, drop listeners
--- and observers, delete the GL resources and free the context.
+-- | Release one instance: its scope marks the state disposed, stops the loop,
+-- drops listeners and observers, and deletes the GL resources and context.
 disposeLive :: Live -> IO ()
 disposeLive live = do
-  state <- readIORef (liveState live)
-  writeIORef (liveState live) state { dsDisposed = True }
-  stopLoop live
-  listeners <- readIORef (liveListeners live)
-  forM_ (reverse listeners) $ \Listener {..} ->
-    void $ listenerTarget # "removeEventListener" $
-      (listenerType, listenerCallback, listenerCapture)
-  observers <- readIORef (liveObservers live)
-  forM_ observers $ \observer -> void $ observer # "disconnect" $ ()
-  resources <- readIORef (liveResources live)
+  Browser.disposeScope (liveScope live)
   writeIORef (liveResources live) Nothing
-  forM_ resources $ \Resources {..} -> do
-    void $ resGl # "deleteTexture" $ [resImageTexture]
-    void $ resGl # "deleteTexture" $ [resBayerTexture]
-    void $ resGl # "deleteBuffer" $ [resPositionBuffer]
-    void $ resGl # "deleteBuffer" $ [resTextureBuffer]
-    deleteProgram resGl resProgram
-    releaseContext resGl
------------------------------------------------------------------------------
-attribLocation :: JSVal -> GlProgram -> MisoString -> IO Int
-attribLocation gl program name = do
-  value <- gl # "getAttribLocation" $ (glProgram program, name)
-  fromJSValUnchecked value
------------------------------------------------------------------------------
-uniformLocation :: JSVal -> GlProgram -> MisoString -> IO JSVal
-uniformLocation gl program name =
-  gl # "getUniformLocation" $ (glProgram program, name)
 -----------------------------------------------------------------------------
 uniform1i :: JSVal -> GlProgram -> MisoString -> Int -> IO ()
 uniform1i gl program name value = do

@@ -60,6 +60,7 @@ library
     Site.Content.Types
     Site.Document
     Site.Dither
+    Site.FrameLoop
     Site.GitHub
     Site.Hollow
     Site.HollowGeometry
@@ -69,6 +70,7 @@ library
     Site.Prose
     Site.Route
     Site.Scroll
+    Site.Section
     Site.Scribble
     Site.Sea
     Site.Theme
@@ -79,8 +81,10 @@ library
     Site.View.Link
     Site.View.Post
     Site.View.Section
+    Site.Widgets.Runtime
   other-modules:
     Site.Content.Generated
+    Site.Widgets.Browser
     Site.Widgets.Dither
     Site.Widgets.Gl
     Site.Widgets.Hollow
@@ -93,7 +97,8 @@ library
     base < 5,
     containers,
     miso >= 1.13,
-    text
+    text,
+    transformers
   default-language:
     Haskell2010
 

@@ -1,33 +1,32 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE RecursiveDo      #-}
 -----------------------------------------------------------------------------
 -- | The sea footer shader, ported from the source site's
 -- @Platform.Browser.Sea@ + @Platform.Browser.Sea.ts@. The pure half lives in
 -- 'Site.Sea'; this module owns the context, the resources, the animation
 -- loop and the observers.
 --
--- One instance exists at a time. 'attach' is idempotent and is called from
--- the canvas's @onCreated@ hook (which hydration fires), so a prerendered
--- page boots the shader without any client-side routing. 'dispose' runs from
--- @onBeforeDestroyed@ and releases the context, which is what keeps repeated
--- navigation under the browser's live-context cap.
+-- One mount owns one 'Site.Widgets.Browser.Mount' and scope. 'mount' is
+-- called through the canvas's @onCreatedWith@ hook (which hydration fires),
+-- and the owning slot makes it idempotent; releasing the scope releases the
+-- context, which keeps repeated navigation under the browser's live-context
+-- cap.
 --
 -- Like 'Site.Platform', the module is written against "Miso.DSL" and carries
 -- no @foreign import javascript@, so it builds for the native test and
 -- prerender targets; the effects are simply never run there.
 module Site.Widgets.Sea
-  ( attach
-  , dispose
+  ( mount
   ) where
 -----------------------------------------------------------------------------
-import           Control.Monad (forM_, unless, void, when)
-import           Control.Exception (finally)
-import           Data.Maybe (isJust)
+import           Control.Monad (unless, void, when)
+import           Control.Monad.Trans.Class (lift)
+import           Control.Monad.Trans.Maybe (MaybeT (..))
 import           Prelude hiding ((!!))
 import           Data.IORef
   ( IORef
-  , modifyIORef'
   , newIORef
   , readIORef
   , writeIORef
@@ -39,20 +38,19 @@ import           Miso.DSL
   , fromJSValUnchecked
   , jsg
   , jsNull
-  , new
   , setField
-  , syncCallback1
   , (!)
   , (#)
   , (!!)
   )
 import           Miso.String (MisoString)
-import           System.IO.Unsafe (unsafePerformIO)
 -----------------------------------------------------------------------------
 import qualified Site.Config as Config
 import           Site.Platform (prefersReducedMotion)
 import           Site.Sea
 import           Site.Widgets.Gl
+import qualified Site.Widgets.Browser as Browser
+import qualified Site.FrameLoop as Frame
 import           Site.Widgets.Shaders
   ( seaCompositeFragment
   , seaFooterFragment
@@ -76,15 +74,8 @@ data Overlay = Overlay
   , overlayDitherPixelSize :: JSVal
   }
 -----------------------------------------------------------------------------
--- | One registered event listener, kept so 'dispose' can remove it.
-data Listener = Listener
-  { listenerTarget   :: JSVal
-  , listenerType     :: MisoString
-  , listenerCallback :: JSVal
-  , listenerCapture  :: Bool
-  }
------------------------------------------------------------------------------
--- | Everything mounted for a live canvas.
+-- | Everything mounted for a live canvas. The scope and loop own cleanup;
+-- the 'Live' value itself is only needed while registering callbacks.
 data Live = Live
   { liveCanvas           :: JSVal
   , liveGl               :: JSVal
@@ -99,107 +90,35 @@ data Live = Live
   , liveReducedMotion    :: Bool
   , liveDark             :: IORef Bool
   , liveHoverTarget      :: IORef Double
-  , liveObservers        :: IORef [JSVal]
+  , liveScope            :: Browser.Scope
   , liveState            :: IORef SeaState
   , liveLayout           :: IORef RenderLayout
   , liveBounds           :: IORef (Double, Double)
-  , liveVisible          :: IORef Bool
   , liveIntersecting     :: IORef Bool
-  , liveRunning          :: IORef Bool
-  , liveRafCallback      :: IORef JSVal
-  , liveRafHandle        :: IORef (Maybe Int)
+  , liveLoop             :: Frame.FrameLoop
   , livePrevious         :: IORef (Maybe SeaUniforms)
-  , liveListeners        :: IORef [Listener]
-  , liveObserver         :: IORef JSVal
   }
 -----------------------------------------------------------------------------
--- The one live mount. Kept in a top-level ref because the canvas is unique
--- and the effect is imperative on both sides of the boundary.
-liveRef :: IORef (Maybe Live)
-liveRef = unsafePerformIO (newIORef Nothing)
-{-# NOINLINE liveRef #-}
------------------------------------------------------------------------------
--- 'SeaMounted' and the component mount action are both intentional entry
--- points, but they can arrive before the first WebGL build has published
--- 'liveRef'. Serialize that short window so both callers do not compile two
--- programs against the same canvas and leave uniforms associated with the
--- other program.
-mountingRef :: IORef Bool
-mountingRef = unsafePerformIO (newIORef False)
-{-# NOINLINE mountingRef #-}
------------------------------------------------------------------------------
--- | How many times a missing context has been retried. Chromium evicts the
--- oldest WebGL context when a page holds too many; a fresh canvas can
--- transiently fail to get one and succeed a moment later.
-retryRef :: IORef Int
-retryRef = unsafePerformIO (newIORef 0)
-{-# NOINLINE retryRef #-}
------------------------------------------------------------------------------
--- | Mount the shader if the canvas is in the document and nothing is live.
--- Safe to call from both hydration and a client-side mount.
-attach :: IO ()
-attach = do
-  current <- readIORef liveRef
-  mounting <- readIORef mountingRef
-  case (current, mounting) of
-    (Just _, _)  -> pure ()
-    (Nothing, True) -> pure ()
-    (Nothing, False) -> do
-      writeIORef mountingRef True
-      (do
-        document <- jsg "document"
-        canvas <- document # "querySelector" $ ("#" <> Config.seaCanvasId)
-        absent <- isAbsent canvas
-        unless absent (mount canvas)
-       ) `finally` writeIORef mountingRef False
------------------------------------------------------------------------------
--- | Tear down the live mount, if any.
-dispose :: IO ()
-dispose = do
-  current <- readIORef liveRef
-  case current of
-    Nothing   -> pure ()
-    Just live -> do
-      stopLoop live
-      listeners <- readIORef (liveListeners live)
-      forM_ (reverse listeners) $ \listener ->
-        void $ listenerTarget listener # "removeEventListener" $
-          ( listenerType listener
-          , listenerCallback listener
-          , listenerCapture listener
-          )
-      observer <- readIORef (liveObserver live)
-      absent <- isAbsent observer
-      unless absent $ void $ observer # "disconnect" $ ()
-      observers <- readIORef (liveObservers live)
-      forM_ observers $ \mutationObserver ->
-        void $ mutationObserver # "disconnect" $ ()
-      let gl = liveGl live
-      void $ gl # "deleteFramebuffer" $ [liveFramebuffer live]
-      void $ gl # "deleteTexture" $ [liveTexture live]
-      deleteProgram gl (liveScene live)
-      deleteProgram gl (liveComposite live)
-      releaseContext gl
-      writeIORef liveRef Nothing
------------------------------------------------------------------------------
-mount :: JSVal -> IO ()
-mount canvas = do
+-- | False asks the owning mount slot to retry context acquisition.
+mount :: Browser.Scope -> JSVal -> IO Bool
+mount owner canvas = do
   markSeaState canvas "starting"
   context <- createWebGl2Context canvas
   case context of
     Nothing -> do
       markSeaState canvas "retrying"
-      retryMount
+      pure False
     Just gl -> do
-      built <- build canvas gl
+      scope <- Browser.newScope
+      Browser.own owner (Browser.disposeScope scope)
+      Browser.own scope (releaseContext gl)
+      built <- build scope canvas gl
       case built of
         Nothing -> do
           markSeaState canvas "failed"
-          releaseContext gl
-        Just live -> do
-          writeIORef retryRef 0
-          markSeaState canvas "ready"
-          writeIORef liveRef (Just live)
+          Browser.disposeScope scope
+        Just _ -> markSeaState canvas "ready"
+      pure True
 
 -- | @data-sea@ is an attribute, not a property: the test harness and the
 -- debugger read it off the canvas element.
@@ -210,9 +129,6 @@ markSeaState canvas state =
 -- | Ask for another attempt after the frame in which the context cap was hit.
 -- Chromium evicts contexts under pressure and frees them asynchronously, so
 -- the window can be several seconds wide on a loaded machine.
-retryMount :: IO ()
-retryMount = mountWithRetry retryRef (isJust <$> readIORef liveRef) attach
------------------------------------------------------------------------------
 createWebGl2Context :: JSVal -> IO (Maybe JSVal)
 createWebGl2Context canvas = do
   options <- create
@@ -225,23 +141,19 @@ createWebGl2Context canvas = do
   absent <- isAbsent context
   pure (if absent then Nothing else Just context)
 -----------------------------------------------------------------------------
-build :: JSVal -> JSVal -> IO (Maybe Live)
-build canvas gl =
-  compileProgram gl seaFooterVertex seaFooterFragment "sea-water" >>>= \scene ->
-  compileProgram gl seaFooterVertex seaCompositeFragment "sea-composite" >>>= \composite ->
-  createTarget gl >>>= \(texture, framebuffer) ->
-  createLive canvas gl scene composite texture framebuffer
+build :: Browser.Scope -> JSVal -> JSVal -> IO (Maybe Live)
+build scope canvas gl = runMaybeT $ do
+  scene <- acquire scope (compileProgram gl seaFooterVertex seaFooterFragment "sea-water") (deleteProgram gl)
+  composite <- acquire scope (compileProgram gl seaFooterVertex seaCompositeFragment "sea-composite") (deleteProgram gl)
+  (texture, framebuffer) <- createTarget scope gl
+  lift (createLive scope canvas gl scene composite texture framebuffer)
 -----------------------------------------------------------------------------
 -- | The offscreen color target the scene pass renders into.
-createTarget :: JSVal -> IO (Maybe (JSVal, JSVal))
-createTarget gl = do
-  texture <- gl # "createTexture" $ ()
-  framebuffer <- gl # "createFramebuffer" $ ()
-  textureAbsent <- isAbsent texture
-  framebufferAbsent <- isAbsent framebuffer
-  if textureAbsent || framebufferAbsent
-    then pure Nothing
-    else do
+createTarget :: Browser.Scope -> JSVal -> MaybeT IO (JSVal, JSVal)
+createTarget scope gl = do
+  texture <- acquire scope (optionalObject (gl # "createTexture" $ ())) (\value -> void $ gl # "deleteTexture" $ [value])
+  framebuffer <- acquire scope (optionalObject (gl # "createFramebuffer" $ ())) (\value -> void $ gl # "deleteFramebuffer" $ [value])
+  MaybeT $ do
       void $ gl # "activeTexture" $ [glTexture0]
       void $ gl # "bindTexture" $ (glTexture2D, texture)
       void $ gl # "texParameteri" $ (glTexture2D, glTextureMinFilter, glLinear)
@@ -257,20 +169,20 @@ createTarget gl = do
       void $ gl # "bindFramebuffer" $ (glFramebuffer, jsNull)
       pure (if status == glFramebufferComplete then Just (texture, framebuffer) else Nothing)
 -----------------------------------------------------------------------------
-createLive :: JSVal -> JSVal -> GlProgram -> GlProgram -> JSVal -> JSVal -> IO (Maybe Live)
-createLive canvas gl scene composite texture framebuffer = do
-  locationTime <- getUniform gl (glProgram scene) "t"
-  locationResolution <- getUniform gl (glProgram scene) "r"
-  locationCubeOffset <- getUniform gl (glProgram scene) "cubeOff"
-  locationCubeVelocity <- getUniform gl (glProgram scene) "cubeVel"
-  locationDark <- getUniform gl (glProgram scene) "uiDark"
-  locationIntro <- getUniform gl (glProgram scene) "seaIntro"
-  locationLabHover <- getUniform gl (glProgram scene) "labHover"
-  overlayOutputSize <- getUniform gl (glProgram composite) "outputSize"
-  overlayDitherPixelSize <- getUniform gl (glProgram composite) "ditherPx"
-  cloudQ <- getUniform gl (glProgram scene) "cloudQ"
-  seaColorPass <- getUniform gl (glProgram scene) "seaColorPass"
-  seaTexture <- getUniform gl (glProgram composite) "seaTexture"
+createLive :: Browser.Scope -> JSVal -> JSVal -> GlProgram -> GlProgram -> JSVal -> JSVal -> IO Live
+createLive scope canvas gl scene composite texture framebuffer = mdo
+  locationTime <- uniformLocation gl scene "t"
+  locationResolution <- uniformLocation gl scene "r"
+  locationCubeOffset <- uniformLocation gl scene "cubeOff"
+  locationCubeVelocity <- uniformLocation gl scene "cubeVel"
+  locationDark <- uniformLocation gl scene "uiDark"
+  locationIntro <- uniformLocation gl scene "seaIntro"
+  locationLabHover <- uniformLocation gl scene "labHover"
+  overlayOutputSize <- uniformLocation gl composite "outputSize"
+  overlayDitherPixelSize <- uniformLocation gl composite "ditherPx"
+  cloudQ <- uniformLocation gl scene "cloudQ"
+  seaColorPass <- uniformLocation gl scene "seaColorPass"
+  seaTexture <- uniformLocation gl composite "seaTexture"
   void $ gl # "useProgram" $ [glProgram scene]
   void $ gl # "uniform1f" $ (cloudQ, 0.6 :: Double)
   void $ gl # "uniform1f" $ (seaColorPass, 1.0 :: Double)
@@ -284,17 +196,11 @@ createLive canvas gl scene composite texture framebuffer = do
   state <- newIORef (initialSeaState startedAt hover)
   layout <- newIORef (renderLayoutFor 1.0 1.0 1.0)
   bounds <- newIORef (1.0, 1.0)
-  visible <- newIORef False
   intersecting <- newIORef False
-  running <- newIORef False
-  rafCallback <- newIORef jsNull
-  rafHandle <- newIORef Nothing
+  loop <- Browser.frameLoop scope reduced (drawFrame live)
   previous <- newIORef Nothing
-  listeners <- newIORef []
-  observer <- newIORef jsNull
   darkRef <- newIORef dark
   hoverRef <- newIORef hover
-  observers <- newIORef []
   let live = Live
         { liveCanvas = canvas
         , liveGl = gl
@@ -320,31 +226,21 @@ createLive canvas gl scene composite texture framebuffer = do
         , liveReducedMotion = reduced
         , liveDark = darkRef
         , liveHoverTarget = hoverRef
-        , liveObservers = observers
+        , liveScope = scope
         , liveState = state
         , liveLayout = layout
         , liveBounds = bounds
-        , liveVisible = visible
         , liveIntersecting = intersecting
-        , liveRunning = running
-        , liveRafCallback = rafCallback
-        , liveRafHandle = rafHandle
+        , liveLoop = loop
         , livePrevious = previous
-        , liveListeners = listeners
-        , liveObserver = observer
         }
-  callback <- syncCallback1 $ \timestamp -> tick live timestamp
-  writeIORef rafCallback callback
   applyLayout live
   registerPointer live
   registerResize live
   registerTheme live
   registerHover live
   registerIntersection live
-  pure (Just live)
------------------------------------------------------------------------------
-getUniform :: JSVal -> JSVal -> MisoString -> IO JSVal
-getUniform gl program name = gl # "getUniformLocation" $ (program, name)
+  pure live
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 readLabHover :: JSVal -> IO Double
@@ -400,22 +296,6 @@ applyLayout live = do
       (overlayDitherPixelSize (liveOverlay live), pixelRatio layout)
     startLoop live
 -----------------------------------------------------------------------------
-tick :: Live -> JSVal -> IO ()
-tick live rawTimestamp = do
-  running <- readIORef (liveRunning live)
-  when running $ do
-    timestamp <- fromJSValUnchecked rawTimestamp
-    drawFrame live timestamp
-    scheduleFrame live
------------------------------------------------------------------------------
-scheduleFrame :: Live -> IO ()
-scheduleFrame live = do
-  callback <- readIORef (liveRafCallback live)
-  window <- jsg "window"
-  handle <- window # "requestAnimationFrame" $ [callback]
-  handleId <- fromJSValUnchecked handle
-  writeIORef (liveRafHandle live) (Just handleId)
------------------------------------------------------------------------------
 drawFrame :: Live -> Double -> IO ()
 drawFrame live timestamp = do
   state <- readIORef (liveState live)
@@ -425,7 +305,6 @@ drawFrame live timestamp = do
   let input = SeaInput
         { inputTimestamp = timestamp
         , inputStartedAt = liveStartedAt live
-        , inputDragging = stateDragging state
         , inputLabHoverTarget = hover
         , inputCanvasWidth = sceneWidth layout
         , inputCanvasHeight = sceneHeight layout
@@ -467,42 +346,20 @@ drawUniforms live layout uniforms = do
 -----------------------------------------------------------------------------
 -- | Request a frame if the canvas is on screen and none is scheduled.
 startLoop :: Live -> IO ()
-startLoop live = do
-  running <- readIORef (liveRunning live)
-  visible <- readIORef (liveVisible live)
-  when (not running && visible) $ do
-    writeIORef (liveRunning live) True
-    scheduleFrame live
------------------------------------------------------------------------------
-stopLoop :: Live -> IO ()
-stopLoop live = do
-  writeIORef (liveRunning live) False
-  handle <- readIORef (liveRafHandle live)
-  forM_ handle $ \handleId -> do
-    window <- jsg "window"
-    void $ window # "cancelAnimationFrame" $ [handleId]
-  writeIORef (liveRafHandle live) Nothing
+startLoop = Frame.invalidate . liveLoop
 -----------------------------------------------------------------------------
 addListener :: Live -> JSVal -> MisoString -> Bool -> (JSVal -> IO ()) -> IO ()
-addListener live target kind capture handler = do
-  callback <- syncCallback1 handler
-  void $ target # "addEventListener" $ (kind, callback, capture)
-  modifyIORef' (liveListeners live) (Listener target kind callback capture :)
+addListener live = Browser.listen (liveScope live)
 -----------------------------------------------------------------------------
 registerPointer :: Live -> IO ()
 registerPointer live = do
   let canvas = liveCanvas live
   addListener live canvas "pointerdown" True $ \event -> do
-    capturePointer canvas event
+    Browser.capturePointer canvas event
     handlePointer live PointerDown event
   addListener live canvas "pointermove" True (handlePointer live PointerMove)
   addListener live canvas "pointerup" True (handlePointer live PointerUp)
   addListener live canvas "pointercancel" True (handlePointer live PointerUp)
------------------------------------------------------------------------------
-capturePointer :: JSVal -> JSVal -> IO ()
-capturePointer canvas event = do
-  pointerId <- event ! "pointerId"
-  void $ canvas # "setPointerCapture" $ [pointerId]
 -----------------------------------------------------------------------------
 handlePointer :: Live -> SeaPointerKind -> JSVal -> IO ()
 handlePointer live kind event = do
@@ -520,11 +377,8 @@ handlePointer live kind event = do
 -- resize alone would miss the first real box (and any container change).
 registerResize :: Live -> IO ()
 registerResize live = do
-  callback <- syncCallback1 $ \_ -> applyLayout live
-  observerClass <- jsg "ResizeObserver"
-  observer <- new observerClass callback
-  void $ observer # "observe" $ [liveCanvas live]
-  modifyIORef' (liveObservers live) (observer :)
+  options <- create
+  void $ Browser.observe (liveScope live) "ResizeObserver" (Just (liveCanvas live)) options (\_ -> applyLayout live)
 -----------------------------------------------------------------------------
 -- | Theme and lab-hover changes arrive through @MutationObserver@, the same
 -- way the source's @observeTheme@ and @observeDataAttribute@ do. Reading the
@@ -541,7 +395,7 @@ registerTheme live = do
 -----------------------------------------------------------------------------
 registerHover :: Live -> IO ()
 registerHover live = do
-  parent <- pure (liveParent live)
+  let parent = liveParent live
   absent <- isAbsent parent
   unless absent $
     addAttributeObserver live parent $ \_ -> do
@@ -553,11 +407,7 @@ addAttributeObserver :: Live -> JSVal -> (JSVal -> IO ()) -> IO ()
 addAttributeObserver live target handler = do
   options <- create
   setField options "attributes" True
-  callback <- syncCallback1 handler
-  observerClass <- jsg "MutationObserver"
-  observer <- new observerClass callback
-  void $ observer # "observe" $ (target, options)
-  modifyIORef' (liveObservers live) (observer :)
+  void $ Browser.observe (liveScope live) "MutationObserver" (Just target) options handler
 -----------------------------------------------------------------------------
 -- | The source gates the loop on both intersection (with a 120px margin) and
 -- tab visibility. Window resizes are handled by 'registerResize' rather than
@@ -566,15 +416,11 @@ registerIntersection :: Live -> IO ()
 registerIntersection live = do
   options <- create
   setField options "rootMargin" ("120px" :: MisoString)
-  observerClass <- jsg "IntersectionObserver"
-  callback <- syncCallback1 $ \entries -> do
+  void $ Browser.observe (liveScope live) "IntersectionObserver" (Just (liveCanvas live)) options $ \entries -> do
     first <- entries !! 0
     intersecting <- fromJSValUnchecked =<< first ! "isIntersecting"
     writeIORef (liveIntersecting live) intersecting
     emitVisibility live
-  observer <- new observerClass (callback, options)
-  void $ observer # "observe" $ [liveCanvas live]
-  writeIORef (liveObserver live) observer
   document <- jsg "document"
   addListener live document "visibilitychange" False (\_ -> emitVisibility live)
 -----------------------------------------------------------------------------
@@ -584,5 +430,4 @@ emitVisibility live = do
   document <- jsg "document"
   visibility <- fromJSValUnchecked =<< document ! "visibilityState"
   let visible = intersecting && visibility == ("visible" :: MisoString)
-  writeIORef (liveVisible live) visible
-  if visible then startLoop live else stopLoop live
+  Frame.setVisible (liveLoop live) visible

@@ -410,8 +410,8 @@ const emitPost = (post, binding) => {
     field('postDate', escapeString(post.date)),
     field('postDateLabel', escapeString(dateLabel(post.date))),
     field('postSlug', escapeString(post.slug)),
-    field('postSection', escapeString(post.section)),
-    field('postStatus', escapeString(post.status)),
+    field('postSection', post.section === 'thought' ? 'Thought' : 'Lab'),
+    field('postStatus', post.status === 'published' ? 'Published' : 'Draft'),
     field('postTags', hsList(post.tags, escapeString)),
     field('postExcerpt', escapeString(post.excerpt)),
     field('postBanner', escapeString(post.banner)),
@@ -438,12 +438,16 @@ const generate = async () => {
     const state = { headingCounts: new Map(), toc: [], footnoteRefs: new Map() }
     const blocks = parseBlocks(tokens, matchClosers(tokens), state, 0, tokens.length)
     const fallbackSlug = name.replace(/\.md$/, '')
+    const section = attributes.section ?? 'thought'
+    const status = attributes.status ?? 'draft'
+    if (!['thought', 'lab'].includes(section)) throw new Error(`${name}: unknown section ${section}`)
+    if (!['published', 'draft'].includes(status)) throw new Error(`${name}: unknown status ${status}`)
     posts.push({
       title: attributes.title ?? fallbackSlug,
       date: attributes.date ?? '',
       slug: attributes.slug ?? fallbackSlug,
-      section: attributes.section ?? 'thought',
-      status: attributes.status ?? 'draft',
+      section,
+      status,
       tags: Array.isArray(attributes.tags) ? attributes.tags : [],
       excerpt: attributes.excerpt ?? '',
       banner: attributes.banner ?? '',
@@ -462,7 +466,8 @@ const generate = async () => {
     '{-# LANGUAGE OverloadedStrings #-}',
     'module Site.Content.Generated (posts) where',
     '',
-    'import Site.Content.Types (Post (..), TocEntry (..))',
+    'import Site.Content.Types (Post (..), TocEntry (..), PublicationStatus (..))',
+    'import Site.Section (Section (..))',
     'import Site.Prose (Block (..), Footnote (..), Inline (..))',
     '',
     'posts :: [Post]',

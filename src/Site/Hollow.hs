@@ -77,7 +77,6 @@ data HollowInput = HollowInput
   , hiStartedAt      :: Double
   , hiReduceMotion   :: Bool
   , hiLabHoverTarget :: Double
-  , hiDragging       :: Bool
   , hiCanvasWidth    :: Int
   , hiCanvasHeight   :: Int
   } deriving (Show, Eq)
@@ -123,6 +122,7 @@ endHollowDrag stale motion = motion
 -----------------------------------------------------------------------------
 stepHollowMotion :: HollowFrame -> HollowMotion -> HollowMotion
 stepHollowMotion frame motion
+  | hfDragging frame && hfReduceMotion frame = motion { hmSmoothAngle = hmTargetAngle motion }
   | hfDragging frame = smoothHollow True (hfFrameDuration frame) motion
   | hfReduceMotion frame = initialHollowMotion
       { hmTargetAngle = nearestTurn (hmTargetAngle motion)
@@ -194,9 +194,8 @@ stepHollowVisual
   -> HollowVisual
 stepHollowVisual frameDuration labHoverTarget interactionActive reduceMotion visual =
   HollowVisual
-    { hvLabHover = hvLabHover visual
-        + (labHoverTarget - hvLabHover visual)
-        * min 1.0 (frameDuration * 0.003)
+    { hvLabHover = if reduceMotion then labHoverTarget else hvLabHover visual
+        + (labHoverTarget - hvLabHover visual) * min 1.0 (frameDuration * 0.003)
     , hvSeconds =
         if interactionActive || reduceMotion
           then hvSeconds visual
@@ -241,7 +240,7 @@ hollowFrame input state = (stepped, uniforms)
       (hiStartedAt input)
     motion = stepHollowMotion
       (HollowFrame
-        { hfDragging = hiDragging input
+         { hfDragging = hsDragging state
         , hfFrameDuration = timingDuration timing
         , hfReduceMotion = hiReduceMotion input
         })

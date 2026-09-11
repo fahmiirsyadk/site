@@ -25,6 +25,7 @@ import qualified Site.Config as Config
 import qualified Site.Content as Content
 import           Site.Route (Route (..))
 import qualified Site.Route as Route
+import           Site.Section (sectionName)
 -----------------------------------------------------------------------------
 data Meta = Meta
   { metaTitle       :: MisoString
@@ -49,7 +50,7 @@ defaultMeta = Meta
 metaForRoute :: Route -> Meta
 metaForRoute = \case
   Home            -> defaultMeta
-  Section section -> defaultMeta { metaTitle = section <> " - " <> Config.siteName }
+  Section section -> defaultMeta { metaTitle = sectionName section <> " - " <> Config.siteName }
   Post section slug ->
     maybe notFoundMeta postMeta (Content.findPost section slug)
   NotFound _      -> notFoundMeta

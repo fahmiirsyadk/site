@@ -1,6 +1,7 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE RecursiveDo      #-}
 -----------------------------------------------------------------------------
 -- | The header's hollow mark, ported from the source's @HollowMark.purs@ and
 -- @HollowMark.ts@. WebGL1, one instance, drag to spin.
@@ -10,15 +11,14 @@
 -- @Float32Array@ through one JavaScript helper call, then uploaded once. The
 -- moon texture loads asynchronously and is re-uploaded on load.
 module Site.Widgets.Hollow
-  ( attach
-  , dispose
+  ( mount
   ) where
 -----------------------------------------------------------------------------
-import           Control.Monad (forM_, unless, void, when)
-import           Data.Maybe (isJust)
+import           Control.Monad (void, when)
+import           Control.Monad.Trans.Class (lift)
+import           Control.Monad.Trans.Maybe (MaybeT (..))
 import           Data.IORef
   ( IORef
-  , modifyIORef'
   , newIORef
   , readIORef
   , writeIORef
@@ -33,13 +33,11 @@ import           Miso.DSL
   , jsNull
   , new
   , setField
-  , syncCallback1
   , (!)
   , (#)
   , (!!)
   )
 import           Miso.String (MisoString)
-import           System.IO.Unsafe (unsafePerformIO)
 -----------------------------------------------------------------------------
 import           Site.Canvas (rasterLayout, rasterCanvasHeight, rasterCanvasWidth)
 import qualified Site.Config as Config
@@ -47,6 +45,8 @@ import           Site.Hollow
 import           Site.HollowGeometry (hollowVertexCount)
 import           Site.Platform (prefersReducedMotion)
 import           Site.Widgets.Gl
+import qualified Site.Widgets.Browser as Browser
+import qualified Site.FrameLoop as Frame
 import           Site.Widgets.HollowGeometry (hollowGeometryText)
 import           Site.Widgets.Shaders (hollowMarkFragment, hollowMarkVertex)
 -----------------------------------------------------------------------------
@@ -56,13 +56,6 @@ data Uniforms = Uniforms
   , uniformAspect    :: JSVal
   , uniformTime      :: JSVal
   , uniformLabHover  :: JSVal
-  }
------------------------------------------------------------------------------
-data Listener = Listener
-  { listenerTarget   :: JSVal
-  , listenerType     :: MisoString
-  , listenerCallback :: JSVal
-  , listenerCapture  :: Bool
   }
 -----------------------------------------------------------------------------
 data HollowLive = HollowLive
@@ -79,24 +72,11 @@ data HollowLive = HollowLive
   , hollowState        :: IORef HollowState
   , hollowHover        :: IORef Double
   , hollowSize         :: IORef (Int, Int)
-  , hollowVisible      :: IORef Bool
   , hollowIntersecting :: IORef Bool
-  , hollowRunning      :: IORef Bool
-  , hollowRafCallback  :: IORef JSVal
-  , hollowRafHandle    :: IORef (Maybe Int)
+  , hollowLoop         :: Frame.FrameLoop
   , hollowPrevious     :: IORef (Maybe HollowUniforms)
-  , hollowListeners    :: IORef [Listener]
-  , hollowObservers    :: IORef [JSVal]
-  , hollowDisposed     :: IORef Bool
+  , hollowScope        :: Browser.Scope
   }
------------------------------------------------------------------------------
-hollowRef :: IORef (Maybe HollowLive)
-hollowRef = unsafePerformIO (newIORef Nothing)
-{-# NOINLINE hollowRef #-}
------------------------------------------------------------------------------
-retryRef :: IORef Int
-retryRef = unsafePerformIO (newIORef 0)
-{-# NOINLINE retryRef #-}
 -----------------------------------------------------------------------------
 -- | The mesh as a compact build-generated milli-unit payload: each quantized
 -- value has 0.001 precision, and the JavaScript side decodes it to floats in
@@ -108,56 +88,20 @@ retryRef = unsafePerformIO (newIORef 0)
 -- passing 300k numbers across the FFI individually would be slower than the
 -- rest of the mount combined.
 -----------------------------------------------------------------------------
-attach :: IO ()
-attach = do
-  current <- readIORef hollowRef
-  case current of
-    Just _  -> pure ()
-    Nothing -> do
-      document <- jsg "document"
-      canvas <- document # "querySelector" $ Config.hollowMarkSelector
-      absent <- isAbsent canvas
-      unless absent (mount canvas)
------------------------------------------------------------------------------
-dispose :: IO ()
-dispose = do
-  current <- readIORef hollowRef
-  case current of
-    Nothing   -> pure ()
-    Just live -> do
-      writeIORef (hollowDisposed live) True
-      stopLoop live
-      listeners <- readIORef (hollowListeners live)
-      forM_ (reverse listeners) $ \listener ->
-        void $ listenerTarget listener # "removeEventListener" $
-          ( listenerType listener
-          , listenerCallback listener
-          , listenerCapture listener
-          )
-      observers <- readIORef (hollowObservers live)
-      forM_ observers $ \observer -> void $ observer # "disconnect" $ ()
-      let gl = hollowGl live
-      void $ gl # "deleteBuffer" $ [hollowBuffer live]
-      void $ gl # "deleteTexture" $ [hollowTexture live]
-      deleteProgram gl (hollowProgram live)
-      releaseContext gl
-      writeIORef hollowRef Nothing
------------------------------------------------------------------------------
-mount :: JSVal -> IO ()
-mount canvas = do
+mount :: Browser.Scope -> JSVal -> IO Bool
+mount owner canvas = do
   context <- createWebGlContext canvas
   case context of
-    Nothing -> retryMount
+    Nothing -> pure False
     Just gl -> do
-      built <- build canvas gl
+      scope <- Browser.newScope
+      Browser.own owner (Browser.disposeScope scope)
+      Browser.own scope (releaseContext gl)
+      built <- build scope canvas gl
       case built of
-        Nothing -> releaseContext gl
-        Just live -> do
-          writeIORef retryRef 0
-          writeIORef hollowRef (Just live)
------------------------------------------------------------------------------
-retryMount :: IO ()
-retryMount = mountWithRetry retryRef (isJust <$> readIORef hollowRef) attach
+        Nothing -> Browser.disposeScope scope
+        Just _ -> pure ()
+      pure True
 -----------------------------------------------------------------------------
 createWebGlContext :: JSVal -> IO (Maybe JSVal)
 createWebGlContext canvas = do
@@ -170,12 +114,12 @@ createWebGlContext canvas = do
   absent <- isAbsent context
   pure (if absent then Nothing else Just context)
 -----------------------------------------------------------------------------
-build :: JSVal -> JSVal -> IO (Maybe HollowLive)
-build canvas gl =
-  compileProgram gl hollowMarkVertex hollowMarkFragment "hollow-mark" >>>= \program ->
-  createVertexBuffer gl program >>>= \buffer ->
-  createMoonTexture gl program >>>= \texture ->
-  Just <$> createLive canvas gl program buffer texture
+build :: Browser.Scope -> JSVal -> JSVal -> IO (Maybe HollowLive)
+build scope canvas gl = runMaybeT $ do
+  program <- acquire scope (compileProgram gl hollowMarkVertex hollowMarkFragment "hollow-mark") (deleteProgram gl)
+  buffer <- acquire scope (createVertexBuffer gl program) (\value -> void $ gl # "deleteBuffer" $ [value])
+  texture <- acquire scope (createMoonTexture gl program) (\value -> void $ gl # "deleteTexture" $ [value])
+  lift (createLive scope canvas gl program buffer texture)
 -----------------------------------------------------------------------------
 createVertexBuffer :: JSVal -> GlProgram -> IO (Maybe JSVal)
 createVertexBuffer gl program = do
@@ -215,17 +159,9 @@ createMoonTexture gl program = do
       void $ gl # "texParameteri" $ (glTexture2D, glTextureMagFilter, glLinear)
       white <- whitePixels
       texImage2DWith gl glTexture2D 0 glRgba 1 1 0 glRgba glUnsignedByte white
-      moonUniform <- getUniformLocation gl (glProgram program) "u_moon_texture"
+      moonUniform <- uniformLocation gl program "u_moon_texture"
       void $ gl # "uniform1i" $ (moonUniform, 2 :: Int)
       pure (Just texture)
------------------------------------------------------------------------------
-attribLocation :: JSVal -> GlProgram -> MisoString -> IO Int
-attribLocation gl program name = do
-  value <- gl # "getAttribLocation" $ (glProgram program, name)
-  fromJSValUnchecked value
------------------------------------------------------------------------------
-getUniformLocation :: JSVal -> JSVal -> MisoString -> IO JSVal
-getUniformLocation gl program name = gl # "getUniformLocation" $ (program, name)
 -----------------------------------------------------------------------------
 vertexAttribute :: JSVal -> Int -> Int -> Int -> Int -> IO ()
 vertexAttribute gl location size stride offset = do
@@ -248,28 +184,22 @@ whitePixels = do
     ("return new Uint8Array([255, 255, 255, 255]);" :: MisoString)
   constructor # "call" $ [jsNull]
 -----------------------------------------------------------------------------
-createLive :: JSVal -> JSVal -> GlProgram -> JSVal -> JSVal -> IO HollowLive
-createLive canvas gl program buffer texture = do
-  uniformAngle <- getUniformLocation gl (glProgram program) "u_angle"
-  uniformCubeAngle <- getUniformLocation gl (glProgram program) "u_cube_angle"
-  uniformAspect <- getUniformLocation gl (glProgram program) "u_aspect"
-  uniformTime <- getUniformLocation gl (glProgram program) "u_time"
-  uniformLabHover <- getUniformLocation gl (glProgram program) "u_lab_hover"
+createLive :: Browser.Scope -> JSVal -> JSVal -> GlProgram -> JSVal -> JSVal -> IO HollowLive
+createLive scope canvas gl program buffer texture = mdo
+  uniformAngle <- uniformLocation gl program "u_angle"
+  uniformCubeAngle <- uniformLocation gl program "u_cube_angle"
+  uniformAspect <- uniformLocation gl program "u_aspect"
+  uniformTime <- uniformLocation gl program "u_time"
+  uniformLabHover <- uniformLocation gl program "u_lab_hover"
   startedAt <- performanceNow
   reduceMotion <- prefersReducedMotion
   hover <- readLabHover canvas
   state <- newIORef (initialHollowState startedAt)
   hoverRef <- newIORef hover
   size <- newIORef (1, 1)
-  visible <- newIORef False
   intersecting <- newIORef False
-  running <- newIORef False
-  rafCallback <- newIORef jsNull
-  rafHandle <- newIORef Nothing
+  loop <- Browser.frameLoop scope reduceMotion (drawFrame live)
   previous <- newIORef Nothing
-  listeners <- newIORef []
-  observers <- newIORef []
-  disposed <- newIORef False
   image <- new (jsg "Image") ()
   setField image "decoding" ("async" :: MisoString)
   let live = HollowLive
@@ -286,18 +216,11 @@ createLive canvas gl program buffer texture = do
         , hollowState = state
         , hollowHover = hoverRef
         , hollowSize = size
-        , hollowVisible = visible
         , hollowIntersecting = intersecting
-        , hollowRunning = running
-        , hollowRafCallback = rafCallback
-        , hollowRafHandle = rafHandle
+        , hollowLoop = loop
         , hollowPrevious = previous
-        , hollowListeners = listeners
-        , hollowObservers = observers
-        , hollowDisposed = disposed
+        , hollowScope = scope
         }
-  callback <- syncCallback1 $ \timestamp -> tick live timestamp
-  writeIORef rafCallback callback
   loadMoon live
   applyLayout live
   registerPointer live
@@ -309,9 +232,7 @@ createLive canvas gl program buffer texture = do
 -----------------------------------------------------------------------------
 loadMoon :: HollowLive -> IO ()
 loadMoon live = do
-  callback <- syncCallback1 $ \_ -> do
-    disposed <- readIORef (hollowDisposed live)
-    unless disposed $ do
+  Browser.listen (hollowScope live) (hollowImage live) "load" False $ \_ -> do
       let gl = hollowGl live
       -- Set the unpack flag only for the image upload. It must not surround
       -- the typed-array placeholder upload during context setup.
@@ -320,8 +241,8 @@ loadMoon live = do
       void $ gl # "bindTexture" $ (glTexture2D, hollowTexture live)
       void $ gl # "texImage2D" $
         (glTexture2D, 0 :: Int, glRgba, glRgba, glUnsignedByte, hollowImage live)
-  void $ hollowImage live # "addEventListener" $
-    ("load" :: MisoString, callback)
+      writeIORef (hollowPrevious live) Nothing
+      startLoop live
   setField (hollowImage live) "src"
     ("/assets/images/lroc-color-1k.webp" :: MisoString)
 -----------------------------------------------------------------------------
@@ -352,22 +273,6 @@ applyLayout live = do
     writeIORef (hollowPrevious live) Nothing
     startLoop live
 -----------------------------------------------------------------------------
-tick :: HollowLive -> JSVal -> IO ()
-tick live rawTimestamp = do
-  running <- readIORef (hollowRunning live)
-  when running $ do
-    timestamp <- fromJSValUnchecked rawTimestamp
-    drawFrame live timestamp
-    scheduleFrame live
------------------------------------------------------------------------------
-scheduleFrame :: HollowLive -> IO ()
-scheduleFrame live = do
-  callback <- readIORef (hollowRafCallback live)
-  window <- jsg "window"
-  handle <- window # "requestAnimationFrame" $ [callback]
-  handleId <- fromJSValUnchecked handle
-  writeIORef (hollowRafHandle live) (Just handleId)
------------------------------------------------------------------------------
 drawFrame :: HollowLive -> Double -> IO ()
 drawFrame live timestamp = do
   state <- readIORef (hollowState live)
@@ -378,7 +283,6 @@ drawFrame live timestamp = do
         , hiStartedAt = hollowStartedAt live
         , hiReduceMotion = hollowReduceMotion live
         , hiLabHoverTarget = hover
-        , hiDragging = hsDragging state
         , hiCanvasWidth = canvasWidth
         , hiCanvasHeight = canvasHeight
         }
@@ -407,33 +311,16 @@ drawUniforms live uniforms = do
     (glTriangles, 0 :: Int, hollowVerticesAt live)
 -----------------------------------------------------------------------------
 startLoop :: HollowLive -> IO ()
-startLoop live = do
-  running <- readIORef (hollowRunning live)
-  visible <- readIORef (hollowVisible live)
-  when (not running && visible) $ do
-    writeIORef (hollowRunning live) True
-    scheduleFrame live
------------------------------------------------------------------------------
-stopLoop :: HollowLive -> IO ()
-stopLoop live = do
-  writeIORef (hollowRunning live) False
-  handle <- readIORef (hollowRafHandle live)
-  forM_ handle $ \handleId -> do
-    window <- jsg "window"
-    void $ window # "cancelAnimationFrame" $ [handleId]
-  writeIORef (hollowRafHandle live) Nothing
+startLoop = Frame.invalidate . hollowLoop
 -----------------------------------------------------------------------------
 addListener :: HollowLive -> JSVal -> MisoString -> Bool -> (JSVal -> IO ()) -> IO ()
-addListener live target kind capture handler = do
-  callback <- syncCallback1 handler
-  void $ target # "addEventListener" $ (kind, callback, capture)
-  modifyIORef' (hollowListeners live) (Listener target kind callback capture :)
+addListener live = Browser.listen (hollowScope live)
 -----------------------------------------------------------------------------
 registerPointer :: HollowLive -> IO ()
 registerPointer live = do
   let canvas = hollowCanvas live
   addListener live canvas "pointerdown" True $ \event -> do
-    capturePointer canvas event
+    Browser.capturePointer canvas event
     handlePointer live HollowDown event
     markDragging live "true"
   addListener live canvas "pointermove" True (handlePointer live HollowMove)
@@ -443,11 +330,6 @@ registerPointer live = do
   addListener live canvas "pointercancel" True $ \event -> do
     handlePointer live HollowUp event
     markDragging live "false"
------------------------------------------------------------------------------
-capturePointer :: JSVal -> JSVal -> IO ()
-capturePointer canvas event = do
-  pointerId <- event ! "pointerId"
-  void $ canvas # "setPointerCapture" $ [pointerId]
 -----------------------------------------------------------------------------
 markDragging :: HollowLive -> MisoString -> IO ()
 markDragging live value =
@@ -471,38 +353,25 @@ handlePointer live kind event = do
 -----------------------------------------------------------------------------
 registerResize :: HollowLive -> IO ()
 registerResize live = do
-  callback <- syncCallback1 $ \_ -> do
-    applyLayout live
-    when (hollowReduceMotion live) (renderNow live)
-  observerClass <- jsg "ResizeObserver"
-  observer <- new observerClass callback
-  void $ observer # "observe" $ [hollowCanvas live]
-  modifyIORef' (hollowObservers live) (observer :)
+  options <- create
+  void $ Browser.observe (hollowScope live) "ResizeObserver" (Just (hollowCanvas live)) options (\_ -> applyLayout live)
 -----------------------------------------------------------------------------
 registerTheme :: HollowLive -> IO ()
 registerTheme live = do
   document <- jsg "document"
   element <- document ! "documentElement"
-  callback <- syncCallback1 $ \_ -> renderNow live
-  observerClass <- jsg "MutationObserver"
   options <- create
   setField options "attributes" True
-  observer <- new observerClass callback
-  void $ observer # "observe" $ (element, options)
-  modifyIORef' (hollowObservers live) (observer :)
+  void $ Browser.observe (hollowScope live) "MutationObserver" (Just element) options (\_ -> startLoop live)
 -----------------------------------------------------------------------------
 registerHover :: HollowLive -> IO ()
 registerHover live = do
-  callback <- syncCallback1 $ \_ -> do
+  options <- create
+  setField options "attributes" True
+  void $ Browser.observe (hollowScope live) "MutationObserver" (Just (hollowCanvas live)) options $ \_ -> do
     value <- readLabHover (hollowCanvas live)
     writeIORef (hollowHover live) value
     startLoop live
-  observerClass <- jsg "MutationObserver"
-  options <- create
-  setField options "attributes" True
-  observer <- new observerClass callback
-  void $ observer # "observe" $ (hollowCanvas live, options)
-  modifyIORef' (hollowObservers live) (observer :)
 -----------------------------------------------------------------------------
 -- | The source gates the loop on intersection with a 120px margin and on tab
 -- visibility; reduced-motion users get a single frame per change instead.
@@ -510,15 +379,11 @@ registerVisibility :: HollowLive -> IO ()
 registerVisibility live = do
   options <- create
   setField options "rootMargin" ("120px" :: MisoString)
-  observerClass <- jsg "IntersectionObserver"
-  callback <- syncCallback1 $ \entries -> do
+  void $ Browser.observe (hollowScope live) "IntersectionObserver" (Just (hollowCanvas live)) options $ \entries -> do
     first <- entries !! 0
     intersecting <- fromJSValUnchecked =<< first ! "isIntersecting"
     writeIORef (hollowIntersecting live) intersecting
     emitVisibility live
-  observer <- new observerClass (callback, options)
-  void $ observer # "observe" $ [hollowCanvas live]
-  modifyIORef' (hollowObservers live) (observer :)
   document <- jsg "document"
   addListener live document "visibilitychange" False (\_ -> emitVisibility live)
 -----------------------------------------------------------------------------
@@ -528,11 +393,4 @@ emitVisibility live = do
   document <- jsg "document"
   visibility <- fromJSValUnchecked =<< document ! "visibilityState"
   let visible = intersecting && visibility == ("visible" :: MisoString)
-  writeIORef (hollowVisible live) visible
-  when visible (renderNow live)
-  if visible then startLoop live else stopLoop live
------------------------------------------------------------------------------
-renderNow :: HollowLive -> IO ()
-renderNow live = do
-  timestamp <- performanceNow
-  drawFrame live timestamp
+  Frame.setVisible (hollowLoop live) visible

@@ -10,7 +10,7 @@ module Site.View.Home
   ) where
 -----------------------------------------------------------------------------
 import           Miso (text)
-import           Miso.Event (onBeforeDestroyed, onCreated)
+import           Miso.Event (onBeforeDestroyedWith, onCreatedWith)
 import           Miso.Html.Element as H
 import           Miso.Html.Property as P
 import           Miso.Property (textProp)
@@ -18,7 +18,7 @@ import           Miso.String (ms)
 import qualified Miso.Svg.Element as S
 import qualified Miso.Svg.Property as SP
 -----------------------------------------------------------------------------
-import           Site.Action (Action (..))
+import           Site.Action (Action (..), Element (..))
 import qualified Site.Config as Config
 import           Site.Content (Post)
 import qualified Site.Content as Content
@@ -40,7 +40,7 @@ introduction status =
   H.section_
     [ P.class_ "w-full" ]
     [ H.div_
-        [ P.class_ "max-w-[32rem] space-y-3 text-[13px] leading-[1.7] text-[#171717] dark:text-neutral-200" ]
+        [ P.class_ "max-w-[32rem] space-y-3 text-[13px] leading-[1.7] text-ink dark:text-neutral-200" ]
         [ H.p_ []
             [ text "Frontend engineer from Indonesia. I build interfaces and developer tools, with equal interest in how software feels and how it works." ]
         , H.p_ []
@@ -51,11 +51,11 @@ introduction status =
         , H.p_ []
             [ text "Find me on "
             , gitHubCard status
-            , H.span_ [ P.class_ "mx-1 text-[#FF4B26]" ] [ text "↗" ]
+            , H.span_ [ P.class_ "mx-1 text-coral" ] [ text "↗" ]
             , text " or email "
             , H.a_
                 [ P.href_ ("mailto:" <> Config.emailAddress)
-                , P.class_ "inline-flex items-center gap-1 underline decoration-dotted decoration-neutral-400 underline-offset-4 hover:text-[#FF4B26]"
+                , P.class_ "inline-flex items-center gap-1 underline decoration-dotted decoration-neutral-400 underline-offset-4 hover:text-coral"
                 ]
                 [ mailIcon, text Config.emailAddress ]
             , text "."
@@ -70,8 +70,8 @@ thinkingAbout =
   H.span_
     [ P.data_ Config.scribbleKey "true"
     , P.class_ "thinking-scribble"
-    , onCreated ScribbleMounted
-    , onBeforeDestroyed ScribbleDisposed
+    , onCreatedWith (ScribbleMounted . Element)
+    , onBeforeDestroyedWith (ScribbleDisposed . Element)
     ]
     [ H.span_ [ P.class_ "thinking-scribble-text" ] [ text "thinking about" ]
     , S.svg_
@@ -108,13 +108,11 @@ postPreview post =
   internalLink (Post (Content.postSection post) (Content.postSlug post))
     [ P.class_ "post-row group flex w-full items-center gap-3 py-2 text-[12px] leading-[1.7] no-underline" ]
     [ H.span_
-        [ P.class_ "min-w-0 font-instrument text-[16px] leading-[1.3] text-[#171717] transition-colors group-hover:text-[#FF4B26] dark:text-neutral-200 dark:group-hover:text-[#FF6B4A]" ]
+        [ P.class_ "min-w-0 font-instrument text-[16px] leading-[1.3] text-ink transition-colors group-hover:text-coral dark:text-neutral-200 dark:group-hover:text-coral-bright" ]
         [ text (Content.postTitle post) ]
     , H.span_ [ P.class_ "min-h-px min-w-6 flex-1 border-b border-neutral-300 dark:border-neutral-600" ] []
     , H.span_
-        [ P.data_ "relative-date" (Content.postDate post)
-        , P.class_ "shrink-0 whitespace-nowrap text-right text-neutral-600 dark:text-neutral-400 max-sm:hidden"
-        ]
+        [ P.class_ "shrink-0 whitespace-nowrap text-right text-neutral-600 dark:text-neutral-400 max-sm:hidden" ]
         [ text (Content.postDateLabel post) ]
     ]
 -----------------------------------------------------------------------------
@@ -126,7 +124,7 @@ gitHubCard status =
         [ P.href_ Config.githubProfileUrl
         , P.target_ "_blank"
         , P.rel_ "noreferrer"
-        , P.class_ "underline decoration-dotted decoration-neutral-400 underline-offset-4 hover:text-[#FF4B26]"
+        , P.class_ "underline decoration-dotted decoration-neutral-400 underline-offset-4 hover:text-coral"
         ]
         [ githubIcon
         , H.span_ [ P.class_ "ml-1" ] [ text "GitHub" ]
@@ -146,7 +144,7 @@ gitHubCard status =
             , H.span_
                 [ P.class_ "flex min-w-0 flex-col leading-tight" ]
                 [ H.strong_
-                    [ P.class_ "text-[12px] text-[#171717] dark:text-neutral-100" ]
+                    [ P.class_ "text-[12px] text-ink dark:text-neutral-100" ]
                     [ text Config.githubDisplayName ]
                 , H.span_
                     [ P.class_ "text-[10px] text-neutral-400" ]

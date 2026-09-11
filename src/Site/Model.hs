@@ -19,13 +19,18 @@
 module Site.Model
   ( -- * Route transition
     RouteMotion (..)
-  , motionName
+   , motionName
+   , Navigation (..)
+   , navigationMotion
+   , pendingRoute
     -- * Pages
   , Page (..)
   , pageForRoute
   , routeForPage
     -- * Copy link
-  , CopyStatus (..)
+   , CopyStatus (..)
+   , PostState (..)
+   , PostRequest (..)
     -- * Model
   , Model (..)
   , initialModel
@@ -33,15 +38,12 @@ module Site.Model
     -- * Lenses
   , page
   , theme
-  , motion
+   , navigation
   , navigationVersion
-  , pendingNavigation
   , labHover
   , gitHubProfile
   , gitHubContributions
   , gitHubFailed
-  , copyStatus
-  , reading
     -- * Derived
   , currentRoute
   , labInteractionName
@@ -56,6 +58,7 @@ import           Site.Route (Route (..))
 import qualified Site.Route as Route
 import           Site.Scroll (ReadingProgress, emptyReadingProgress)
 import           Site.Theme (Theme (..))
+import qualified Site.Section as Section
 -----------------------------------------------------------------------------
 -- | Where the shell is in a route change.
 --
@@ -68,6 +71,22 @@ data RouteMotion
   | Leaving
   | Entering
   deriving (Show, Eq)
+
+-- | History commitment is distinct from a pending leave: a duplicate timer
+-- must not push the same URI again while we await the subscription event.
+data Navigation = Settled | LeavingFor Route | AwaitingURI Route | EnteringPage
+  deriving (Show, Eq)
+
+navigationMotion :: Navigation -> RouteMotion
+navigationMotion = \case
+  Settled -> Idle
+  LeavingFor _ -> Leaving
+  AwaitingURI _ -> Leaving
+  EnteringPage -> Entering
+
+pendingRoute :: Navigation -> Maybe Route
+pendingRoute (LeavingFor target) = Just target
+pendingRoute _ = Nothing
 -----------------------------------------------------------------------------
 -- | Value of the @data-route-motion@ attribute. The CSS selects on these
 -- exact strings.
@@ -80,18 +99,19 @@ motionName = \case
 -- | The mounted page, with whatever state that page owns.
 data Page
   = HomePage
-  | SectionPage MisoString
-  | PostPage MisoString MisoString
+   | SectionPage Section.Section
+   | PostPage Section.Section MisoString PostState
   | NotFoundPage MisoString
   deriving (Show, Eq)
 -----------------------------------------------------------------------------
 -- | Seed a page from the URL it was reached by. This is where per-page
 -- initial state will be constructed.
-pageForRoute :: Route -> Page
-pageForRoute = \case
+pageForRoute :: Int -> Route -> Page
+pageForRoute generation = \case
   Home              -> HomePage
   Section section   -> SectionPage section
   Post section slug -> PostPage section slug
+    (PostState generation 0 NotCopied emptyReadingProgress)
   NotFound path     -> NotFoundPage path
 -----------------------------------------------------------------------------
 -- | Recover the URL a page is showing. Needed by the view (to mark the active
@@ -100,21 +120,31 @@ routeForPage :: Page -> Route
 routeForPage = \case
   HomePage              -> Home
   SectionPage section   -> Section section
-  PostPage section slug -> Post section slug
+  PostPage section slug _ -> Post section slug
   NotFoundPage path     -> NotFound path
 -----------------------------------------------------------------------------
 -- | The copy-link button's two states. The reset timer returns it to
 -- 'NotCopied' after two seconds, as the source did.
 data CopyStatus = NotCopied | Copied
   deriving (Show, Eq)
+
+data PostState = PostState
+  { postGeneration :: Int
+  , postCopyVersion :: Int
+  , postCopyStatus :: CopyStatus
+  , postReading :: ReadingProgress
+  } deriving (Show, Eq)
+
+-- | Identity of replaceable work within one mounted post.
+data PostRequest = PostRequest Int Int
+  deriving (Show, Eq)
 -----------------------------------------------------------------------------
 data Model
   = Model
   { _page :: Page
   , _theme :: Theme
-  , _motion :: RouteMotion
-  , _navigationVersion :: Int
-  , _pendingNavigation :: Maybe Route
+   , _navigation :: Navigation
+   , _navigationVersion :: Int
     -- | Whether the header's lab link is hovered or focused. It drives the
     -- sea's @data-lab-interaction@. Reset on every URL change.
   , _labHover :: Bool
@@ -122,11 +152,6 @@ data Model
   , _gitHubProfile :: Maybe Profile
   , _gitHubContributions :: Maybe Contributions
   , _gitHubFailed :: Bool
-    -- | Post chrome state. Kept at the top level like the source's post
-    -- submodel: measurement replaces it on entry, and the copy button
-    -- self-resets.
-  , _copyStatus :: CopyStatus
-  , _reading :: ReadingProgress
   } deriving (Show, Eq)
 -----------------------------------------------------------------------------
 -- | Only correct for the root URL in the light theme. Real boots go through
@@ -137,17 +162,14 @@ initialModel = modelFor Home Light
 -----------------------------------------------------------------------------
 modelFor :: Route -> Theme -> Model
 modelFor target chosen = Model
-  { _page   = pageForRoute target
+   { _page   = pageForRoute 0 target
   , _theme  = chosen
-  , _motion = Idle
+   , _navigation = Settled
   , _navigationVersion = 0
-  , _pendingNavigation = Nothing
   , _labHover = False
   , _gitHubProfile = Nothing
   , _gitHubContributions = Nothing
   , _gitHubFailed = False
-  , _copyStatus = NotCopied
-  , _reading = emptyReadingProgress
   }
 -----------------------------------------------------------------------------
 page :: Lens Model Page
@@ -156,14 +178,11 @@ page = lens _page (\model value -> model { _page = value })
 theme :: Lens Model Theme
 theme = lens _theme (\model value -> model { _theme = value })
 -----------------------------------------------------------------------------
-motion :: Lens Model RouteMotion
-motion = lens _motion (\model value -> model { _motion = value })
+navigation :: Lens Model Navigation
+navigation = lens _navigation (\model value -> model { _navigation = value })
 -----------------------------------------------------------------------------
 navigationVersion :: Lens Model Int
 navigationVersion = lens _navigationVersion (\model value -> model { _navigationVersion = value })
------------------------------------------------------------------------------
-pendingNavigation :: Lens Model (Maybe Route)
-pendingNavigation = lens _pendingNavigation (\model value -> model { _pendingNavigation = value })
 -----------------------------------------------------------------------------
 labHover :: Lens Model Bool
 labHover = lens _labHover (\model value -> model { _labHover = value })
@@ -177,12 +196,6 @@ gitHubContributions = lens _gitHubContributions (\model value -> model { _gitHub
 gitHubFailed :: Lens Model Bool
 gitHubFailed = lens _gitHubFailed (\model value -> model { _gitHubFailed = value })
 -----------------------------------------------------------------------------
-copyStatus :: Lens Model CopyStatus
-copyStatus = lens _copyStatus (\model value -> model { _copyStatus = value })
------------------------------------------------------------------------------
-reading :: Lens Model ReadingProgress
-reading = lens _reading (\model value -> model { _reading = value })
------------------------------------------------------------------------------
 currentRoute :: Model -> Route
 currentRoute = routeForPage . _page
 -----------------------------------------------------------------------------
@@ -191,6 +204,6 @@ currentRoute = routeForPage . _page
 labInteractionName :: Model -> MisoString
 labInteractionName model
   | _labHover model = Config.labInteractionHovered
-  | Route.activeSection (currentRoute model) == Config.labSection =
+  | Route.activeSection (currentRoute model) == Just Config.labSection =
       Config.labInteractionHovered
   | otherwise = Config.labInteractionIdle

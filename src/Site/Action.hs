@@ -6,15 +6,24 @@
 -- swap pages belongs to 'Site.Update'. No constructor here is unhandled.
 module Site.Action
   ( Action (..)
+  , Element (..)
   ) where
 -----------------------------------------------------------------------------
 import           Miso (URI)
+import           Miso.DSL (JSVal)
 import           Miso.String (MisoString)
 -----------------------------------------------------------------------------
 import           Site.GitHub (Contributions, Profile)
+import           Site.Model (PostRequest)
 import           Site.Route (Route)
 import           Site.Scroll (ReadingProgress)
 import           Site.Theme (Theme)
+
+-- | Opaque DOM identity retained by lifecycle actions.
+newtype Element = Element JSVal deriving (Eq)
+
+instance Show Element where
+  show _ = "<element>"
 -----------------------------------------------------------------------------
 data Action
   = FollowedLink Route
@@ -33,14 +42,15 @@ data Action
   -- allowing the current page to transition in.
   | ToggledTheme
   | AppMounted
+  | AppDisposed
   -- ^ The shell mounted; read the stored or system theme.
   | AdoptedTheme Theme
   -- ^ The theme read at mount, ready to make the model agree with the class
   -- the anti-flash script already applied.
-  | SeaMounted
+  | SeaMounted Element
   -- ^ The sea canvas entered the document. Fires during hydration and on
   -- every client-side mount; the effect itself is idempotent.
-  | SeaDisposed
+  | SeaDisposed Element
   -- ^ The sea canvas left the document; release its WebGL context.
   | HoveredLab
   | LeftLab
@@ -53,7 +63,7 @@ data Action
   | ScrolledContent
   -- ^ The post's scroll container moved. Captured, because scroll events do
   -- not bubble.
-  | MeasuredReadingProgress ReadingProgress
+   | MeasuredReadingProgress Int ReadingProgress
   -- ^ A fresh measurement of the reading rail's geometry.
   | SelectedReadingProgress Int
   -- ^ The reader picked an exact position on the rail, by click or by
@@ -61,17 +71,17 @@ data Action
   | AdjustedReadingProgress Int
   -- ^ The reader stepped the rail by a delta, with the arrow or page keys.
   | ClickedCopyLink MisoString
-  | CopiedLink
-  | FailedCopyLink
-  | CopyStatusExpired
+   | CopiedLink PostRequest
+   | FailedCopyLink PostRequest
+   | CopyStatusExpired PostRequest
   -- ^ The copy confirmation's reset timer elapsed.
   | IgnoredKey
   -- ^ A key on the reading slider that has no binding.
-  | ScribbleMounted
-  | ScribbleDisposed
+  | ScribbleMounted Element
+  | ScribbleDisposed Element
   -- ^ The home page's scribble span; the widget loops its animation.
-  | HollowMounted
-  | HollowDisposed
+  | HollowMounted Element
+  | HollowDisposed Element
   -- ^ The header's hollow mark canvas; drag-to-spin WebGL.
   deriving (Show, Eq)
 -----------------------------------------------------------------------------

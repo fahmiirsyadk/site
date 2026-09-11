@@ -39,9 +39,18 @@
   font-display: optional;
 }
 
+/* The site palette. These tokens generate the `paper`/`ink`/`coral`/
+   `hairline` utilities used by the views, and plain CSS reads them through
+   var(); the appearance constants cannot drift between the two. */
 @theme {
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --color-paper: #f5f5f5;
+  --color-ink: #171717;
+  --color-coral: #ff4b26;
+  --color-coral-bright: #ff6b4a;
+  --color-coral-deep: #c24120;
+  --color-hairline: #e5e5e5;
 }
 
 /* The shell owns the theme with the `dark` class on <html>. */
@@ -60,7 +69,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* The ink the dithered images are drawn in. */
-    --dither-ink: #ff4b26;
+    --dither-ink: var(--color-coral);
   }
 
   html.dark {
@@ -70,8 +79,8 @@
   body {
     min-height: 100%;
     overflow-x: clip;
-    background: #f5f5f5;
-    color: #171717;
+    background: var(--color-paper);
+    color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: 12px;
     line-height: 1.7;
@@ -79,7 +88,7 @@
 
   html.dark body {
     background: #0a0a0a;
-    color: #f5f5f5;
+    color: var(--color-paper);
   }
 
   @media (min-width: 768px) {
@@ -157,23 +166,23 @@
 }
 
 .footer-theme-toggle:hover {
-  color: #c24120;
+  color: var(--color-coral-deep);
   transform: rotate(12deg);
 }
 
 .footer-theme-toggle:focus-visible {
-  color: #c24120;
-  outline: 2px solid #c24120;
+  color: var(--color-coral-deep);
+  outline: 2px solid var(--color-coral-deep);
   outline-offset: 3px;
 }
 
 html.dark .footer-theme-toggle:hover {
-  color: #ff6b4a;
+  color: var(--color-coral-bright);
 }
 
 html.dark .footer-theme-toggle:focus-visible {
-  color: #ff6b4a;
-  outline-color: #ff6b4a;
+  color: var(--color-coral-bright);
+  outline-color: var(--color-coral-bright);
 }
 
 /* The header's hollow mark canvas. The widget draws into it; CSS owns the
@@ -222,7 +231,7 @@ html.dark .footer-theme-toggle:focus-visible {
   width: 6.2em;
   height: 5em;
   overflow: visible;
-  color: #ff4b26;
+  color: var(--color-coral);
   opacity: 0.78;
   pointer-events: none;
   transform: translate(-50%, -50%);
@@ -250,7 +259,7 @@ html.dark .footer-theme-toggle:focus-visible {
 }
 
 .github-contribution[data-level='0'] {
-  background: #e5e5e5;
+  background: var(--color-hairline);
 }
 
 .github-contribution[data-level='1'] {
@@ -266,7 +275,7 @@ html.dark .footer-theme-toggle:focus-visible {
 }
 
 .github-contribution[data-level='4'] {
-  background: #ff4b26;
+  background: var(--color-coral);
 }
 
 html.dark .github-contribution[data-level='0'] {
@@ -395,7 +404,7 @@ html.dark .theme-sun {
   height: auto;
   margin: 0;
   border-radius: 0.5rem;
-  background: #171717;
+  background: var(--color-ink);
 }
 
 .dithered-image-inline {
@@ -458,12 +467,12 @@ html.dark .theme-sun {
 }
 
 .post-action-button:hover {
-  color: #c24120;
+  color: var(--color-coral-deep);
 }
 
 .post-action-button:focus-visible {
-  color: #c24120;
-  outline: 2px solid #c24120;
+  color: var(--color-coral-deep);
+  outline: 2px solid var(--color-coral-deep);
   outline-offset: 3px;
 }
 
@@ -482,12 +491,12 @@ html.dark .post-action-button {
 }
 
 html.dark .post-action-button:hover {
-  color: #ff6b4a;
+  color: var(--color-coral-bright);
 }
 
 html.dark .post-action-button:focus-visible {
-  color: #ff6b4a;
-  outline-color: #ff6b4a;
+  color: var(--color-coral-bright);
+  outline-color: var(--color-coral-bright);
 }
 
 .post-prose {
@@ -504,7 +513,7 @@ html.dark .post-action-button:focus-visible {
 }
 
 .post-prose :where(a) {
-  color: #c24120;
+  color: var(--color-coral-deep);
   text-decoration-line: underline;
   text-decoration-thickness: 0.08em;
   text-underline-offset: 0.2em;
@@ -515,7 +524,7 @@ html.dark .post-action-button:focus-visible {
 }
 
 html.dark .post-prose :where(a) {
-  color: #ff6b4a;
+  color: var(--color-coral-bright);
 }
 
 .post-prose :where(code) {
@@ -554,7 +563,7 @@ html.dark .post-prose :where(a) {
 }
 
 .post-prose pre {
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--color-hairline);
   background: #fafafa;
   color: #404040;
 }
@@ -588,7 +597,7 @@ html.dark .post-prose :where(pre code) {
 
 .post-prose .footnotes {
   margin-top: 2.5rem;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid var(--color-hairline);
   padding-top: 1rem;
   font-size: 0.85em;
 }

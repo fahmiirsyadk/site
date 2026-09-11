@@ -12,6 +12,7 @@ import           Miso (miso)
 -----------------------------------------------------------------------------
 import           Site.App (app, bootModel, siteEvents)
 import qualified Site.Platform as Platform
+import qualified Site.Widgets.Runtime as Widgets
 -----------------------------------------------------------------------------
 #ifdef WASM
 #ifndef INTERACTIVE
@@ -21,14 +22,15 @@ foreign export javascript "hs_start" main :: IO ()
 -----------------------------------------------------------------------------
 main :: IO ()
 main = do
+  widgets <- Widgets.newRuntime
   initial <- bootModel
   Platform.installInternalLinkGuard
 #ifdef INTERACTIVE
   -- The interactive browser watches an empty page: draw.
-  reload siteEvents (app initial)
+  reload siteEvents (app widgets initial)
 #else
   -- Production loads a prerendered page and hydrates it, falling back to a
   -- draw when the markup is absent (for example a bare `make build`).
-  miso siteEvents (\_ -> app initial)
+  miso siteEvents (\_ -> app widgets initial)
 #endif
 -----------------------------------------------------------------------------

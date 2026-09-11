@@ -9,12 +9,17 @@
 -- did, and the record stays flat enough to emit as a literal.
 module Site.Content.Types
   ( Post (..)
-  , TocEntry (..)
+   , TocEntry (..)
+   , PublicationStatus (..)
   ) where
 -----------------------------------------------------------------------------
 import           Miso.String (MisoString)
 -----------------------------------------------------------------------------
 import           Site.Prose (Block)
+import           Site.Section (Section)
+
+data PublicationStatus = Draft | Published
+  deriving (Show, Eq)
 -----------------------------------------------------------------------------
 data TocEntry = TocEntry
   { tocId    :: MisoString
@@ -29,8 +34,8 @@ data Post = Post
   , postDateLabel     :: MisoString
   -- ^ Precomputed display date, so native and WASM agree without @Intl@.
   , postSlug          :: MisoString
-  , postSection       :: MisoString
-  , postStatus        :: MisoString
+   , postSection       :: Section
+   , postStatus        :: PublicationStatus
   , postTags          :: [MisoString]
   , postExcerpt       :: MisoString
   , postBanner        :: MisoString

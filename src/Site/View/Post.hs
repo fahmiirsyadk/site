@@ -10,7 +10,7 @@ module Site.View.Post
   ) where
 -----------------------------------------------------------------------------
 import           Data.Char (toLower)
-import           Data.List (isInfixOf)
+import           Data.List (isSuffixOf)
 import           Miso (text)
 import qualified Miso.CSS as CSS
 import           Miso.Event
@@ -73,15 +73,13 @@ titleRow post =
   H.div_
     [ P.class_ "flex w-full min-w-0 items-center gap-3 text-[12px] leading-[1.7]" ]
     [ H.h1_
-        [ P.class_ "min-w-0 font-instrument text-2xl leading-tight text-balance text-[#171717] dark:text-neutral-100" ]
+        [ P.class_ "min-w-0 font-instrument text-2xl leading-tight text-balance text-ink dark:text-neutral-100" ]
         [ text (Content.postTitle post) ]
     , H.span_
         [ P.class_ "min-h-px min-w-6 flex-1 border-b border-neutral-300 dark:border-neutral-600" ]
         []
     , H.span_
-        [ P.data_ "relative-date" (Content.postDate post)
-        , P.class_ "shrink-0 text-right text-neutral-600 dark:text-neutral-400"
-        ]
+        [ P.class_ "shrink-0 text-right text-neutral-600 dark:text-neutral-400" ]
         [ text (Content.postDateLabel post) ]
     ]
 -----------------------------------------------------------------------------
@@ -144,11 +142,16 @@ ditheredCover post banner =
 isNativeMedia :: MisoString -> Bool
 isNativeMedia source = isMp4 source || isGif source
 -----------------------------------------------------------------------------
+-- | Only the path decides the media type, matching the content generator:
+-- a query or fragment cannot turn an image URL into an MP4.
+mediaPath :: MisoString -> String
+mediaPath = map toLower . takeWhile (`notElem` ("?#" :: String)) . fromMisoString
+-----------------------------------------------------------------------------
 isMp4 :: MisoString -> Bool
-isMp4 source = ".mp4" `isInfixOf` map toLower (fromMisoString source)
+isMp4 source = ".mp4" `isSuffixOf` mediaPath source
 -----------------------------------------------------------------------------
 isGif :: MisoString -> Bool
-isGif source = ".gif" `isInfixOf` map toLower (fromMisoString source)
+isGif source = ".gif" `isSuffixOf` mediaPath source
 -----------------------------------------------------------------------------
 readingRail :: ReadingProgress -> Node context
 readingRail progress =
@@ -296,7 +299,7 @@ postNavigation post
   | otherwise =
       [ H.nav_
           [ textProp "aria-label" "Post navigation"
-          , P.class_ "mt-12 grid grid-cols-2 gap-3 border-t border-[#E5E5E5] pt-6 dark:border-neutral-800"
+          , P.class_ "mt-12 grid grid-cols-2 gap-3 border-t border-hairline pt-6 dark:border-neutral-800"
           ]
           [ maybe (H.span_ [] []) (link False) older
           , maybe (H.span_ [] []) (link True) newer
@@ -307,7 +310,7 @@ postNavigation post
     link right neighbor =
       internalLink (Post (Content.postSection neighbor) (Content.postSlug neighbor))
         [ P.class_
-            ( "group flex flex-col gap-1 rounded-md border border-[#E5E5E5] px-4 py-3 no-underline transition-colors hover:border-[#FF4B26] dark:border-neutral-800 "
+            ( "group flex flex-col gap-1 rounded-md border border-hairline px-4 py-3 no-underline transition-colors hover:border-coral dark:border-neutral-800 "
                 <> if right then "items-end text-right" else "items-start text-left"
             )
         ]
@@ -315,6 +318,6 @@ postNavigation post
             [ P.class_ "text-[10px] uppercase tracking-[0.07em] text-neutral-600 dark:text-neutral-400" ]
             [ text (if right then "Newer" else "Older") ]
         , H.span_
-            [ P.class_ "font-instrument text-[15px] leading-snug text-[#171717] group-hover:text-[#FF4B26] dark:text-neutral-200 dark:group-hover:text-[#FF6B4A]" ]
+            [ P.class_ "font-instrument text-[15px] leading-snug text-ink group-hover:text-coral dark:text-neutral-200 dark:group-hover:text-coral-bright" ]
             [ text (Content.postTitle neighbor) ]
         ]

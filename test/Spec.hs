@@ -13,8 +13,8 @@
 module Main (main) where
 -----------------------------------------------------------------------------
 import           Control.Monad (forM_, unless)
-import           Data.IORef (modifyIORef', newIORef, readIORef)
-import           Data.List (isPrefixOf)
+import           Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
+import           Data.List (isInfixOf, isPrefixOf)
 import           Data.Maybe (listToMaybe)
 import           Miso (URI (..))
 import           Miso.DSL (jsNull)
@@ -39,8 +39,12 @@ import qualified Site.Meta as Meta
 import           Site.Model
                  ( CopyStatus (..)
                  , Model (..)
-                 , Page (..)
-                 , RouteMotion (..)
+                  , Page (..)
+                  , PostState (..)
+                  , PostRequest (..)
+                  , RouteMotion (..)
+                  , navigationMotion
+                  , pendingRoute
                  , labInteractionName
                  , modelFor
                  , motionName
@@ -48,6 +52,7 @@ import           Site.Model
 import           Site.Prose (Block (..))
 import           Site.Route (Route (..))
 import qualified Site.Route as Route
+import qualified Site.Section as Section
 import           Site.Scroll
                  ( Geometry (..)
                  , HeadingGeometry (..)
@@ -57,12 +62,15 @@ import           Site.Scroll
 import qualified Site.Scroll as Scroll
 import qualified Site.Scribble as Scribble
 import qualified Site.Sea as Sea
+import qualified Site.FrameLoop as Frame
 import           Site.Theme (Theme (..))
 import qualified Site.Theme as Theme
 import           Site.Update (updateModel)
+import qualified Site.Widgets.Runtime as Widgets
 -----------------------------------------------------------------------------
 main :: IO ()
 main = do
+  widgets <- Widgets.newRuntime
   failures <- newIORef ([] :: [String])
   let
     check :: String -> Bool -> IO ()
@@ -74,7 +82,7 @@ main = do
             (expected == actual)
 
   routeSpec check checkEq
-  updateSpec check checkEq
+  updateSpec widgets check checkEq
   metaSpec check checkEq
   contentSpec check checkEq
   seaSpec check checkEq
@@ -83,6 +91,8 @@ main = do
   scribbleSpec check checkEq
   hollowSpec check checkEq
   ditherSpec check checkEq
+  frameLoopSpec check checkEq
+  paletteSpec check
 
   collected <- reverse <$> readIORef failures
   case collected of
@@ -123,22 +133,22 @@ routeSpec check checkEq = do
             (Route.uriToRoute (Route.routeURI target))
 
   -- A single segment is a section only if it names one.
-  check "thought is a content section" (Route.isContentSection Config.thoughtSection)
-  check "lab is a content section" (Route.isContentSection Config.labSection)
+  check "thought is a content section" (Route.isContentSection "thought")
+  check "lab is a content section" (Route.isContentSection "lab")
   check "ssh is not a content section" (not (Route.isContentSection "ssh"))
 
-  checkEq "activeSection Home" "" (Route.activeSection Home)
-  checkEq "activeSection Post" Config.thoughtSection
+  checkEq "activeSection Home" Nothing (Route.activeSection Home)
+  checkEq "activeSection Post" (Just Config.thoughtSection)
           (Route.activeSection (Post Config.thoughtSection "a-post"))
 -----------------------------------------------------------------------------
 knownPaths :: [(MisoString, Route)]
 knownPaths =
   [ ("/", Home)
   , ("/ssh/", NotFound "/ssh")
-  , ("/thought/", Section "thought")
-  , ("/lab/", Section "lab")
-  , ("/thought/a-post/", Post "thought" "a-post")
-  , ("/lab/a-thing/", Post "lab" "a-thing")
+   , ("/thought/", Section Section.Thought)
+   , ("/lab/", Section Section.Lab)
+   , ("/thought/a-post/", Post Section.Thought "a-post")
+   , ("/lab/a-thing/", Post Section.Lab "a-thing")
   , ("/nope/", NotFound "/nope")
   , ("/nope/deeper/", NotFound "/nope/deeper")
   , ("/thought/a/b/", NotFound "/thought/a/b")
@@ -149,7 +159,7 @@ extraRoutes :: [Route]
 extraRoutes =
   [ NotFound "/a"
   , NotFound "/a/b/c"
-  , Post "thought" "slug-with-dashes"
+   , Post Section.Thought "slug-with-dashes"
   ]
 -----------------------------------------------------------------------------
 -- | Shapes a browser can hand us that are not canonical.
@@ -159,9 +169,10 @@ messyPaths =
   , "/ssh", "/ssh//", "///a///b///"
   ]
 -----------------------------------------------------------------------------
-updateSpec :: Check -> CheckEq -> IO ()
-updateSpec check checkEq = do
-  let home = modelFor Home Light
+updateSpec :: Widgets.Runtime -> Check -> CheckEq -> IO ()
+updateSpec widgets check checkEq = do
+  let step = runStep widgets
+      home = modelFor Home Light
       thought = Section Config.thoughtSection
       lab = Section Config.labSection
 
@@ -274,7 +285,11 @@ updateSpec check checkEq = do
   checkEq "parseStorageName round trips Dark" (Just Dark) (Theme.parseStorageName "dark")
   checkEq "parseStorageName rejects junk" Nothing (Theme.parseStorageName "purple")
 
-  check "leave duration matches the CSS transition" (Config.routeLeaveMs == 250)
+  css <- readFile "styles/input.css"
+  let leavingRule = takeWhile (/= '}') . drop 1 . dropWhile (/= '{') $
+        dropUntil ".route-content[data-route-motion='leaving']" css
+  check "leave duration matches the actual CSS transition"
+        (contains ("transition-duration: " <> show Config.routeLeaveMs <> "ms;") leavingRule)
 
   -- The lab link's hover state drives the sea footer's data attribute.
   let (hoveredLab, hoveredLabEffects) = step home HoveredLab
@@ -291,22 +306,41 @@ updateSpec check checkEq = do
           Config.labInteractionHovered (labInteractionName (modelFor lab Light))
 
   -- The copy button: success marks it and schedules the two-second reset.
-  let (copied, copiedEffects) = step home CopiedLink
-      (resetStatus, resetEffects) = step copied CopyStatusExpired
+  let postRoute = Post Section.Thought "chaotic-pendulum"
+      post = modelFor postRoute Light
+      (requested, _) = step post (ClickedCopyLink "https://faah.me/thought/chaotic-pendulum/")
+      request = PostRequest 0 1
+      (copied, copiedEffects) = step requested (CopiedLink request)
+      (resetStatus, resetEffects) = step copied (CopyStatusExpired request)
   checkEq "CopiedLink marks the button" Copied (_copyStatus copied)
   checkEq "CopiedLink schedules the reset timer" 1 copiedEffects
   checkEq "CopyStatusExpired returns to idle" NotCopied (_copyStatus resetStatus)
   checkEq "CopyStatusExpired schedules nothing" 0 resetEffects
 
+  let (requestedAgain, _) = step copied (ClickedCopyLink "url")
+      (copiedAgain, _) = step requestedAgain (CopiedLink (PostRequest 0 2))
+  checkEq "old expiry cannot clear a newer copy confirmation" copiedAgain
+    (fst (step copiedAgain (CopyStatusExpired request)))
+  checkEq "old clipboard completion cannot overwrite a newer request" requestedAgain
+    (fst (step requestedAgain (CopiedLink request)))
+  let (otherPost, _) = step copied (ChangedURI (Route.routeURI (Post Section.Lab "reconstruct")))
+  checkEq "clipboard completion belongs to its mounted post" otherPost
+    (fst (step otherPost (CopiedLink request)))
+  checkEq "copy completion on home is ignored" home (fst (step home (CopiedLink request)))
+
   -- Measurements replace the rail state; rail actions schedule one scroll.
   let measured = ReadingProgress 42 [HeadingPosition "a" 2 10]
-      (measuredModel, measuredEffects) = step home (MeasuredReadingProgress measured)
-      (setModel, setEffects) = step home (SelectedReadingProgress 50)
+      (measuredModel, measuredEffects) = step post (MeasuredReadingProgress 0 measured)
+      (setModel, setEffects) = step post (SelectedReadingProgress 50)
       (scrolledHome, scrolledEffects) = step home ScrolledContent
   checkEq "MeasuredReadingProgress stores the rail" measured (_reading measuredModel)
   checkEq "MeasuredReadingProgress schedules nothing" 0 measuredEffects
   checkEq "SelectedReadingProgress schedules one scroll" 1 setEffects
-  checkEq "SelectedReadingProgress leaves the model alone" home setModel
+  checkEq "SelectedReadingProgress leaves the model alone" post setModel
+  checkEq "measurement from an old post is ignored" otherPost
+    (fst (step otherPost (MeasuredReadingProgress 0 measured)))
+  checkEq "rail selection on home is ignored" (home, 0)
+    (step home (SelectedReadingProgress 50))
   checkEq "scrolling away from a post schedules nothing" 0 scrolledEffects
   checkEq "scrolling away from a post changes nothing" home scrolledHome
 
@@ -467,7 +501,6 @@ seaSpec check checkEq = do
   let input = Sea.SeaInput
         { Sea.inputTimestamp = 1000
         , Sea.inputStartedAt = 0
-        , Sea.inputDragging = False
         , Sea.inputLabHoverTarget = 0
         , Sea.inputCanvasWidth = 400
         , Sea.inputCanvasHeight = 300
@@ -593,7 +626,6 @@ hollowSpec check checkEq = do
         , Hollow.hiStartedAt = 0
         , Hollow.hiReduceMotion = True
         , Hollow.hiLabHoverTarget = 0
-        , Hollow.hiDragging = False
         , Hollow.hiCanvasWidth = 200
         , Hollow.hiCanvasHeight = 100
         }
@@ -677,15 +709,122 @@ ditherSpec check checkEq = do
   checkEq "sixteen bayer entries" 16 (length Dither.bayerMatrix)
   checkEq "the bayer matrix tops out at 240" 240 (maximum Dither.bayerMatrix)
 -----------------------------------------------------------------------------
+-- | The frame scheduler: coalescing, on-demand one-shot frames, visibility
+-- cancellation, and continuous self-rescheduling. The driver and the clock are
+-- fakes, so this runs natively.
+frameLoopSpec :: Check -> CheckEq -> IO ()
+frameLoopSpec check checkEq = do
+  drawCount <- newIORef (0 :: Int)
+  requests <- newIORef (0 :: Int)
+  cancels <- newIORef (0 :: Int)
+  tickRef <- newIORef (Nothing :: Maybe (Double -> IO ()))
+  let driver = Frame.FrameDriver
+        { Frame.requestFrame = modifyIORef' requests (+ 1) >> pure 1
+        , Frame.cancelFrame = \_ -> modifyIORef' cancels (+ 1)
+        }
+      install tick = writeIORef tickRef (Just tick) >> pure driver
+      draw _ = modifyIORef' drawCount (+ 1)
+      tick timestamp = maybe (pure ()) ($ timestamp) =<< readIORef tickRef
+
+  onDemand <- Frame.newFrameLoop Frame.OnDemand install draw
+  Frame.setVisible onDemand True
+  Frame.invalidate onDemand
+  Frame.invalidate onDemand
+  checkEq "repeated invalidation arms one frame" 1 =<< readIORef requests
+  tick 16.0
+  checkEq "the on-demand frame draws once" 1 =<< readIORef drawCount
+  checkEq "an on-demand frame does not reschedule itself" 1 =<< readIORef requests
+
+  Frame.invalidate onDemand
+  Frame.setVisible onDemand False
+  checkEq "hiding cancels the pending frame" 1 =<< readIORef cancels
+  tick 32.0
+  checkEq "a frame delivered while hidden does not draw" 1 =<< readIORef drawCount
+  Frame.invalidate onDemand
+  checkEq "a hidden loop does not schedule" 2 =<< readIORef requests
+  Frame.setVisible onDemand True
+  checkEq "becoming visible schedules again" 3 =<< readIORef requests
+  Frame.dispose onDemand
+  checkEq "dispose cancels the armed frame" 2 =<< readIORef cancels
+
+  continuousDraws <- newIORef (0 :: Int)
+  let continuousDraw _ = modifyIORef' continuousDraws (+ 1)
+  continuous <- Frame.newFrameLoop Frame.Continuous install continuousDraw
+  Frame.setVisible continuous True
+  Frame.invalidate continuous
+  tick 1.0
+  tick 2.0
+  checkEq "a continuous loop keeps drawing" 2 =<< readIORef continuousDraws
+  Frame.dispose continuous
+-----------------------------------------------------------------------------
+-- | The palette is declared once in the Tailwind theme; the views must use
+-- the generated utilities rather than raw hex values.
+paletteSpec :: Check -> IO ()
+paletteSpec check = do
+  css <- readFile "styles/input.css"
+  forM_ tokens $ \token ->
+    check ("styles/input.css defines " <> token) (token `isInfixOf` css)
+  forM_ views $ \file -> do
+    source <- readFile file
+    check (file <> " uses palette utilities, not raw hexes")
+      (not (any (`isInfixOf` source) rawPalette))
+  where
+    tokens =
+      [ "--color-paper:"
+      , "--color-ink:"
+      , "--color-coral:"
+      , "--color-coral-bright:"
+      , "--color-coral-deep:"
+      , "--color-hairline:"
+      , "--dither-ink: var(--color-coral)"
+      ]
+    views =
+      [ "src/Site/View.hs"
+      , "src/Site/View/Home.hs"
+      , "src/Site/View/Post.hs"
+      , "src/Site/View/Section.hs"
+      ]
+    rawPalette =
+      [ "#FF4B26", "#FF6B4A", "#C24120"
+      , "[#171717]", "[#E5E5E5]", "[#F5F5F5]"
+      ]
+-----------------------------------------------------------------------------
 -- | Run one action against one model, purely.
 --
 -- 'runEffect' is 'execRWS'. The 'Miso.Effect.ComponentInfo' it needs is
 -- mostly identity and a DOM reference; nothing in 'Site.Update' reads it, and
 -- the reference is never dereferenced because scheduled effects are returned
 -- rather than run.
-step :: Model -> Action -> (Model, Int)
-step model action =
-  let (next, schedules) = runEffect (updateModel action) info model
+runStep :: Widgets.Runtime -> Model -> Action -> (Model, Int)
+runStep widgets model action =
+  let (next, schedules) = runEffect (updateModel widgets action) info model
   in (next, length schedules)
   where
-    info = mkComponentInfo 0 0 jsNull () ()
+     info = mkComponentInfo 0 0 jsNull () ()
+
+-- Derived observations: the model no longer stores duplicate motion/pending
+-- fields or post chrome outside the mounted page.
+_motion :: Model -> RouteMotion
+_motion = navigationMotion . _navigation
+
+_pendingNavigation :: Model -> Maybe Route
+_pendingNavigation = pendingRoute . _navigation
+
+_copyStatus :: Model -> CopyStatus
+_copyStatus model = case _page model of
+  PostPage _ _ state -> postCopyStatus state
+  _ -> NotCopied
+
+_reading :: Model -> ReadingProgress
+_reading model = case _page model of
+  PostPage _ _ state -> postReading state
+  _ -> Scroll.emptyReadingProgress
+
+contains :: String -> String -> Bool
+contains needle = not . null . dropUntil needle
+
+dropUntil :: String -> String -> String
+dropUntil needle source
+  | needle `isPrefixOf` source = source
+dropUntil _ [] = []
+dropUntil needle (_ : rest) = dropUntil needle rest
