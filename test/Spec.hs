@@ -41,6 +41,7 @@ import           Site.Model
                  , Model (..)
                  , Page (..)
                  , RouteMotion (..)
+                 , labInteractionName
                  , modelFor
                  , motionName
                  )
@@ -282,24 +283,30 @@ updateSpec check checkEq = do
   checkEq "HoveredLab schedules nothing" 0 hoveredLabEffects
   check "LeftLab lowers the interaction" (not (_labHover leftLab))
   checkEq "LeftLab schedules nothing" 0 leftLabEffects
+  checkEq "the hover value is the configured name"
+          Config.labInteractionHovered (labInteractionName hoveredLab)
+  checkEq "elsewhere the interaction is idle"
+          Config.labInteractionIdle (labInteractionName home)
+  checkEq "being on the lab page counts as engagement"
+          Config.labInteractionHovered (labInteractionName (modelFor lab Light))
 
   -- The copy button: success marks it and schedules the two-second reset.
   let (copied, copiedEffects) = step home CopiedLink
-      (resetStatus, resetEffects) = step copied ResetCopyStatus
+      (resetStatus, resetEffects) = step copied CopyStatusExpired
   checkEq "CopiedLink marks the button" Copied (_copyStatus copied)
   checkEq "CopiedLink schedules the reset timer" 1 copiedEffects
-  checkEq "ResetCopyStatus returns to idle" NotCopied (_copyStatus resetStatus)
-  checkEq "ResetCopyStatus schedules nothing" 0 resetEffects
+  checkEq "CopyStatusExpired returns to idle" NotCopied (_copyStatus resetStatus)
+  checkEq "CopyStatusExpired schedules nothing" 0 resetEffects
 
   -- Measurements replace the rail state; rail actions schedule one scroll.
   let measured = ReadingProgress 42 [HeadingPosition "a" 2 10]
       (measuredModel, measuredEffects) = step home (MeasuredReadingProgress measured)
-      (setModel, setEffects) = step home (SetReadingProgress 50)
+      (setModel, setEffects) = step home (SelectedReadingProgress 50)
       (scrolledHome, scrolledEffects) = step home ScrolledContent
   checkEq "MeasuredReadingProgress stores the rail" measured (_reading measuredModel)
   checkEq "MeasuredReadingProgress schedules nothing" 0 measuredEffects
-  checkEq "SetReadingProgress schedules one scroll" 1 setEffects
-  checkEq "SetReadingProgress leaves the model alone" home setModel
+  checkEq "SelectedReadingProgress schedules one scroll" 1 setEffects
+  checkEq "SelectedReadingProgress leaves the model alone" home setModel
   checkEq "scrolling away from a post schedules nothing" 0 scrolledEffects
   checkEq "scrolling away from a post changes nothing" home scrolledHome
 
@@ -339,6 +346,16 @@ metaSpec check checkEq = do
   check "anti-flash script reads the configured storage key"
         (MS.isInfixOf ("localStorage.getItem('" <> Config.themeStorageKey <> "')")
           antiFlashScript)
+  check "anti-flash script toggles the configured class"
+        (MS.isInfixOf ("classList.toggle('" <> Config.darkClassName <> "'")
+          antiFlashScript)
+  check "anti-flash script tests the configured queries"
+        (MS.isInfixOf Config.prefersDarkQuery antiFlashScript)
+  check "anti-flash script compares the stored theme names"
+        (all (`MS.isInfixOf` antiFlashScript)
+          [ "'" <> Theme.storageName Dark <> "'"
+          , "'" <> Theme.storageName Light <> "'"
+          ])
 -----------------------------------------------------------------------------
 -- | The generated content catalog and the queries over it. Drafts never
 -- surface, published posts are newest first, and post metadata uses the

@@ -29,6 +29,35 @@ module Site.Config
   , pageViewId
   , seaFooterId
   , seaCanvasId
+  , routeMotionKey
+  , postProseClass
+  , postProseSelector
+  , postHeadingSelector
+  , hollowMarkClass
+  , hollowMarkSelector
+  , hollowDraggingKey
+  , scribbleKey
+  , scribblePathKey
+  , scribbleSelector
+  , scribblePathSelector
+  , labInteractionKey
+  , labInteractionHovered
+  , labInteractionIdle
+  , ditheredImageKey
+  , ditheredSourceKey
+  , ditheredCanvasKey
+  , ditheredImageSelector
+  , ditheredSourceSelector
+  , ditheredCanvasSelector
+  , ditherInitializedKey
+  , ditherReadyKey
+  , ditherFallbackKey
+  , internalLinkKey
+  , internalLinkSelector
+  , internalLinkGuardProperty
+    -- * Theme contract
+  , darkClassName
+  , prefersDarkQuery
     -- * Storage
   , themeStorageKey
     -- * Route transition timing
@@ -108,6 +137,96 @@ seaFooterId = "sea-footer"
 -----------------------------------------------------------------------------
 seaCanvasId :: MisoString
 seaCanvasId = "sea-canvas"
+-----------------------------------------------------------------------------
+-- | Value of the @data-route-motion@ attribute. The three @.route-content@
+-- rules in @styles.css@ select on it.
+routeMotionKey :: MisoString
+routeMotionKey = "route-motion"
+-----------------------------------------------------------------------------
+-- | The post body. The view writes the class, the reading rail discovers
+-- headings inside it, and @styles.css@ styles it.
+postProseClass :: MisoString
+postProseClass = "post-prose"
+-----------------------------------------------------------------------------
+postProseSelector :: MisoString
+postProseSelector = "." <> postProseClass
+-----------------------------------------------------------------------------
+-- | Headings the reading rail anchors to. The prose renderer only emits these
+-- three levels.
+postHeadingSelector :: MisoString
+postHeadingSelector = "h2, h3, h4"
+-----------------------------------------------------------------------------
+-- | The header's WebGL mark. The view writes the class, the widget queries it.
+hollowMarkClass :: MisoString
+hollowMarkClass = "hollow-mark"
+-----------------------------------------------------------------------------
+hollowMarkSelector :: MisoString
+hollowMarkSelector = "." <> hollowMarkClass
+-----------------------------------------------------------------------------
+-- | Set to @true@ while the mark is dragged; @styles.css@ selects on it.
+hollowDraggingKey :: MisoString
+hollowDraggingKey = "dragging"
+-----------------------------------------------------------------------------
+-- | The home page's animated scribble and the path inside it.
+scribbleKey :: MisoString
+scribbleKey = "random-scribble"
+-----------------------------------------------------------------------------
+scribblePathKey :: MisoString
+scribblePathKey = "random-scribble-path"
+-----------------------------------------------------------------------------
+scribbleSelector, scribblePathSelector :: MisoString
+scribbleSelector = "[data-" <> scribbleKey <> "]"
+scribblePathSelector = "[data-" <> scribblePathKey <> "]"
+-----------------------------------------------------------------------------
+-- | Drives the sea footer's and hollow mark's hover state. The values are
+-- produced by 'Site.Model.labInteractionName'.
+labInteractionKey :: MisoString
+labInteractionKey = "lab-interaction"
+-----------------------------------------------------------------------------
+labInteractionHovered :: MisoString
+labInteractionHovered = "hovered"
+-----------------------------------------------------------------------------
+labInteractionIdle :: MisoString
+labInteractionIdle = "idle"
+-----------------------------------------------------------------------------
+-- | Dithered-image markup. 'Site.Prose' and 'Site.View.Post' write the three
+-- keys; the widget queries the selectors and raises the state keys.
+ditheredImageKey, ditheredSourceKey, ditheredCanvasKey :: MisoString
+ditheredImageKey = "dithered-image"
+ditheredSourceKey = "dithered-source"
+ditheredCanvasKey = "dithered-canvas"
+-----------------------------------------------------------------------------
+ditheredImageSelector, ditheredSourceSelector, ditheredCanvasSelector :: MisoString
+ditheredImageSelector = "[data-" <> ditheredImageKey <> "]"
+ditheredSourceSelector = "img[data-" <> ditheredSourceKey <> "]"
+ditheredCanvasSelector = "canvas[data-" <> ditheredCanvasKey <> "]"
+-----------------------------------------------------------------------------
+-- | State the widget writes back on a root: mounted, first frame drawn, and
+-- WebGL unavailable. @styles.css@ selects on the last two.
+ditherInitializedKey, ditherReadyKey, ditherFallbackKey :: MisoString
+ditherInitializedKey = "dither-initialized"
+ditherReadyKey = "dither-ready"
+ditherFallbackKey = "dither-fallback"
+-----------------------------------------------------------------------------
+-- | Internal links carry the marker the synchronous click guard looks for.
+internalLinkKey :: MisoString
+internalLinkKey = "internal-link"
+-----------------------------------------------------------------------------
+internalLinkSelector :: MisoString
+internalLinkSelector = "a[data-" <> internalLinkKey <> "]"
+-----------------------------------------------------------------------------
+-- | Window property holding the installed guard callback, so a hot reload
+-- replaces it instead of stacking listeners.
+internalLinkGuardProperty :: MisoString
+internalLinkGuardProperty = "__siteMisoInternalLinkGuard"
+-----------------------------------------------------------------------------
+-- | Class on @<html>@ that switches the theme, and the query that picks the
+-- system preference. The anti-flash script reads both before WASM loads.
+darkClassName :: MisoString
+darkClassName = "dark"
+-----------------------------------------------------------------------------
+prefersDarkQuery :: MisoString
+prefersDarkQuery = "(prefers-color-scheme: dark)"
 -----------------------------------------------------------------------------
 -- | @localStorage@ key. Read by the anti-flash script in @index.html@ before
 -- the WASM module loads, so it must match that script exactly.

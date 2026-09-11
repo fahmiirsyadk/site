@@ -30,6 +30,8 @@ import qualified Miso.Html.Property as P
 import           Miso.Property (textProp)
 import           Miso.String (MisoString, ms)
 -----------------------------------------------------------------------------
+import qualified Site.Config as Config
+-----------------------------------------------------------------------------
 data Block
   = Paragraph [Inline]
   -- ^ A loose paragraph.
@@ -166,11 +168,11 @@ renderInline = \case
   Image source alt title ->
     [ H.span_
         [ P.class_ "dithered-image dithered-image-inline"
-        , P.data_ "dithered-image" ""
+        , P.data_ Config.ditheredImageKey ""
         ]
         [ H.img_
             ( [ P.class_ "dithered-image-source"
-              , P.data_ "dithered-source" ""
+              , P.data_ Config.ditheredSourceKey ""
               , P.src_ source
               , textProp "alt" alt
               , textProp "loading" "lazy"
@@ -178,7 +180,7 @@ renderInline = \case
               <> titleAttribute title
             )
         , H.canvas_
-            [ P.data_ "dithered-canvas" ""
+            [ P.data_ Config.ditheredCanvasKey ""
             , P.aria_ "hidden" "true"
             ]
             []

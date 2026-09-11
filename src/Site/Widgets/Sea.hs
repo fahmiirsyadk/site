@@ -23,6 +23,7 @@ module Site.Widgets.Sea
 -----------------------------------------------------------------------------
 import           Control.Monad (forM_, unless, void, when)
 import           Control.Exception (finally)
+import           Data.Maybe (isJust)
 import           Prelude hiding ((!!))
 import           Data.IORef
   ( IORef
@@ -210,17 +211,7 @@ markSeaState canvas state =
 -- Chromium evicts contexts under pressure and frees them asynchronously, so
 -- the window can be several seconds wide on a loaded machine.
 retryMount :: IO ()
-retryMount = do
-  attempts <- readIORef retryRef
-  when (attempts < 40) $ do
-    writeIORef retryRef (attempts + 1)
-    window <- jsg "window"
-    callback <- syncCallback1 $ \_ -> do
-      current <- readIORef liveRef
-      case current of
-        Just _  -> pure ()
-        Nothing -> attach
-    void $ window # "setTimeout" $ (callback, 500 :: Int)
+retryMount = mountWithRetry retryRef (isJust <$> readIORef liveRef) attach
 -----------------------------------------------------------------------------
 createWebGl2Context :: JSVal -> IO (Maybe JSVal)
 createWebGl2Context canvas = do
@@ -233,11 +224,6 @@ createWebGl2Context canvas = do
   context <- canvas # "getContext" $ ("webgl2" :: MisoString, options)
   absent <- isAbsent context
   pure (if absent then Nothing else Just context)
------------------------------------------------------------------------------
--- A failed step leaves whatever it built to the context release in 'mount'.
-(>>>=) :: IO (Maybe a) -> (a -> IO (Maybe b)) -> IO (Maybe b)
-action >>>= next = action >>= maybe (pure Nothing) next
-infixl 1 >>>=
 -----------------------------------------------------------------------------
 build :: JSVal -> JSVal -> IO (Maybe Live)
 build canvas gl =
@@ -291,7 +277,7 @@ createLive canvas gl scene composite texture framebuffer = do
   void $ gl # "useProgram" $ [glProgram composite]
   void $ gl # "uniform1i" $ (seaTexture, 0 :: Int)
   parent <- canvas ! "parentElement"
-  startedAt <- now
+  startedAt <- performanceNow
   reduced <- prefersReducedMotion
   hover <- readLabHover parent
   dark <- isDarkTheme
@@ -360,12 +346,6 @@ createLive canvas gl scene composite texture framebuffer = do
 getUniform :: JSVal -> JSVal -> MisoString -> IO JSVal
 getUniform gl program name = gl # "getUniformLocation" $ (program, name)
 -----------------------------------------------------------------------------
--- | @performance.now()@, the time base @requestAnimationFrame@ hands back.
-now :: IO Double
-now = do
-  performance <- jsg "performance"
-  value <- performance # "now" $ ()
-  fromJSValUnchecked value
 -----------------------------------------------------------------------------
 readLabHover :: JSVal -> IO Double
 readLabHover parent = do
@@ -373,16 +353,16 @@ readLabHover parent = do
   if absent
     then pure 0.0
     else do
-      value <- parent # "getAttribute" $ ("data-lab-interaction" :: MisoString)
+      value <- parent # "getAttribute" $ ("data-" <> Config.labInteractionKey)
       text <- fromJSVal value :: IO (Maybe MisoString)
-      pure (if text == Just "hovered" then 1.0 else 0.0)
+      pure (if text == Just Config.labInteractionHovered then 1.0 else 0.0)
 -----------------------------------------------------------------------------
 isDarkTheme :: IO Bool
 isDarkTheme = do
   document <- jsg "document"
   element <- document ! "documentElement"
   classes <- element ! "classList"
-  contained <- classes # "contains" $ ("dark" :: MisoString)
+  contained <- classes # "contains" $ Config.darkClassName
   fromJSValUnchecked contained
 -----------------------------------------------------------------------------
 -- | Re-measure the canvas, resize both render targets, and tell the

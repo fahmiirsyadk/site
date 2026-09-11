@@ -132,7 +132,7 @@ updateModel = \case
   -- Reading and adopting the real value here draws exactly once when they
   -- differ -- a dark-mode reader gets the dark toggle label -- and not at
   -- all otherwise.
-  SyncTheme -> do
+  AppMounted -> do
     io $ do
       chosen <- Platform.bootTheme
       Platform.applyTheme chosen
@@ -187,10 +187,10 @@ updateModel = \case
     current <- use reading
     when (progress /= current) (reading .= progress)
 
-  SetReadingProgress percent ->
+  SelectedReadingProgress percent ->
     io_ (ScrollWidget.scrollToProgress (Scroll.clampProgress percent))
 
-  MoveReadingProgress delta -> do
+  AdjustedReadingProgress delta -> do
     current <- use reading
     io_ (ScrollWidget.scrollToProgress (Scroll.clampProgress (readingPercent current + delta)))
 
@@ -201,12 +201,12 @@ updateModel = \case
     copyStatus .= Copied
     io $ do
       Platform.delayMs 2000
-      pure ResetCopyStatus
+      pure CopyStatusExpired
 
   FailedCopyLink ->
     pure ()
 
-  ResetCopyStatus ->
+  CopyStatusExpired ->
     copyStatus .= NotCopied
 
   IgnoredKey ->

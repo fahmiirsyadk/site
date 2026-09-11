@@ -4,12 +4,13 @@
 -- | The WebGL mechanics shared by the shader mounts, ported from the source
 -- site's @Platform.Browser.Gl@.
 --
--- Only the calls every mount uses are here: context attributes, program
--- compilation, parameter reads, and context release. Draw calls stay next to
--- the widget that owns them. Like 'Site.Platform', this module is written
--- against "Miso.DSL" rather than @foreign import javascript@, so it compiles
--- for the native test and prerender targets, where the JavaScript primitives
--- are never forced.
+-- Only what every mount uses is here: context attributes, program
+-- compilation, parameter reads, context release, the JavaScript accessors
+-- the widgets read values with, and the retry that covers a transiently
+-- unavailable context. Draw calls stay next to the widget that owns them.
+-- Like 'Site.Platform', this module is written against "Miso.DSL" rather than
+-- @foreign import javascript@, so it compiles for the native test and
+-- prerender targets, where the JavaScript primitives are never forced.
 module Site.Widgets.Gl
   ( -- * Programs
     GlProgram (..)
@@ -21,10 +22,17 @@ module Site.Widgets.Gl
     -- * Contexts
   , releaseContext
   , isContextLost
+  , mountWithRetry
+    -- * JavaScript values
+  , isAbsent
+  , number
+  , int
+  , performanceNow
+    -- * Sequencing
+  , (>>>=)
     -- * Parameters and logging
   , getParameterBool
   , getParameterInt
-  , isAbsent
   , logError
     -- * Constants
     -- | WebGL enums are fixed by the specification and shared by WebGL1 and
@@ -65,18 +73,21 @@ module Site.Widgets.Gl
   , glColorDepthBits
   ) where
 -----------------------------------------------------------------------------
-import           Control.Monad (unless, void)
+import           Control.Monad (unless, void, when)
+import           Data.IORef (IORef, readIORef, writeIORef)
 import           Miso.DSL
   ( JSVal
   , fromJSValUnchecked
-  , isNull
-  , isUndefined
   , jsg
   , jsNull
+  , syncCallback1
   , toJSVal
+  , (!)
   , (#)
   )
 import           Miso.String (MisoString)
+-----------------------------------------------------------------------------
+import           Site.Platform (isAbsent)
 -----------------------------------------------------------------------------
 data GlProgram = GlProgram
   { glProgram  :: JSVal
@@ -214,8 +225,50 @@ getParameterInt gl method object parameter = do
   value <- gl # method $ (object, parameter)
   fromJSValUnchecked value
 -----------------------------------------------------------------------------
-isAbsent :: JSVal -> IO Bool
-isAbsent value = (||) <$> isNull value <*> isUndefined value
+-- | Read @object[key]@ as a number.
+number :: JSVal -> MisoString -> IO Double
+number object key = fromJSValUnchecked =<< object ! key
+-----------------------------------------------------------------------------
+-- | Read @object[key]@ as an integer.
+int :: JSVal -> MisoString -> IO Int
+int object key = fromJSValUnchecked =<< object ! key
+-----------------------------------------------------------------------------
+-- | @performance.now()@, the time base @requestAnimationFrame@ hands back.
+performanceNow :: IO Double
+performanceNow = do
+  performance <- jsg "performance"
+  value <- performance # "now" $ ()
+  fromJSValUnchecked value
+-----------------------------------------------------------------------------
+-- | Chain an action that may have produced nothing into the next one. Used
+-- by the stepwise WebGL builds, where one failed step aborts the mount.
+(>>>=) :: IO (Maybe a) -> (a -> IO (Maybe b)) -> IO (Maybe b)
+action >>>= next = action >>= maybe (pure Nothing) next
+infixl 1 >>>=
+-----------------------------------------------------------------------------
+-- | Attempt @retry@ after 'mountRetryDelayMs' when the context was not
+-- available, up to 'mountRetryAttempts' times. @isMounted@ is re-read on each
+-- wake-up so a mount that landed in the meantime is not duplicated.
+--
+-- Chromium evicts the oldest WebGL context when a page holds too many, and
+-- frees them asynchronously, so the window can be several seconds wide on a
+-- loaded machine.
+mountWithRetry :: IORef Int -> IO Bool -> IO () -> IO ()
+mountWithRetry attemptsRef isMounted retry = do
+  attempts <- readIORef attemptsRef
+  when (attempts < mountRetryAttempts) $ do
+    writeIORef attemptsRef (attempts + 1)
+    window <- jsg "window"
+    callback <- syncCallback1 $ \_ -> do
+      mounted <- isMounted
+      unless mounted retry
+    void $ window # "setTimeout" $ (callback, mountRetryDelayMs :: Int)
+-----------------------------------------------------------------------------
+mountRetryAttempts :: Int
+mountRetryAttempts = 40
+-----------------------------------------------------------------------------
+mountRetryDelayMs :: Int
+mountRetryDelayMs = 500
 -----------------------------------------------------------------------------
 logError :: MisoString -> MisoString -> IO ()
 logError label detail = do

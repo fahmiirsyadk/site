@@ -28,12 +28,15 @@ module Site.Platform
   , resetContentScroll
     -- * Link interception
   , installInternalLinkGuard
+    -- * JavaScript values
+  , isAbsent
   ) where
 -----------------------------------------------------------------------------
 import           Control.Concurrent (threadDelay)
 import           Control.Monad (void, when)
 import           Miso.DSL
-                 ( Object (..)
+                 ( JSVal
+                 , Object (..)
                  , fromJSVal
                  , freeJSVal
                  , isNull
@@ -55,6 +58,11 @@ import qualified Site.Theme as Theme
 delayMs :: Int -> IO ()
 delayMs milliseconds = threadDelay (milliseconds * 1000)
 -----------------------------------------------------------------------------
+-- | True when a JavaScript value is @null@ or @undefined@. Shared by the
+-- platform effects and the widgets so every absence check is the same.
+isAbsent :: JSVal -> IO Bool
+isAbsent value = (||) <$> isNull value <*> isUndefined value
+-----------------------------------------------------------------------------
 -- | @window.matchMedia(query).matches@, defaulting to 'False' when the query
 -- cannot be answered.
 matchMedia :: MisoString -> IO Bool
@@ -74,7 +82,7 @@ prefersReducedMotion = matchMedia "(prefers-reduced-motion: reduce)"
 -----------------------------------------------------------------------------
 -- | Consulted only when @localStorage@ holds no explicit choice.
 prefersDarkColorScheme :: IO Bool
-prefersDarkColorScheme = matchMedia "(prefers-color-scheme: dark)"
+prefersDarkColorScheme = matchMedia Config.prefersDarkQuery
 -----------------------------------------------------------------------------
 -- | The theme the reader should see: the stored choice when valid, the system
 -- preference otherwise. This is the same decision the anti-flash script makes
@@ -96,7 +104,7 @@ applyTheme :: Theme -> IO ()
 applyTheme chosen = do
   element <- jsg "document" >>= (! "documentElement")
   classes <- element ! "classList"
-  void $ classes # "toggle" $ ("dark" :: MisoString, chosen == Dark)
+  void $ classes # "toggle" $ (Config.darkClassName, chosen == Dark)
 -----------------------------------------------------------------------------
 storeTheme :: Theme -> IO ()
 storeTheme chosen = safeStorageSet Config.themeStorageKey (Theme.storageName chosen)
@@ -140,7 +148,7 @@ safeStorageSet key value = do
 resetContentScroll :: IO ()
 resetContentScroll = do
   element <- jsg "document" # "querySelector" $ [Config.contentScrollSelector]
-  absent <- (||) <$> isNull element <*> isUndefined element
+  absent <- isAbsent element
   if absent
     then pure ()
     else void $ element # "scrollTo" $ (0 :: Int, 0 :: Int)
@@ -152,15 +160,15 @@ resetContentScroll = do
 installInternalLinkGuard :: IO ()
 installInternalLinkGuard = do
   document <- jsg "document"
-  old <- document ! internalLinkGuardProperty
-  oldAbsent <- (||) <$> isNull old <*> isUndefined old
+  old <- document ! Config.internalLinkGuardProperty
+  oldAbsent <- isAbsent old
   when (not oldAbsent) $ do
     void $ document # "removeEventListener" $ ("click" :: MisoString, old, True)
     freeJSVal old
   callback <- syncCallback1 $ \event -> do
     target <- event ! "target"
-    anchor <- target # "closest" $ ("a[data-internal-link]" :: MisoString)
-    absent <- (||) <$> isNull anchor <*> isUndefined anchor
+    anchor <- target # "closest" $ Config.internalLinkSelector
+    absent <- isAbsent anchor
     when (not absent) $ do
       button <- (fromJSVal =<< event ! "button") :: IO (Maybe Int)
       ctrl <- (fromJSVal =<< event ! "ctrlKey") :: IO (Maybe Bool)
@@ -170,7 +178,5 @@ installInternalLinkGuard = do
       let primary = maybe True (== 0) button
           modified = any (== Just True) [ctrl, meta, shift, alt]
       when (primary && not modified) (void $ event # "preventDefault" $ ())
-  setProp internalLinkGuardProperty callback (Object document)
+  setProp Config.internalLinkGuardProperty callback (Object document)
   void $ document # "addEventListener" $ ("click" :: MisoString, callback, True)
-  where
-    internalLinkGuardProperty = "__siteMisoInternalLinkGuard"

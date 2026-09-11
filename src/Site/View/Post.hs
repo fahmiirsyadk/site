@@ -61,7 +61,7 @@ postView post status progress =
         ( cover post
           <> [ titleRow post
              , H.div_
-                 [ P.class_ "post-prose prose prose-neutral dark:prose-invert max-w-none prose-headings:font-instrument" ]
+                 [ P.class_ (Config.postProseClass <> " prose prose-neutral dark:prose-invert max-w-none prose-headings:font-instrument") ]
                  (Prose.renderBlocks (Content.postBody post))
              , actionBar post status
              ]
@@ -124,18 +124,18 @@ ditheredCover :: Post -> MisoString -> Node context
 ditheredCover post banner =
   H.div_
     [ P.class_ "dithered-image relative overflow-hidden post-cover rounded-lg"
-    , P.data_ "dithered-image" ""
+    , P.data_ Config.ditheredImageKey ""
     ]
     [ H.img_
         [ P.src_ banner
         , textProp "alt" (Content.postTitle post)
-        , P.data_ "dithered-source" ""
+        , P.data_ Config.ditheredSourceKey ""
         , textProp "loading" "eager"
         , P.class_ "dithered-image-source absolute inset-0 h-full w-full object-cover"
         ]
     , H.canvas_
         [ P.aria_ "hidden" "true"
-        , P.data_ "dithered-canvas" ""
+        , P.data_ Config.ditheredCanvasKey ""
         , P.class_ "cover-canvas block h-full w-full"
         ]
         []
@@ -166,7 +166,7 @@ readingRail progress =
         , P.data_ "reading-progress-tick" (ms value)
         , P.class_ "group absolute right-0 z-30 h-[1%] w-16 cursor-pointer lg:w-20"
         , CSS.style_ [("top", ms value <> "%")]
-        , E.onClick (SetReadingProgress value)
+        , E.onClick (SelectedReadingProgress value)
         ]
         [ H.span_ [ P.class_ (tickMarkerClass headings value <> " top-0") ] [] ]
     bottomTick =
@@ -175,7 +175,7 @@ readingRail progress =
         , P.data_ "reading-progress-tick" "100"
         , P.class_ "group absolute right-0 z-30 h-[1%] w-16 cursor-pointer lg:w-20"
         , CSS.style_ [("bottom", "0px")]
-        , E.onClick (SetReadingProgress 100)
+        , E.onClick (SelectedReadingProgress 100)
         ]
         [ H.span_ [ P.class_ (tickMarkerClass headings 100 <> " bottom-0") ] [] ]
 -----------------------------------------------------------------------------
@@ -224,14 +224,14 @@ keyDecoder = at [] $ withObject "keydown" $ \object -> object .: "key"
 -----------------------------------------------------------------------------
 progressKey :: MisoString -> Action
 progressKey = \case
-  "ArrowUp"    -> MoveReadingProgress (-5)
-  "ArrowLeft"  -> MoveReadingProgress (-5)
-  "ArrowDown"  -> MoveReadingProgress 5
-  "ArrowRight" -> MoveReadingProgress 5
-  "PageUp"     -> MoveReadingProgress (-10)
-  "PageDown"   -> MoveReadingProgress 10
-  "Home"       -> SetReadingProgress 0
-  "End"        -> SetReadingProgress 100
+  "ArrowUp"    -> AdjustedReadingProgress (-5)
+  "ArrowLeft"  -> AdjustedReadingProgress (-5)
+  "ArrowDown"  -> AdjustedReadingProgress 5
+  "ArrowRight" -> AdjustedReadingProgress 5
+  "PageUp"     -> AdjustedReadingProgress (-10)
+  "PageDown"   -> AdjustedReadingProgress 10
+  "Home"       -> SelectedReadingProgress 0
+  "End"        -> SelectedReadingProgress 100
   _            -> IgnoredKey
 -----------------------------------------------------------------------------
 progressHandle :: ReadingProgress -> Node context

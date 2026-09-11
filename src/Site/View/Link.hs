@@ -21,6 +21,7 @@ import           Miso.JSON (withObject, (.:), (.:?))
 import           Miso.Types (Attribute)
 -----------------------------------------------------------------------------
 import           Site.Action (Action (..))
+import qualified Site.Config as Config
 import qualified Site.Model as Model
 import           Site.Route (Route)
 import qualified Site.Route as Route
@@ -54,7 +55,7 @@ internalLink :: Route -> [Attr] -> [Node context] -> Node context
 internalLink target attributes =
   H.a_
     ( P.href_ (Route.routePath target)
-    : P.data_ "internal-link" "true"
+    : P.data_ Config.internalLinkKey "true"
     : on "click" linkClickDecoder (\click _ _ ->
         if interceptableClick click
           then FollowedLink target

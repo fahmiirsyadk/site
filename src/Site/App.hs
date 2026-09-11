@@ -80,5 +80,5 @@ app :: Model -> App Model Action
 app initial = (component initial updateModel viewModel)
   { subs = [ uriSub ChangedURI ]
   , hydrateModel = Just staticBootModel
-  , mount = Just SyncTheme
+  , mount = Just AppMounted
   }

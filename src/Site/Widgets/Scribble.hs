@@ -24,8 +24,6 @@ import           Miso.DSL
   ( JSVal
   , create
   , fromJSValUnchecked
-  , isNull
-  , isUndefined
   , jsg
   , jsNull
   , setField
@@ -37,8 +35,10 @@ import           Miso.DSL
 import           Miso.String (MisoString, ms)
 import           System.IO.Unsafe (unsafePerformIO)
 -----------------------------------------------------------------------------
+import qualified Site.Config as Config
 import           Site.Platform (prefersReducedMotion)
 import           Site.Scribble
+import           Site.Widgets.Gl (isAbsent)
 -----------------------------------------------------------------------------
 data Live = Live
   { livePath         :: JSVal
@@ -60,10 +60,10 @@ attach = do
     Just _  -> pure ()
     Nothing -> do
       document <- jsg "document"
-      container <- document # "querySelector" $ ("[data-random-scribble]" :: MisoString)
+      container <- document # "querySelector" $ Config.scribbleSelector
       containerAbsent <- isAbsent container
       unless containerAbsent $ do
-        path <- container # "querySelector" $ ("[data-random-scribble-path]" :: MisoString)
+        path <- container # "querySelector" $ Config.scribblePathSelector
         pathAbsent <- isAbsent path
         unless pathAbsent (mount path)
 -----------------------------------------------------------------------------
@@ -158,6 +158,3 @@ mathRandom = do
   math <- jsg "Math"
   value <- math # "random" $ ()
   fromJSValUnchecked value
------------------------------------------------------------------------------
-isAbsent :: JSVal -> IO Bool
-isAbsent value = (||) <$> isNull value <*> isUndefined value

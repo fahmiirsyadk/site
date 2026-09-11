@@ -29,6 +29,7 @@ import           Site.Model (Model)
 import qualified Site.Model as Model
 import           Site.Route (Route)
 import           Site.Theme (Theme (..))
+import qualified Site.Theme as Theme
 import           Site.View (viewModel)
 -----------------------------------------------------------------------------
 -- | A complete document for one route: doctype, head, and the same body the
@@ -90,18 +91,20 @@ headNodes version route meta =
 stamp :: MisoString -> MisoString
 stamp version = "?v=" <> version
 -----------------------------------------------------------------------------
--- | Applies the stored or system theme before first paint. The key and the
--- class must match 'Site.Config.themeStorageKey' and 'Site.Platform.applyTheme';
--- a native test asserts the first. The @js@ class gates the pre-dither
--- placeholder in @styles/input.css@, so a no-JS page keeps the plain image.
+-- | Applies the stored or system theme before first paint. Built from the
+-- same constants 'Site.Platform.applyTheme' uses -- the storage key, the
+-- class, and the media query -- so the script cannot drift from the runtime.
+-- The @js@ class gates the pre-dither placeholder in @styles/input.css@, so a
+-- no-JS page keeps the plain image.
 antiFlashScript :: MisoString
 antiFlashScript =
   "(function(){"
   <> "document.documentElement.classList.add('js');"
   <> "var systemDark=false;"
-  <> "try{systemDark=window.matchMedia('(prefers-color-scheme: dark)').matches;}catch(_){}"
+  <> "try{systemDark=window.matchMedia('" <> Config.prefersDarkQuery <> "').matches;}catch(_){}"
   <> "var stored=null;"
-  <> "try{stored=localStorage.getItem('theme');}catch(_){}"
-  <> "var dark=stored==='dark'||(stored!=='light'&&systemDark);"
-  <> "document.documentElement.classList.toggle('dark',dark);"
+  <> "try{stored=localStorage.getItem('" <> Config.themeStorageKey <> "');}catch(_){}"
+  <> "var dark=stored==='" <> Theme.storageName Dark
+  <> "'||(stored!=='" <> Theme.storageName Light <> "'&&systemDark);"
+  <> "document.documentElement.classList.toggle('" <> Config.darkClassName <> "',dark);"
   <> "})()"

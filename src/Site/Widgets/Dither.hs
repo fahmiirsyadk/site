@@ -209,7 +209,7 @@ syncRegistry = do
     forM_ departed $ \entry -> unobservePending observer (entryRoot entry)
     reconcilePending observer
   document <- jsg "document"
-  roots <- document # "querySelectorAll" $ ditherRootSelector
+  roots <- document # "querySelectorAll" $ Config.ditheredImageSelector
   count <- int roots "length"
   case visibilityObserver of
     Just observer ->
@@ -263,11 +263,8 @@ reconcilePending observer = do
 isDitherRoot :: JSVal -> IO Bool
 isDitherRoot root = do
   connected <- fromJSValUnchecked =<< root ! "isConnected"
-  matches <- fromJSValUnchecked =<< (root # "matches" $ ditherRootSelector)
+  matches <- fromJSValUnchecked =<< (root # "matches" $ Config.ditheredImageSelector)
   pure (connected && matches)
-
-ditherRootSelector :: MisoString
-ditherRootSelector = "[data-dithered-image]"
 
 sameNode :: JSVal -> JSVal -> IO Bool
 sameNode left right = fromJSValUnchecked =<< (left # "isSameNode" $ [right])
@@ -411,9 +408,9 @@ visibleBox = do
 -- place with the fallback image visible.
 mountOne :: JSVal -> IO ()
 mountOne root = do
-  void $ root # "setAttribute" $ ("data-dither-initialized" :: MisoString, "true" :: MisoString)
-  image <- root # "querySelector" $ ("img[data-dithered-source]" :: MisoString)
-  canvas <- root # "querySelector" $ ("canvas[data-dithered-canvas]" :: MisoString)
+  void $ root # "setAttribute" $ ("data-" <> Config.ditherInitializedKey, "true" :: MisoString)
+  image <- root # "querySelector" $ Config.ditheredSourceSelector
+  canvas <- root # "querySelector" $ Config.ditheredCanvasSelector
   imageAbsent <- isAbsent image
   canvasAbsent <- isAbsent canvas
   live <- if imageAbsent || canvasAbsent
@@ -422,7 +419,7 @@ mountOne root = do
       prepared <- prepareDitherImage canvas
       case prepared of
         Nothing -> do
-          void $ root # "setAttribute" $ ("data-dither-fallback" :: MisoString, "true" :: MisoString)
+          void $ root # "setAttribute" $ ("data-" <> Config.ditherFallbackKey, "true" :: MisoString)
           pure Nothing
         Just resources -> Just <$> createLive root image canvas resources
   modifyIORef' registryRef (Entry root live :)
@@ -430,13 +427,13 @@ mountOne root = do
 disposeEntry :: Entry -> IO ()
 disposeEntry Entry {..} = do
   forM_ entryLive disposeLive
-  void $ entryRoot # "removeAttribute" $ ("data-dither-initialized" :: MisoString)
-  void $ entryRoot # "removeAttribute" $ ("data-dither-ready" :: MisoString)
-  void $ entryRoot # "removeAttribute" $ ("data-dither-fallback" :: MisoString)
+  void $ entryRoot # "removeAttribute" $ ("data-" <> Config.ditherInitializedKey)
+  void $ entryRoot # "removeAttribute" $ ("data-" <> Config.ditherReadyKey)
+  void $ entryRoot # "removeAttribute" $ ("data-" <> Config.ditherFallbackKey)
 -----------------------------------------------------------------------------
 readInitialized :: JSVal -> IO Bool
 readInitialized root = do
-  value <- root # "getAttribute" $ ("data-dither-initialized" :: MisoString)
+  value <- root # "getAttribute" $ ("data-" <> Config.ditherInitializedKey)
   text <- fromJSValUnchecked value :: IO (Maybe MisoString)
   pure (text == Just "true")
 -----------------------------------------------------------------------------
@@ -586,7 +583,7 @@ registerTheme live = do
   element <- document ! "documentElement"
   callback <- syncCallback1 $ \_ -> do
     refreshInk live
-    timestamp <- nowTimestamp
+    timestamp <- performanceNow
     renderAt live timestamp
   options <- create
   setField options "attributes" True
@@ -628,9 +625,9 @@ handleContextLost live event = do
       , dsReady = False
       }
     stopLoop live
-    void $ liveRoot live # "removeAttribute" $ ("data-dither-ready" :: MisoString)
+    void $ liveRoot live # "removeAttribute" $ ("data-" <> Config.ditherReadyKey)
     void $ liveRoot live # "setAttribute" $
-      ("data-dither-fallback" :: MisoString, "true" :: MisoString)
+      ("data-" <> Config.ditherFallbackKey, "true" :: MisoString)
 
 -- | Rebuild the resources invalidated by a context loss. The DOM node and its
 -- observers remain owned by the same entry, so a restored image does not
@@ -650,7 +647,7 @@ handleContextRestored live = do
           , dsUploaded = False
           , dsReady = False
           }
-        void $ liveRoot live # "removeAttribute" $ ("data-dither-fallback" :: MisoString)
+        void $ liveRoot live # "removeAttribute" $ ("data-" <> Config.ditherFallbackKey)
         refreshInk live
         complete <- imageComplete (liveImage live)
         when complete (loadImage live)
@@ -750,7 +747,7 @@ redrawNow live = do
       && sourceWidth > 0
       && sourceHeight > 0
       ) $ do
-    timestamp <- nowTimestamp
+    timestamp <- performanceNow
     ink <- readIORef (liveInk live)
     resources <- readIORef (liveResources live)
     forM_ resources $ \value -> do
@@ -761,7 +758,7 @@ redrawNow live = do
       -- crossfade and the pre-dither placeholder both key off this.
       unless (dsReady state) $
         void $ liveRoot live # "setAttribute" $
-          ("data-dither-ready" :: MisoString, "true" :: MisoString)
+          ("data-" <> Config.ditherReadyKey, "true" :: MisoString)
 -----------------------------------------------------------------------------
 -- | Drawing is gated to ~20fps; the loop keeps scheduling in between. With
 -- reduced motion one frame is enough, so the tick stops itself.
@@ -881,12 +878,6 @@ devicePixelRatio = do
   window <- jsg "window"
   number window "devicePixelRatio"
 -----------------------------------------------------------------------------
-nowTimestamp :: IO Double
-nowTimestamp = do
-  performance <- jsg "performance"
-  value <- performance # "now" $ ()
-  fromJSValUnchecked value
------------------------------------------------------------------------------
 computedStyleValue :: JSVal -> MisoString -> IO MisoString
 computedStyleValue element property = do
   window <- jsg "window"
@@ -900,12 +891,6 @@ setAspectRatio :: JSVal -> Double -> Double -> IO ()
 setAspectRatio element width height = do
   style <- element ! "style"
   setField style "aspectRatio" (ms (show width) <> " / " <> ms (show height))
------------------------------------------------------------------------------
-number :: JSVal -> MisoString -> IO Double
-number object key = fromJSValUnchecked =<< object ! key
------------------------------------------------------------------------------
-int :: JSVal -> MisoString -> IO Int
-int object key = fromJSValUnchecked =<< object ! key
 -----------------------------------------------------------------------------
 unlessM :: IO Bool -> IO () -> IO ()
 unlessM condition action = condition >>= \result -> unless result action

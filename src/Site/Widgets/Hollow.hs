@@ -15,6 +15,7 @@ module Site.Widgets.Hollow
   ) where
 -----------------------------------------------------------------------------
 import           Control.Monad (forM_, unless, void, when)
+import           Data.Maybe (isJust)
 import           Data.IORef
   ( IORef
   , modifyIORef'
@@ -41,6 +42,7 @@ import           Miso.String (MisoString)
 import           System.IO.Unsafe (unsafePerformIO)
 -----------------------------------------------------------------------------
 import           Site.Canvas (rasterLayout, rasterCanvasHeight, rasterCanvasWidth)
+import qualified Site.Config as Config
 import           Site.Hollow
 import           Site.HollowGeometry (hollowVertexCount)
 import           Site.Platform (prefersReducedMotion)
@@ -113,7 +115,7 @@ attach = do
     Just _  -> pure ()
     Nothing -> do
       document <- jsg "document"
-      canvas <- document # "querySelector" $ (".hollow-mark" :: MisoString)
+      canvas <- document # "querySelector" $ Config.hollowMarkSelector
       absent <- isAbsent canvas
       unless absent (mount canvas)
 -----------------------------------------------------------------------------
@@ -155,17 +157,7 @@ mount canvas = do
           writeIORef hollowRef (Just live)
 -----------------------------------------------------------------------------
 retryMount :: IO ()
-retryMount = do
-  attempts <- readIORef retryRef
-  when (attempts < 40) $ do
-    writeIORef retryRef (attempts + 1)
-    window <- jsg "window"
-    callback <- syncCallback1 $ \_ -> do
-      current <- readIORef hollowRef
-      case current of
-        Just _  -> pure ()
-        Nothing -> attach
-    void $ window # "setTimeout" $ (callback, 500 :: Int)
+retryMount = mountWithRetry retryRef (isJust <$> readIORef hollowRef) attach
 -----------------------------------------------------------------------------
 createWebGlContext :: JSVal -> IO (Maybe JSVal)
 createWebGlContext canvas = do
@@ -177,10 +169,6 @@ createWebGlContext canvas = do
   context <- canvas # "getContext" $ ("webgl" :: MisoString, options)
   absent <- isAbsent context
   pure (if absent then Nothing else Just context)
------------------------------------------------------------------------------
-(>>>=) :: IO (Maybe a) -> (a -> IO (Maybe b)) -> IO (Maybe b)
-action >>>= next = action >>= maybe (pure Nothing) next
-infixl 1 >>>=
 -----------------------------------------------------------------------------
 build :: JSVal -> JSVal -> IO (Maybe HollowLive)
 build canvas gl =
@@ -267,7 +255,7 @@ createLive canvas gl program buffer texture = do
   uniformAspect <- getUniformLocation gl (glProgram program) "u_aspect"
   uniformTime <- getUniformLocation gl (glProgram program) "u_time"
   uniformLabHover <- getUniformLocation gl (glProgram program) "u_lab_hover"
-  startedAt <- now
+  startedAt <- performanceNow
   reduceMotion <- prefersReducedMotion
   hover <- readLabHover canvas
   state <- newIORef (initialHollowState startedAt)
@@ -337,17 +325,12 @@ loadMoon live = do
   setField (hollowImage live) "src"
     ("/assets/images/lroc-color-1k.webp" :: MisoString)
 -----------------------------------------------------------------------------
-now :: IO Double
-now = do
-  performance <- jsg "performance"
-  value <- performance # "now" $ ()
-  fromJSValUnchecked value
 -----------------------------------------------------------------------------
 readLabHover :: JSVal -> IO Double
 readLabHover canvas = do
-  value <- canvas # "getAttribute" $ ("data-lab-interaction" :: MisoString)
+  value <- canvas # "getAttribute" $ ("data-" <> Config.labInteractionKey)
   text <- fromJSValUnchecked value :: IO (Maybe MisoString)
-  pure (if text == Just "hovered" then 1.0 else 0.0)
+  pure (if text == Just Config.labInteractionHovered then 1.0 else 0.0)
 -----------------------------------------------------------------------------
 applyLayout :: HollowLive -> IO ()
 applyLayout live = do
@@ -468,7 +451,7 @@ capturePointer canvas event = do
 -----------------------------------------------------------------------------
 markDragging :: HollowLive -> MisoString -> IO ()
 markDragging live value =
-  void $ hollowCanvas live # "setAttribute" $ ("data-dragging" :: MisoString, value)
+  void $ hollowCanvas live # "setAttribute" $ ("data-" <> Config.hollowDraggingKey, value)
 -----------------------------------------------------------------------------
 handlePointer :: HollowLive -> HollowPointerKind -> JSVal -> IO ()
 handlePointer live kind event = do
@@ -478,7 +461,7 @@ handlePointer live kind event = do
   width <- fromJSValUnchecked =<< rect ! "width"
   x <- fromJSValUnchecked =<< event ! "clientX"
   y <- fromJSValUnchecked =<< event ! "clientY"
-  timestamp <- now
+  timestamp <- performanceNow
   state <- readIORef (hollowState live)
   writeIORef (hollowState live)
     (hollowPointer
@@ -551,5 +534,5 @@ emitVisibility live = do
 -----------------------------------------------------------------------------
 renderNow :: HollowLive -> IO ()
 renderNow live = do
-  timestamp <- now
+  timestamp <- performanceNow
   drawFrame live timestamp

@@ -106,7 +106,7 @@ routeContent :: Model -> Node context
 routeContent model =
   H.div_
     [ P.id_ Config.pageViewId
-    , P.data_ "route-motion" (Model.motionName (_motion model))
+    , P.data_ Config.routeMotionKey (Model.motionName (_motion model))
     , P.class_ "route-content mt-7"
     ]
     [ pageContent model ]
@@ -120,8 +120,8 @@ siteHeader model =
         -- The hollow mark is a WebGL canvas; the widget mounts from these
         -- hooks and reads the lab interaction attribute.
         [ H.canvas_
-            [ P.class_ "hollow-mark"
-            , P.data_ "lab-interaction" (Model.labInteractionName model)
+            [ P.class_ Config.hollowMarkClass
+            , P.data_ Config.labInteractionKey (Model.labInteractionName model)
             , P.role_ "img"
             , textProp "aria-label" "Faah hollow mark"
             , onCreated HollowMounted

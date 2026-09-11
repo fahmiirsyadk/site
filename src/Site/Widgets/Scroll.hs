@@ -17,11 +17,8 @@ import           Control.Monad (forM, unless, void)
 import           Data.Char (digitToInt)
 import           Prelude hiding ((!!))
 import           Miso.DSL
-  ( JSVal
-  , create
+  ( create
   , fromJSValUnchecked
-  , isNull
-  , isUndefined
   , jsg
   , setField
   , (!)
@@ -33,12 +30,7 @@ import           Miso.String (MisoString, unpack)
 import qualified Site.Config as Config
 import           Site.Platform (prefersReducedMotion)
 import           Site.Scroll
------------------------------------------------------------------------------
-headingSelector :: MisoString
-headingSelector = "h2, h3, h4"
------------------------------------------------------------------------------
-contentSelector :: MisoString
-contentSelector = ".post-prose"
+import           Site.Widgets.Gl (int, isAbsent, number)
 -----------------------------------------------------------------------------
 -- | Measure the scroll container, its content, and every anchored heading,
 -- then resolve the rail percentages. Returns an empty progress when the post
@@ -47,7 +39,7 @@ measureReadingProgress :: IO ReadingProgress
 measureReadingProgress = do
   document <- jsg "document"
   root <- document # "querySelector" $ Config.contentScrollSelector
-  content <- document # "querySelector" $ contentSelector
+  content <- document # "querySelector" $ Config.postProseSelector
   rootAbsent <- isAbsent root
   contentAbsent <- isAbsent content
   if rootAbsent || contentAbsent
@@ -58,7 +50,7 @@ measureReadingProgress = do
       clientHeight <- number root "clientHeight"
       rootRect <- root # "getBoundingClientRect" $ ()
       rootTop <- number rootRect "top"
-      nodes <- content # "querySelectorAll" $ headingSelector
+      nodes <- content # "querySelectorAll" $ Config.postHeadingSelector
       count <- int nodes "length"
       headings <- forM [0 .. count - 1] $ \index -> do
         node <- nodes !! index
@@ -97,18 +89,9 @@ scrollToProgress percent = do
       (if reduced then "auto" else "smooth" :: MisoString)
     void $ root # "scrollTo" $ [options]
 -----------------------------------------------------------------------------
-number :: JSVal -> MisoString -> IO Double
-number object key = fromJSValUnchecked =<< object ! key
------------------------------------------------------------------------------
-int :: JSVal -> MisoString -> IO Int
-int object key = fromJSValUnchecked =<< object ! key
------------------------------------------------------------------------------
 -- | @H2@ -> 2. Anything unexpected falls back to the outermost level, which
 -- is the base tick class.
 levelFromTagName :: MisoString -> Int
 levelFromTagName tagName = case unpack tagName of
   ('H' : digit : _) | digit >= '2' && digit <= '4' -> digitToInt digit
   _ -> 2
------------------------------------------------------------------------------
-isAbsent :: JSVal -> IO Bool
-isAbsent value = (||) <$> isNull value <*> isUndefined value

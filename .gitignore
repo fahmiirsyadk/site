@@ -1,11 +1,19 @@
-# Node / TypeScript toolchain
-node_modules/
-package-lock.json
+# Editor / OS
+*~
+
+# Build output
+dist*
+result
+public
+generated
+node_modules
+.wrangler/
+
+# Node tooling
 npm-debug.log*
-dist/
 .vite/
 
-# PureScript / Spago generated output
+# Pre-migration PureScript / Spago output
 .spago/
 /corefn/
 output/

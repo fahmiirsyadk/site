@@ -1,11 +1,11 @@
-.PHONY: all update content shaders geometry css watch-css build optim prerender serve test
+.PHONY: all update content shaders geometry css watch-css build optim prerender serve test watch watch-preview
 
 # Two supported ways to run:
-#   * plain `make all` from the host: each phase crosses into the flake shell
-#     it needs (the WASM build, the native shell for prerender/tests);
-#   * `nix develop .#wasm --command make all` (the interactive habit): the
-#     WASM toolchain is already on PATH, native phases use the host GHC when
-#     present and only fall back to a nested native shell otherwise.
+#   * plain `make all` from the host: every phase crosses into the flake shell
+#     it needs (the WASM toolchain, the native shell for prerender/tests, and
+#     the WASM shell again for Node/npm), so the host needs only `nix`;
+#   * `nix develop .#wasm --command make all`: the WASM toolchain, Node and npm
+#     are already on PATH, and the native phases cross into the default shell.
 # GNU Make drops `#` as a comment in variable assignments, so the flake
 # attribute needs `.\#wasm`.
 WASM_SHELL   := nix develop .\#wasm --command
@@ -14,18 +14,20 @@ GHCJS_SHELL  := nix develop .\#ghcjs --command
 
 ifeq ($(NIX_ENFORCE_NO_NATIVE),1)
 WASM_RUN      :=
+NODE_RUN      :=
 GHCJS_RUN     :=
-# The host GHC cannot link against its GMP from inside the WASM shell, so the
-# native phases cross into the default flake shell instead. Its evaluation is
-# cached, so this is a few seconds, not a second toolchain build.
-NATIVE_CABAL  := nix develop . --command cabal
-NATIVE_RUNGHC := nix develop . --command runghc
 else
 WASM_RUN      := $(WASM_SHELL)
+NODE_RUN      := $(WASM_SHELL)
 GHCJS_RUN     := $(GHCJS_SHELL)
-NATIVE_CABAL  := cabal
-NATIVE_RUNGHC := runghc
 endif
+
+# Native phases always cross into the default flake shell: the host GHC cannot
+# link against its GMP from inside the WASM shell, and the host needs only
+# `nix`, not a GHC of its own. The shell evaluation is cached, so this is a few
+# seconds, not a second toolchain build.
+NATIVE_CABAL  := $(NATIVE_SHELL) cabal
+NATIVE_RUNGHC := $(NATIVE_SHELL) runghc
 
 CABAL_ARGS += --allow-newer=base,template-haskell --with-compiler=wasm32-wasi-ghc --with-hc-pkg=wasm32-wasi-ghc-pkg --with-hsc2hs=wasm32-wasi-hsc2hs --with-haddock=wasm32-wasi-haddock
 RELEASE_CHANNEL := https://gitlab.haskell.org/haskell-wasm/ghc-wasm-meta/-/raw/master/ghcup-wasm-0.0.9.yaml
@@ -48,10 +50,10 @@ update:
 # shaders, and packs the hollow mesh. Any cabal build of the library needs
 # these modules, so they run before build and test.
 content: shaders geometry
-	node scripts/content/generate.mjs
+	$(NODE_RUN) node scripts/content/generate.mjs
 
 shaders:
-	node scripts/shaders/generate.mjs
+	$(NODE_RUN) node scripts/shaders/generate.mjs
 
 geometry: generated/Site/Widgets/HollowGeometry.hs
 
@@ -62,16 +64,23 @@ generated/Site/Widgets/HollowGeometry.hs: src/Site/HollowGeometry.hs scripts/hol
 	$(NATIVE_RUNGHC) -isrc scripts/hollow/Generate.hs
 
 css:
-	npm run build:css
+	$(NODE_RUN) npm run build:css
 
 watch-css:
-	npm run watch:css
+	$(NODE_RUN) npm run watch:css
 
 repl: content css update
 	$(WASM_RUN) wasm32-wasi-cabal repl app -finteractive --repl-options='-fghci-browser -fghci-browser-port=8080'
 
 watch: content
 	$(WASM_RUN) ghciwatch --after-startup-ghci :main --before-reload-ghci 'make content' --after-reload-ghci :main --watch app --watch src --watch content --watch shaders --debounce 50ms --command 'wasm32-wasi-cabal repl app -finteractive --repl-options="-fghci-browser -fghci-browser-port=8080"'
+
+# Production-parity live preview: watches the sources and runs the real
+# `make build` + `make prerender` on change, served on port 8080. CSS edits
+# skip the rebuild and only rerun Tailwind. `optim` is deliberately left out;
+# run `make all` before shipping.
+watch-preview: content css
+	$(NODE_RUN) node scripts/watch-preview.mjs
 
 build: content css
 	$(WASM_RUN) bash -c 'set -e; \

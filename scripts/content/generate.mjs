@@ -462,7 +462,6 @@ const generate = async () => {
     '{-# LANGUAGE OverloadedStrings #-}',
     'module Site.Content.Generated (posts) where',
     '',
-    'import Miso.String (MisoString)',
     'import Site.Content.Types (Post (..), TocEntry (..))',
     'import Site.Prose (Block (..), Footnote (..), Inline (..))',
     '',

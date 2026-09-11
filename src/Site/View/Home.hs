@@ -68,7 +68,7 @@ introduction status =
 thinkingAbout :: Node context
 thinkingAbout =
   H.span_
-    [ P.data_ "random-scribble" "true"
+    [ P.data_ Config.scribbleKey "true"
     , P.class_ "thinking-scribble"
     , onCreated ScribbleMounted
     , onBeforeDestroyed ScribbleDisposed
@@ -80,7 +80,7 @@ thinkingAbout =
         , P.class_ "thinking-scribble-svg"
         ]
         [ S.path_
-            [ P.data_ "random-scribble-path" "true"
+            [ P.data_ Config.scribblePathKey "true"
             , SP.d_ "M8 38Q12 8 43 12 76 16 57 45 38 70 20 48 0 24 47 6 92-4 111 25 128 52 83 51 35 49 61 13 84-12 105 36 118 72 68 61 17 50 31 17 41-8 79 17 112 38 75 66 35 82 14 43-2 13 49 20 103 27 88 55 73 78 42 47 12 17 55 5 98-5 119 31 129 60 82 42 37 24 47 59 55 79 91 53 122 32 97 14 71-4 28 31 5 54 52 67 100 76 109 38 116 6 66 25 22 43 41 8 62-10 89 30 108 58 65 55 26 52 21 31 17 9 60 16 104 22 93 48 80 70 48 40 22 15 71 7 116 1 119 39 120 68 72 48 29 31 8 38"
             , SP.stroke_ "currentColor"
             , SP.strokeWidth_ "5.5"

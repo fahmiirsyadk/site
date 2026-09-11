@@ -32,8 +32,8 @@ data Action
   -- ^ The entry delay completed. The version guards stale entry timers before
   -- allowing the current page to transition in.
   | ToggledTheme
-  | SyncTheme
-  -- ^ The component mounted; read the stored or system theme.
+  | AppMounted
+  -- ^ The shell mounted; read the stored or system theme.
   | AdoptedTheme Theme
   -- ^ The theme read at mount, ready to make the model agree with the class
   -- the anti-flash script already applied.
@@ -55,13 +55,16 @@ data Action
   -- not bubble.
   | MeasuredReadingProgress ReadingProgress
   -- ^ A fresh measurement of the reading rail's geometry.
-  | SetReadingProgress Int
-  | MoveReadingProgress Int
-  -- ^ Rail clicks and keyboard steps.
+  | SelectedReadingProgress Int
+  -- ^ The reader picked an exact position on the rail, by click or by
+  -- @Home@/@End@.
+  | AdjustedReadingProgress Int
+  -- ^ The reader stepped the rail by a delta, with the arrow or page keys.
   | ClickedCopyLink MisoString
   | CopiedLink
   | FailedCopyLink
-  | ResetCopyStatus
+  | CopyStatusExpired
+  -- ^ The copy confirmation's reset timer elapsed.
   | IgnoredKey
   -- ^ A key on the reading slider that has no binding.
   | ScribbleMounted

@@ -50,8 +50,10 @@ module Site.Model
 import           Miso.Lens (Lens, lens)
 import           Miso.String (MisoString)
 -----------------------------------------------------------------------------
+import qualified Site.Config as Config
 import           Site.GitHub (Contributions, Profile)
 import           Site.Route (Route (..))
+import qualified Site.Route as Route
 import           Site.Scroll (ReadingProgress, emptyReadingProgress)
 import           Site.Theme (Theme (..))
 -----------------------------------------------------------------------------
@@ -188,11 +190,7 @@ currentRoute = routeForPage . _page
 -- wins, otherwise being on the lab page counts as engagement.
 labInteractionName :: Model -> MisoString
 labInteractionName model
-  | _labHover model = "hovered"
-  | activeSection (currentRoute model) == "lab" = "hovered"
-  | otherwise = "idle"
-  where
-    activeSection = \case
-      Section section -> section
-      Post section _  -> section
-      _               -> ""
+  | _labHover model = Config.labInteractionHovered
+  | Route.activeSection (currentRoute model) == Config.labSection =
+      Config.labInteractionHovered
+  | otherwise = Config.labInteractionIdle
