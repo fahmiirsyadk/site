@@ -80,7 +80,7 @@ standardBody model =
                     (\() _ _ -> ScrolledContent)
                 ]
                 [ H.div_
-                    [ P.class_ "w-full max-w-3xl shrink-0 text-left" ]
+                    [ P.class_ "w-full max-w-lg shrink-0 text-left" ]
                     [ siteHeader model
                     , routeContent model
                     ]
@@ -108,7 +108,7 @@ routeContent model =
   H.div_
     [ P.id_ Config.pageViewId
      , P.data_ Config.routeMotionKey (Model.motionName (Model.navigationMotion (_navigation model)))
-    , P.class_ "route-content mt-7"
+     , P.class_ "route-content mt-7"
     ]
     [ pageContent model ]
 -----------------------------------------------------------------------------

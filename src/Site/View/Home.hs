@@ -40,7 +40,7 @@ introduction status =
   H.section_
     [ P.class_ "w-full" ]
     [ H.div_
-        [ P.class_ "max-w-[32rem] space-y-3 text-[13px] leading-[1.7] text-ink dark:text-neutral-200" ]
+        [ P.class_ "space-y-3 text-[13px] leading-[1.7] text-ink dark:text-neutral-200" ]
         [ H.p_ []
             [ text "Frontend engineer from Indonesia. I build interfaces and developer tools, with equal interest in how software feels and how it works." ]
         , H.p_ []
