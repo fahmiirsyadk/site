@@ -70,6 +70,8 @@ data Action
   -- @Home@/@End@.
   | AdjustedReadingProgress Int
   -- ^ The reader stepped the rail by a delta, with the arrow or page keys.
+  | ReadingSliderMounted Element
+  | ReadingSliderDisposed Element
   | ClickedCopyLink MisoString
    | CopiedLink PostRequest
    | FailedCopyLink PostRequest

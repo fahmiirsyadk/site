@@ -66,9 +66,9 @@ applicationBody model =
 standardBody :: Model -> Node context
 standardBody model =
   H.div_
-    [ P.class_ "min-h-screen bg-paper text-ink antialiased dark:bg-neutral-950 dark:text-neutral-100" ]
+    [ P.class_ "h-dvh max-h-dvh overflow-hidden bg-paper text-ink antialiased dark:bg-neutral-950 dark:text-neutral-100" ]
     [ H.div_
-        [ P.class_ "flex min-h-screen w-full flex-col md:h-screen md:max-h-screen md:flex-row md:overflow-hidden" ]
+        [ P.class_ "flex h-full w-full flex-col overflow-hidden md:flex-row" ]
         [ H.main_
             [ P.class_ "flex h-full min-h-0 min-w-0 flex-1 flex-col border-t border-hairline bg-white dark:border-neutral-800 dark:bg-neutral-900 md:border-t-0" ]
             [ H.div_

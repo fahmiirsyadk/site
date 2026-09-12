@@ -221,6 +221,12 @@ updateModel widgets = \case
   IgnoredKey ->
     pure ()
 
+  ReadingSliderMounted (Element element) ->
+    io_ (Browser.mountElement (Widgets.readingSlider widgets) element)
+
+  ReadingSliderDisposed (Element element) ->
+    io_ (Browser.disposeElement (Widgets.readingSlider widgets) element)
+
   ScribbleMounted (Element element) ->
     io_ (Browser.mountElement (Widgets.scribble widgets) element)
 

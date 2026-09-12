@@ -15,11 +15,10 @@ import           Miso (text)
 import qualified Miso.CSS as CSS
 import           Miso.Event
   ( Decoder
-  , Options (..)
-  , Phase (BUBBLE)
   , at
-  , defaultOptions
-  , onWithOptions
+  , on
+  , onBeforeDestroyedWith
+  , onCreatedWith
   )
 import           Miso.Html.Element as H
 import           Miso.Html.Event as E
@@ -28,7 +27,7 @@ import           Miso.JSON (withObject, (.:))
 import           Miso.Property (textProp)
 import           Miso.String (MisoString, fromMisoString, ms)
 -----------------------------------------------------------------------------
-import           Site.Action (Action (..))
+import           Site.Action (Action (..), Element (..))
 import qualified Site.Config as Config
 import           Site.Content (Post)
 import qualified Site.Content as Content
@@ -36,7 +35,12 @@ import           Site.Model (CopyStatus (..))
 import qualified Site.Prose as Prose
 import           Site.Route (Route (..))
 import qualified Site.Route as Route
-import           Site.Scroll (HeadingPosition (..), ReadingProgress (..))
+import           Site.Scroll
+  ( HeadingPosition (..)
+  , ProgressCommand (..)
+  , ReadingProgress (..)
+  , progressCommand
+  )
 import           Site.View.Icons
   ( chainLinkIcon
   , checkIcon
@@ -215,27 +219,20 @@ progressSlider progress =
     , P.class_ "peer absolute inset-y-0 -right-2 z-20 w-16 cursor-pointer touch-manipulation outline-none"
     , P.role_ "slider"
     , P.tabindex_ "0"
-    , onWithOptions BUBBLE preventDefaultOptions "keydown" keyDecoder (\key _ _ -> progressKey key)
+    , on "keydown" keyDecoder (\key _ _ -> progressAction key)
+    , onCreatedWith (ReadingSliderMounted . Element)
+    , onBeforeDestroyedWith (ReadingSliderDisposed . Element)
     ]
     []
------------------------------------------------------------------------------
-preventDefaultOptions :: Options
-preventDefaultOptions = defaultOptions { _preventDefault = True }
 -----------------------------------------------------------------------------
 keyDecoder :: Decoder MisoString
 keyDecoder = at [] $ withObject "keydown" $ \object -> object .: "key"
 -----------------------------------------------------------------------------
-progressKey :: MisoString -> Action
-progressKey = \case
-  "ArrowUp"    -> AdjustedReadingProgress (-5)
-  "ArrowLeft"  -> AdjustedReadingProgress (-5)
-  "ArrowDown"  -> AdjustedReadingProgress 5
-  "ArrowRight" -> AdjustedReadingProgress 5
-  "PageUp"     -> AdjustedReadingProgress (-10)
-  "PageDown"   -> AdjustedReadingProgress 10
-  "Home"       -> SelectedReadingProgress 0
-  "End"        -> SelectedReadingProgress 100
-  _            -> IgnoredKey
+progressAction :: MisoString -> Action
+progressAction key = case progressCommand key of
+  Just (AdjustBy delta)    -> AdjustedReadingProgress delta
+  Just (SelectAt position) -> SelectedReadingProgress position
+  Nothing                  -> IgnoredKey
 -----------------------------------------------------------------------------
 progressHandle :: ReadingProgress -> Node context
 progressHandle progress =

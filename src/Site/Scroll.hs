@@ -1,4 +1,6 @@
 -----------------------------------------------------------------------------
+{-# LANGUAGE OverloadedStrings #-}
+-----------------------------------------------------------------------------
 -- | The reading rail's math, ported from the source's @Runtime.Scroll@.
 --
 -- Pure: it turns a measured geometry into percentages. The DOM measurement
@@ -8,6 +10,7 @@ module Site.Scroll
   , Geometry (..)
   , HeadingPosition (..)
   , ReadingProgress (..)
+  , ProgressCommand (..)
   , emptyReadingProgress
   , headingAnchorRatio
   , headingOffset
@@ -16,7 +19,10 @@ module Site.Scroll
   , readingProgress
   , progressScrollTarget
   , headingScrollTarget
+  , progressCommand
   ) where
+-----------------------------------------------------------------------------
+import           Miso.String (MisoString)
 -----------------------------------------------------------------------------
 -- | One heading as measured: where it sits right now.
 data HeadingGeometry = HeadingGeometry
@@ -44,6 +50,23 @@ data ReadingProgress = ReadingProgress
   { readingPercent  :: Int
   , readingHeadings :: [HeadingPosition]
   } deriving (Show, Eq)
+-----------------------------------------------------------------------------
+data ProgressCommand
+  = AdjustBy Int
+  | SelectAt Int
+  deriving (Show, Eq)
+-----------------------------------------------------------------------------
+progressCommand :: MisoString -> Maybe ProgressCommand
+progressCommand key = case key of
+  "ArrowUp"    -> Just (AdjustBy (-5))
+  "ArrowLeft"  -> Just (AdjustBy (-5))
+  "ArrowDown"  -> Just (AdjustBy 5)
+  "ArrowRight" -> Just (AdjustBy 5)
+  "PageUp"     -> Just (AdjustBy (-10))
+  "PageDown"   -> Just (AdjustBy 10)
+  "Home"       -> Just (SelectAt 0)
+  "End"        -> Just (SelectAt 100)
+  _            -> Nothing
 -----------------------------------------------------------------------------
 emptyReadingProgress :: ReadingProgress
 emptyReadingProgress = ReadingProgress

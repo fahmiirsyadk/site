@@ -556,6 +556,12 @@ scrollSpec _ checkEq = do
           (Scroll.progressScrollTarget 2000 500)
   checkEq "heading target applies the 128px offset" 1172.0
           (Scroll.headingScrollTarget 500 100 900)
+  checkEq "ArrowUp maps to an adjustment"
+          (Just (Scroll.AdjustBy (-5)))
+          (Scroll.progressCommand "ArrowUp")
+  checkEq "Tab is not a slider command"
+          Nothing
+          (Scroll.progressCommand "Tab")
 -----------------------------------------------------------------------------
 -- | The GitHub card's JSON shapes and the last-56 derivation.
 gitHubSpec :: Check -> CheckEq -> IO ()
