@@ -13,7 +13,17 @@ import { spawn } from 'node:child_process'
 import { copyFileSync, watch } from 'node:fs'
 import { join } from 'node:path'
 
-const WATCH_DIRS = ['content', 'shaders', 'styles', 'src', 'app', 'static']
+const WATCH_DIRS = [
+  'content',
+  'content-core',
+  'content-compiler',
+  'scripts/content',
+  'shaders',
+  'styles',
+  'src',
+  'app',
+  'static',
+]
 const DEBOUNCE_MS = 300
 const PORT = '8080'
 

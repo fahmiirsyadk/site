@@ -78,13 +78,13 @@ titleRow post =
     [ P.class_ "flex w-full min-w-0 items-center gap-3 text-[12px] leading-[1.7]" ]
     [ H.h1_
         [ P.class_ "min-w-0 font-instrument text-2xl leading-tight text-balance text-ink dark:text-neutral-100" ]
-        [ text (Content.postTitle post) ]
+         [ text (ms (Content.postTitle post)) ]
     , H.span_
         [ P.class_ "min-h-px min-w-6 flex-1 border-b border-neutral-300 dark:border-neutral-600" ]
         []
     , H.span_
         [ P.class_ "shrink-0 text-right text-neutral-600 dark:text-neutral-400" ]
-        [ text (Content.postDateLabel post) ]
+         [ text (ms (Content.postDateLabel post)) ]
     ]
 -----------------------------------------------------------------------------
 cover :: Post -> [Node context]
@@ -93,7 +93,7 @@ cover post
   | isNativeMedia banner = [ nativeCover post banner ]
   | otherwise = [ ditheredCover post banner ]
   where
-    banner = Content.postBanner post
+    banner = ms (Content.postBanner post)
 -----------------------------------------------------------------------------
 nativeCover :: Post -> MisoString -> Node context
 nativeCover post banner =
@@ -107,13 +107,13 @@ nativeCover post banner =
           , textProp "loop" "true"
           , textProp "playsinline" "true"
           , P.preload_ "metadata"
-          , textProp "aria-label" (Content.postTitle post)
+           , textProp "aria-label" (ms (Content.postTitle post))
           , P.class_ "post-cover-media"
           ]
           []
         else H.img_
           [ P.src_ banner
-          , textProp "alt" (Content.postTitle post)
+           , textProp "alt" (ms (Content.postTitle post))
           , textProp "loading" "eager"
           , P.class_ "post-cover-media"
           ]
@@ -130,7 +130,7 @@ ditheredCover post banner =
     ]
     [ H.img_
         [ P.src_ banner
-        , textProp "alt" (Content.postTitle post)
+         , textProp "alt" (ms (Content.postTitle post))
         , P.data_ Config.ditheredSourceKey ""
         , textProp "loading" "eager"
         , P.class_ "dithered-image-source absolute inset-0 h-full w-full object-cover"
@@ -273,7 +273,7 @@ actionBar post status =
     ]
   where
     canonical =
-      Config.siteUrl <> Route.routePath (Post (Content.postSection post) (Content.postSlug post))
+      Config.siteUrl <> Route.routePath (Post (Content.postSection post) (ms (Content.postSlug post)))
 -----------------------------------------------------------------------------
 copyAriaLabel :: CopyStatus -> MisoString
 copyAriaLabel = \case
@@ -305,7 +305,7 @@ postNavigation post
   where
     (older, newer) = Content.neighboringPosts post
     link right neighbor =
-      internalLink (Post (Content.postSection neighbor) (Content.postSlug neighbor))
+      internalLink (Post (Content.postSection neighbor) (ms (Content.postSlug neighbor)))
         [ P.class_
             ( "group flex flex-col gap-1 rounded-md border border-hairline px-4 py-3 no-underline transition-colors hover:border-coral dark:border-neutral-800 "
                 <> if right then "items-end text-right" else "items-start text-left"
@@ -316,5 +316,5 @@ postNavigation post
             [ text (if right then "Newer" else "Older") ]
         , H.span_
             [ P.class_ "font-instrument text-[15px] leading-snug text-ink group-hover:text-coral dark:text-neutral-200 dark:group-hover:text-coral-bright" ]
-            [ text (Content.postTitle neighbor) ]
+             [ text (ms (Content.postTitle neighbor)) ]
         ]

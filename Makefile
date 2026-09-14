@@ -50,7 +50,7 @@ update:
 # shaders, and packs the hollow mesh. Any cabal build of the library needs
 # these modules, so they run before build and test.
 content: shaders geometry
-	$(NODE_RUN) node scripts/content/generate.mjs
+	$(NATIVE_CABAL) run exe:content-compiler
 
 shaders:
 	$(NODE_RUN) node scripts/shaders/generate.mjs

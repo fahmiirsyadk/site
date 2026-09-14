@@ -21,7 +21,9 @@ module Site.Content
 -----------------------------------------------------------------------------
 import           Data.Function (on)
 import           Data.List (elemIndex, find, sortBy)
+import qualified Data.Text as T
 import           Miso.String (MisoString)
+import qualified Miso.String as MS
 -----------------------------------------------------------------------------
 import qualified Site.Content.Generated as Generated
 import           Site.Content.Types (Post (..), TocEntry (..), PublicationStatus (..))
@@ -42,7 +44,7 @@ postsInSection section =
 -----------------------------------------------------------------------------
 findPost :: Section -> MisoString -> Maybe Post
 findPost section slug =
-  find (\post -> postSection post == section && postSlug post == slug) publishedPosts
+  find (\post -> postSection post == section && postSlug post == T.pack (MS.unpack slug)) publishedPosts
 -----------------------------------------------------------------------------
 -- | The older and newer posts in the same section. Chronological order, so
 -- @older@ comes before the post and @newer@ after it.

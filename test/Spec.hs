@@ -453,7 +453,7 @@ contentSpec check checkEq = do
   where
     isFootnotes (Footnotes _) = True
     isFootnotes _             = False
-    isTable (Table _ _)       = True
+    isTable (Table _ _ _)     = True
     isTable _                 = False
 -----------------------------------------------------------------------------
 -- | The sea simulation: layout clamps, drag mapping, and the frame math the

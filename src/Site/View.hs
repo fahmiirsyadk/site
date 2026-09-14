@@ -30,7 +30,7 @@ import           Miso.Html.Element as H
 import           Miso.Html.Event as E
 import           Miso.Html.Property as P
 import           Miso.Property (textProp)
-import           Miso.String (MisoString)
+import           Miso.String (MisoString, ms)
 -----------------------------------------------------------------------------
 import           Site.Action (Action (..), Element (..))
 import qualified Site.Config as Config
@@ -139,7 +139,7 @@ siteHeader model =
             [ textProp "aria-label" "Primary navigation"
             , P.class_ "flex items-center gap-4 text-xs leading-none"
             ]
-             [ navigationLink active (Section Config.thoughtSection) Config.thoughtSection (Section.sectionName Config.thoughtSection)
+             [ navigationLink active (Section Config.thoughtSection) Config.thoughtSection (ms (Section.sectionName Config.thoughtSection))
             , labLink active
             , themeToggle (_theme model)
             ]
@@ -171,7 +171,7 @@ labLink active =
     , E.onBlur LeftLab
     , P.class_ (linkClass current)
     ]
-     [ text (Section.sectionName Config.labSection) ]
+      [ text (ms (Section.sectionName Config.labSection)) ]
   where
      current = active == Just Config.labSection
 -----------------------------------------------------------------------------

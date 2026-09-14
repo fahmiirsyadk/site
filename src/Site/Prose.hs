@@ -5,7 +5,7 @@
 -- | The prose vocabulary: the structured body of a markdown post, and the
 -- pure renderer that turns it into Miso nodes.
 --
--- Markdown is parsed once, at build time, by @scripts/content/generate.mjs@,
+-- Markdown is parsed once, at build time, by the native content compiler,
 -- which emits 'Block' values in @Site.Content.Generated@. Nothing here parses
 -- anything: the native prerenderer and the browser render the same data with
 -- the same code, so there is no HTML string and no injection step.
@@ -28,56 +28,10 @@ import           Miso (View, text)
 import qualified Miso.Html.Element as H
 import qualified Miso.Html.Property as P
 import           Miso.Property (textProp)
-import           Miso.String (MisoString, ms)
+import           Miso.String (ms)
 -----------------------------------------------------------------------------
 import qualified Site.Config as Config
------------------------------------------------------------------------------
-data Block
-  = Paragraph [Inline]
-  -- ^ A loose paragraph.
-  | Plain [Inline]
-  -- ^ The contents of a tight list item: no @\<p\>@ wrapper.
-  | Heading Int MisoString [Inline]
-  -- ^ Level, anchor id (empty when the heading gets none), content.
-  | CodeBlock (Maybe MisoString) [Inline]
-  -- ^ Language and already-highlighted content. 'Nothing' means no language.
-  | BulletList [[Block]]
-  | OrderedList [[Block]]
-  | BlockQuote [Block]
-  |   Table [[[Inline]]] [[[Inline]]]
-  -- ^ Header and body rows; each row is a list of cells, each cell inlines.
-  | Rule
-  | Footnotes [Footnote]
-  deriving (Show, Eq)
------------------------------------------------------------------------------
-data Footnote = Footnote
-  { footnoteNumber :: Int
-  , footnoteRefs   :: [MisoString]
-  -- ^ Ids of the references in the text, in reading order, so every one can
-  -- be linked back to.
-  , footnoteBlocks :: [Block]
-  } deriving (Show, Eq)
------------------------------------------------------------------------------
-data Inline
-  = Text MisoString
-  | Emphasis [Inline]
-  | Strong [Inline]
-  | Code MisoString
-  | Link MisoString (Maybe MisoString) [Inline]
-  -- ^ Href, title, label.
-  | Image MisoString MisoString (Maybe MisoString)
-  -- ^ A dithered image: source, alt, title.
-  | PlainImage MisoString MisoString (Maybe MisoString)
-  -- ^ A GIF or a @#no-dither@ image: source, alt, title.
-  | Video MisoString MisoString (Maybe MisoString)
-  -- ^ An MP4: source, alt, title.
-  | SoftBreak
-  | HardBreak
-  | FootnoteRef Int MisoString
-  -- ^ Footnote number and the id of this reference.
-  | Span MisoString [Inline]
-  -- ^ A classed span, used for highlight.js tokens.
-  deriving (Show, Eq)
+import           Site.Prose.Types (Block (..), ColumnAlignment (..), Footnote (..), Inline (..))
 -----------------------------------------------------------------------------
 type Node context model action = View context model action
 -----------------------------------------------------------------------------
@@ -99,20 +53,28 @@ renderBlock = \case
         [ H.code_ [ P.class_ (codeClass language) ] (renderInlines inlines) ]
     ]
   BulletList items -> [H.ul_ [] (map renderItem items)]
-  OrderedList items -> [H.ol_ [] (map renderItem items)]
+  OrderedList start items -> [H.ol_ (listStart start) (map renderItem items)]
   BlockQuote blocks -> [H.blockquote_ [] (renderBlocks blocks)]
-  Table headerRows bodyRows ->
+  Table alignments headerRows bodyRows ->
     [ H.table_
         []
-        [ H.thead_ [] [ renderRow H.th_ row | row <- headerRows ]
-        , H.tbody_ [] [ renderRow H.td_ row | row <- bodyRows ]
+         [ H.thead_ [] [ renderRow alignments H.th_ row | row <- headerRows ]
+         , H.tbody_ [] [ renderRow alignments H.td_ row | row <- bodyRows ]
         ]
     ]
   Rule -> [H.hr_ []]
   Footnotes footnotes -> renderFootnotes footnotes
   where
     renderItem blocks = H.li_ [] (renderBlocks blocks)
-    renderRow cell cells = H.tr_ [] [ cell [] (renderInlines inlines) | inlines <- cells ]
+    renderRow columnAlignments cell cells = H.tr_ []
+      [ cell (alignmentAttributes alignment) (renderInlines inlines)
+      | (alignment, inlines) <- zip (columnAlignments <> repeat AlignDefault) cells
+      ]
+    listStart start = if start == 1 then [] else [textProp "start" (ms start)]
+    alignmentAttributes AlignLeft = [textProp "style" "text-align: left"]
+    alignmentAttributes AlignCenter = [textProp "style" "text-align: center"]
+    alignmentAttributes AlignRight = [textProp "style" "text-align: right"]
+    alignmentAttributes AlignDefault = []
     headingElement level
       | level <= 2 = H.h2_
       | level == 3 = H.h3_
@@ -120,9 +82,9 @@ renderBlock = \case
       | level == 5 = H.h5_
       | otherwise  = H.h6_
     anchorAttributes "" = []
-    anchorAttributes anchor = [ P.id_ anchor, textProp "tabindex" "-1" ]
+    anchorAttributes anchor = [ P.id_ (ms anchor), textProp "tabindex" "-1" ]
     codeClass Nothing = "hljs"
-    codeClass (Just language) = "hljs language-" <> language
+    codeClass (Just language) = ms ("hljs language-" <> language)
 -----------------------------------------------------------------------------
 -- | The footnote section markdown-it-footnote produced: a separator, then an
 -- ordered list whose items carry a back-reference to the reference.
@@ -145,7 +107,7 @@ renderFootnotes footnotes =
     numberOf = ms . show . footnoteNumber
     backReference refId =
       H.a_
-        [ P.href_ ("#" <> refId)
+        [ P.href_ (ms ("#" <> refId))
         , P.class_ "footnote-backref"
         ]
         [ text "↩︎" ]
@@ -159,10 +121,10 @@ renderFootnotes footnotes =
 -----------------------------------------------------------------------------
 renderInline :: Inline -> [Node context model action]
 renderInline = \case
-  Text contents -> [text contents]
+  Text contents -> [text (ms contents)]
   Emphasis inlines -> [H.em_ [] (renderInlines inlines)]
   Strong inlines -> [H.strong_ [] (renderInlines inlines)]
-  Code contents -> [H.code_ [] [text contents]]
+  Code contents -> [H.code_ [] [text (ms contents)]]
   Link href title inlines ->
     [ H.a_ (hrefAttribute href <> titleAttribute title) (renderInlines inlines) ]
   Image source alt title ->
@@ -173,8 +135,8 @@ renderInline = \case
         [ H.img_
             ( [ P.class_ "dithered-image-source"
               , P.data_ Config.ditheredSourceKey ""
-              , P.src_ source
-              , textProp "alt" alt
+              , P.src_ (ms source)
+              , textProp "alt" (ms alt)
               , textProp "loading" "lazy"
               ]
               <> titleAttribute title
@@ -189,8 +151,8 @@ renderInline = \case
   PlainImage source alt title ->
     [ H.img_
         ( [ P.class_ "markdown-image-plain"
-          , P.src_ source
-          , textProp "alt" alt
+          , P.src_ (ms source)
+          , textProp "alt" (ms alt)
           , textProp "loading" "lazy"
           ]
           <> titleAttribute title
@@ -199,11 +161,11 @@ renderInline = \case
   Video source alt title ->
     [ H.video_
         ( [ P.class_ "markdown-video-plain"
-          , P.src_ source
+          , P.src_ (ms source)
           , P.controls_ True
           , textProp "playsinline" ""
           , P.preload_ "metadata"
-          , textProp "aria-label" alt
+          , textProp "aria-label" (ms alt)
           ]
           <> titleAttribute title
         )
@@ -214,8 +176,8 @@ renderInline = \case
   FootnoteRef n refId ->
     [ H.sup_ [ P.class_ "footnote-ref" ]
         [ H.a_
-            [ P.href_ ("#fn" <> number)
-            , P.id_ refId
+             [ P.href_ (ms ("#fn" <> number))
+             , P.id_ (ms refId)
             ]
             [ text ("[" <> number <> "]") ]
         ]
@@ -223,9 +185,9 @@ renderInline = \case
     where
       number = ms (show n)
   Span className inlines ->
-    [ H.span_ [ P.class_ className ] (renderInlines inlines) ]
+     [ H.span_ [ P.class_ (ms className) ] (renderInlines inlines) ]
   where
-    hrefAttribute href = [ P.href_ href ]
+    hrefAttribute href = [ P.href_ (ms href) ]
     titleAttribute = \case
       Nothing -> []
-      Just value -> [ textProp "title" value ]
+      Just value -> [ textProp "title" (ms value) ]

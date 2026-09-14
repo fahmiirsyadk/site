@@ -18,8 +18,9 @@ module Site.Meta
   , prerenderRoutes
   ) where
 -----------------------------------------------------------------------------
-import           Miso.String (MisoString)
+import           Miso.String (MisoString, ms)
 import qualified Miso.String as MS
+import qualified Data.Text as T
 -----------------------------------------------------------------------------
 import qualified Site.Config as Config
 import qualified Site.Content as Content
@@ -50,7 +51,7 @@ defaultMeta = Meta
 metaForRoute :: Route -> Meta
 metaForRoute = \case
   Home            -> defaultMeta
-  Section section -> defaultMeta { metaTitle = sectionName section <> " - " <> Config.siteName }
+  Section section -> defaultMeta { metaTitle = ms (sectionName section) <> " - " <> Config.siteName }
   Post section slug ->
     maybe notFoundMeta postMeta (Content.findPost section slug)
   NotFound _      -> notFoundMeta
@@ -63,24 +64,25 @@ notFoundMeta = defaultMeta
 -----------------------------------------------------------------------------
 postMeta :: Content.Post -> Meta
 postMeta post = Meta
-  { metaTitle       = firstOf [Content.postOgTitle post, Content.postTitle post]
-  , metaDescription = firstOf
-      [ Content.postOgDescription post
-      , Content.postExcerpt post
-      , Config.siteDescription
-      ]
+  { metaTitle       = ms (firstOf [Content.postOgTitle post, Content.postTitle post])
+   , metaDescription = ms (firstOf
+        [ Content.postOgDescription post
+        , Content.postExcerpt post
+        , toText Config.siteDescription
+        ])
   , metaImage       = absoluteImage (firstOf
-      [ Content.postOgImage post
-      , Content.postBanner post
-      , Config.defaultSocialImage
-      ])
+       [ Content.postOgImage post
+       , Content.postBanner post
+       , toText Config.defaultSocialImage
+       ])
   , metaType        = "article"
   }
   where
     firstOf = foldr (\candidate fallback -> if candidate == "" then fallback else candidate) ""
     absoluteImage image
-      | MS.isPrefixOf "http" image = image
-      | otherwise = Config.siteUrl <> image
+      | T.isPrefixOf "http" image = ms image
+      | otherwise = Config.siteUrl <> ms image
+    toText = T.pack . MS.unpack
 -----------------------------------------------------------------------------
 -- | Every route path already carries its trailing slash, which is the
 -- canonical form the deployed site serves.
@@ -95,6 +97,6 @@ prerenderRoutes =
   , Section Config.thoughtSection
   , Section Config.labSection
   ]
-  <> [ Post (Content.postSection post) (Content.postSlug post)
+  <> [ Post (Content.postSection post) (ms (Content.postSlug post))
      | post <- Content.publishedPosts
      ]

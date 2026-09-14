@@ -45,6 +45,54 @@ common options
 -- The shell lives in a library so that two other consumers can reach it: the
 -- native test-suite below and the native prerender generator. Both compile
 -- this same source under the native/SSR configuration.
+library content-core
+  import:
+    warnings
+  hs-source-dirs:
+    content-core
+  exposed-modules:
+    Site.Content.Types
+    Site.Prose.Types
+    Site.Section
+  build-depends:
+    base < 5,
+    text
+  default-language:
+    Haskell2010
+
+test-suite compiler-spec
+  type:
+    exitcode-stdio-1.0
+  if arch(wasm32) || arch(javascript)
+    buildable:
+      False
+  main-is:
+    CompilerSpec.hs
+  hs-source-dirs:
+    test
+    content-compiler
+  other-modules:
+    Site.Content.Compiler.Frontmatter
+    Site.Content.Compiler.Highlight
+    Site.Content.Compiler.Markdown
+  build-depends:
+    base < 5,
+    aeson,
+    bytestring,
+    commonmark,
+    commonmark-extensions,
+    filepath,
+    mtl,
+    process,
+    site-miso:content-core,
+    text,
+    time,
+    yaml
+  ghc-options:
+    -Wall
+  default-language:
+    Haskell2010
+
 library
   import:
     warnings, platform
@@ -57,7 +105,6 @@ library
     Site.Config
     Site.Canvas
     Site.Content
-    Site.Content.Types
     Site.Document
     Site.Dither
     Site.FrameLoop
@@ -70,7 +117,6 @@ library
     Site.Prose
     Site.Route
     Site.Scroll
-    Site.Section
     Site.Scribble
     Site.Sea
     Site.Theme
@@ -97,6 +143,7 @@ library
     base < 5,
     containers,
     miso >= 1.13,
+    site-miso:content-core,
     text,
     transformers
   default-language:
@@ -108,9 +155,46 @@ executable app
   main-is:
     Main.hs
   build-depends:
-    base < 5, miso >= 1.13, site-miso
+    base < 5, miso >= 1.13, site-miso, site-miso:content-core
   hs-source-dirs:
     app
+  default-language:
+    Haskell2010
+
+-- Native-only content compiler. It deliberately depends on content-core, not
+-- the application library, so generated content is available before the app
+-- library is built.
+executable content-compiler
+  import:
+    warnings
+  if arch(wasm32) || arch(javascript)
+    buildable:
+      False
+  main-is:
+    Main.hs
+  hs-source-dirs:
+    content-compiler
+  other-modules:
+    Site.Content.Compiler.Emit
+    Site.Content.Compiler.Frontmatter
+    Site.Content.Compiler.Highlight
+    Site.Content.Compiler.Markdown
+  build-depends:
+    base < 5,
+    aeson,
+    bytestring,
+    commonmark,
+    commonmark-extensions,
+    directory,
+    filepath,
+    mtl,
+    process,
+    pretty,
+    site-miso:content-core,
+    text,
+    time,
+    template-haskell,
+    yaml
   default-language:
     Haskell2010
 
@@ -142,7 +226,7 @@ test-suite spec
   hs-source-dirs:
     test
   build-depends:
-    base < 5, miso >= 1.13, site-miso
+    base < 5, miso >= 1.13, site-miso, site-miso:content-core
   ghc-options:
     -Wall
   default-language:

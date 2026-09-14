@@ -30,6 +30,7 @@ module Site.Route
   ) where
 -----------------------------------------------------------------------------
 import           Data.List (intercalate)
+import qualified Data.Text as T
 import           Miso (URI (..), emptyURI)
 import           Miso.String (MisoString)
 import qualified Miso.String as MS
@@ -61,7 +62,7 @@ splitOn c s =
     (chunk, _ : rest) -> chunk : splitOn c rest
 -----------------------------------------------------------------------------
 isContentSection :: MisoString -> Bool
-isContentSection = maybe False (const True) . Section.parseSection
+isContentSection = maybe False (const True) . parseSection
 -----------------------------------------------------------------------------
 -- | Total. Unrecognised shapes become 'NotFound' carrying their normalised
 -- form, never an error.
@@ -69,8 +70,8 @@ urlToRoute :: MisoString -> Route
 urlToRoute raw =
   case normalizePath raw of
     []                                            -> Home
-    [rawSection] | Just section <- Section.parseSection rawSection -> Section section
-    [rawSection, slug] | Just section <- Section.parseSection rawSection -> Post section slug
+    [rawSection] | Just section <- parseSection rawSection -> Section section
+    [rawSection, slug] | Just section <- parseSection rawSection -> Post section slug
     parts                                         -> NotFound (rejoin parts)
   where
     rejoin = MS.pack . ("/" <>) . intercalate "/" . map MS.unpack
@@ -80,9 +81,14 @@ urlToRoute raw =
 routePath :: Route -> MisoString
 routePath = \case
   Home              -> "/"
-  Section section   -> "/" <> Section.sectionName section <> "/"
-  Post section slug -> "/" <> Section.sectionName section <> "/" <> slug <> "/"
+  Section section   -> sectionPath section
+  Post section slug -> sectionPath section <> slug <> "/"
   NotFound path     -> path
+  where
+    sectionPath section = "/" <> MS.pack (T.unpack (Section.sectionName section)) <> "/"
+
+parseSection :: MisoString -> Maybe Section.Section
+parseSection = Section.parseSection . T.pack . MS.unpack
 -----------------------------------------------------------------------------
 -- | Only the path is read. Query and fragment are carried by the 'URI' but do
 -- not select a page; fragment-scrolling is a separate concern.

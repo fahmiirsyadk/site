@@ -10,6 +10,7 @@ module Site.View.Section
 import           Miso (text)
 import           Miso.Html.Element as H
 import           Miso.Html.Property as P
+import           Miso.String (ms)
 import qualified Site.Section as Section
 -----------------------------------------------------------------------------
 import           Site.Content (Post)
@@ -23,7 +24,7 @@ sectionView section =
     [ P.class_ "space-y-6" ]
     [ H.h1_
         [ P.class_ "text-[12px] font-semibold leading-[1.7] text-ink dark:text-neutral-100" ]
-         [ text (Section.sectionName section) ]
+         [ text (ms (Section.sectionName section)) ]
     , case posts of
         [] -> H.p_
           [ P.class_ "text-[12px] text-neutral-600 dark:text-neutral-400" ]
@@ -39,13 +40,13 @@ postPreview :: Post -> Node context
 postPreview post =
   H.div_
     [ P.class_ "flex w-full items-center gap-3 py-2 text-[12px] leading-[1.7]" ]
-    [ internalLink (Post (Content.postSection post) (Content.postSlug post))
+    [ internalLink (Post (Content.postSection post) (ms (Content.postSlug post)))
         [ P.class_ "shrink-0 font-instrument text-[16px] leading-[1.3] text-ink no-underline hover:text-coral dark:text-neutral-200 dark:hover:text-coral-bright" ]
-        [ text (Content.postTitle post) ]
+         [ text (ms (Content.postTitle post)) ]
     , H.span_
         [ P.class_ "min-h-px min-w-6 flex-1 border-b border-neutral-300 dark:border-neutral-600" ]
         []
     , H.span_
         [ P.class_ "shrink-0 whitespace-nowrap text-right text-neutral-600 dark:text-neutral-400" ]
-        [ text (Content.postDateLabel post) ]
+       [ text (ms (Content.postDateLabel post)) ]
     ]
